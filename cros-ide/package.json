@@ -1,5 +1,5 @@
 {
-  "name": "cros-ide",
+	"name": "cros-ide",
 	"displayName": "cros-ide",
 	"description": "Connect to Chrome OS DUTs over VNC",
 	"version": "0.0.1",
@@ -128,7 +128,14 @@
 					}
 				}
 			}
-		}
+		},
+		"languages": [
+			{
+			"id": "shellscript",
+			"extensions": [".eclass"],
+			"aliases": ["Eclass"]
+		  }
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run package",
