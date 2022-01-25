@@ -149,7 +149,7 @@
 		"pretest": "npm run compile-tests && npm run compile && npm run lint",
 		"lint": "eslint src --ext ts",
 		"test": "node ./out/test/runTest.js",
-		"vsix": "npx vsce@1.103.1 package -o output/"
+		"publish": "./install.sh --upload"
 	},
 	"devDependencies": {
 		"@types/vscode": "^1.63.1",

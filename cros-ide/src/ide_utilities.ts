@@ -7,6 +7,7 @@
  */
 import * as vscode from 'vscode';
 import * as childProcess from 'child_process';
+import * as fs from 'fs';
 
 type ExecFileResult = {
   stdout: string;
@@ -20,7 +21,7 @@ export async function execFile(file: string, args: ReadonlyArray<string> | undef
         reject(error);
         return;
       }
-      resolve({stdout, stderr});
+      resolve({ stdout, stderr });
     });
   });
 }
@@ -52,4 +53,8 @@ export function createTerminalForHost(host: string, namePrefix: string, extensio
   }
   terminal.sendText(`ssh -i ${testingRsa.fsPath} ${extraOptions} ${portOption} root@${host}; exit $?`);
   return terminal;
+}
+
+export function isInsideChroot(): boolean {
+  return fs.existsSync('/etc/cros_chroot_version')
 }

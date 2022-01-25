@@ -9,8 +9,11 @@ This plugin consolidates commonly used tools for Chromium OS Development.
 
 Go to the [QuickStart Guide](../docs/quickstart.md)
 
-### Building vsix package
-* Outside chroot, run `npm run vsix`, and a .vsix file will be generated under `output/`
+## Publishing the extension
+
+* Outside chroot, run `npm run publish`. It will build the extension and upload it to
+  Cloud storage under [chromeos-velocity](https://pantheon.corp.google.com/storage/browser?project=google.com:chromeos-velocity).
+
   TODO(oka): Make the command work inside chroot.
 
 ## Features
