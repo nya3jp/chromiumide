@@ -19,6 +19,7 @@
 		"onCommand:cros-ide.addFleetHost",
 		"onView:static-devices",
 		"onView:fleet-devices",
+		"onView:boards-packages",
 		"onLanguage:cpp"
 	],
 	"main": "./dist/extension.js",
@@ -73,8 +74,12 @@
 				{
 					"id": "fleet-devices",
 					"name": "crosfleet devices"
+				},
+				{
+				  "id": "boards-packages",
+				  "name": "Boards and Packages"
 				}
-			]
+			  ]
 		},
 		"menus": {
 			"view/title": [

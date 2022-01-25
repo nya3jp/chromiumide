@@ -10,8 +10,10 @@
 import * as vscode from 'vscode';
 import * as dutManager from './dut_management/dut_manager';
 import * as crosLint from './cros_lint';
+import * as boardsPackages from './boards_packages';
 
 export function activate(context: vscode.ExtensionContext) {
   dutManager.activateDutManager(context);
   crosLint.activate(context);
+  boardsPackages.activate();
 }
