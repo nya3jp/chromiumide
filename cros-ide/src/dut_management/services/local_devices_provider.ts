@@ -7,7 +7,7 @@
  */
 import * as vscode from 'vscode';
 import * as ideutil from '../../ide_utilities';
-import {DeviceInfo} from '../dut_manager';
+import * as dut_manager from '../dut_manager';
 import * as dutServices from './dut_services';
 
 export class LocalDevicesProvider implements vscode.TreeDataProvider<string> {
@@ -21,8 +21,8 @@ export class LocalDevicesProvider implements vscode.TreeDataProvider<string> {
     this.queryVersions();
   }
 
-  getTreeItem(host: string): DeviceInfo {
-    return new DeviceInfo(host, this.cachedVersions.get(host) || '');
+  getTreeItem(host: string): dut_manager.DeviceInfo {
+    return new dut_manager.DeviceInfo(host, this.cachedVersions.get(host) || '');
   }
 
   getChildren(parent?: string): string[] {
