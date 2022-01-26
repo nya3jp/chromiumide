@@ -30,10 +30,14 @@ async function execute(cmd: string, showStdout?: boolean) {
   return stdout;
 }
 
-async function latestVersionUrl() {
+async function latestArchive() {
   // The result of `gsutil ls` is lexicographically sorted.
   const stdout = await execute(`gsutil ls ${GS_PREFIX}`);
-  return stdout.trim().split("\n").pop()!;
+  const archives = stdout.trim().split("\n").map(url => {
+    return Archive.parse(url);
+  })
+  archives.sort(Archive.compareFn);
+  return archives.pop()!;
 }
 
 async function gitIsDirty() {
@@ -60,27 +64,69 @@ async function cleanCommitHash() {
 }
 
 class Archive {
+  readonly version: Version;
   constructor(readonly name: string, readonly hash: string) {
+    this.version = versionFromFilename(name);
   }
+
   url() {
     return `${GS_PREFIX}/${this.name}@${this.hash}`;
   }
+
   static parse(url: string) {
     const base = path.basename(url);
     const [name, hash] = base.split('@');
     return new Archive(name, hash);
   }
+
+  static compareFn(first: Archive, second: Archive): number {
+    return compareVersion(first.version, second.version);
+  }
+}
+
+interface Version {
+  major: number
+  minor: number
+  patch: number
+}
+
+// TODO(oka): test this function.
+function compareVersion(first: Version, second: Version): number {
+  if (first.major !== second.major) {
+    return first.major - second.major;
+  }
+  if (first.minor !== second.minor) {
+    return first.minor - second.minor;
+  }
+  if (first.patch !== second.patch) {
+    return first.patch - second.patch;
+  }
+  return 0;
+}
+
+// Get version from filename such as "cros-ide-0.0.1.vsix"
+// TODO(oka): test this function.
+// TODO(oka): check invalid input.
+function versionFromFilename(name: string): Version {
+  const suffix = name.split('-').pop()!;
+  const version = suffix.split('.').slice(0, 3).map(Number);
+  return {
+    major: version[0],
+    minor: version[1],
+    patch: version[2],
+  };
 }
 
 async function buildAndUpload() {
-  let latestInGs = Archive.parse(await latestVersionUrl());
-  let hash = await cleanCommitHash();
+  const latestInGs = await latestArchive();
+  const hash = await cleanCommitHash();
   let td: string | undefined;
   try {
     td = await fs.promises.mkdtemp(os.tmpdir() + '/');
     await execute(`npx vsce@1.103.1 package -o ${td}/`);
     const localName = (await fs.promises.readdir(td))[0];
-    if (latestInGs.name >= localName) {
+    const localVersion = versionFromFilename(localName);
+    if (compareVersion(latestInGs.version, localVersion) >= 0) {
       throw new Error(`${localName} is older than the latest published version ${latestInGs.name}. Update the version and rerun the program.`);
     }
     const url = new Archive(localName, hash).url();
@@ -96,11 +142,11 @@ async function buildAndUpload() {
 async function install() {
   assertInsideChroot();
 
-  const src = await latestVersionUrl();
-  let td: string | undefined;
+  const src = await latestArchive();
+  let td: string | undefined
   try {
     td = await fs.promises.mkdtemp(os.tmpdir() + '/');
-    const dst = path.join(td, Archive.parse(src).name);
+    const dst = path.join(td, src.name);
 
     await execute(`gsutil cp ${src} ${dst}`);
     await execute(`code --install-extension ${dst}`, true);
