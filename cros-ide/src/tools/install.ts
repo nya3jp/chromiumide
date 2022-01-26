@@ -11,10 +11,10 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
-import * as ideUtilities from '../ide_utilities';
+import * as commonUtil from '../common/common_util';
 
 function assertInsideChroot() {
-    if (!ideUtilities.isInsideChroot()) {
+    if (!commonUtil.isInsideChroot()) {
         throw 'Error: not inside chroot'
     }
 }

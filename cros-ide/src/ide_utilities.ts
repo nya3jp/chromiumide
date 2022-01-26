@@ -3,11 +3,10 @@
 // found in the LICENSE file.
 
 /**
- * Keep all general utility functions here.
+ * Keep all general utility functions here, or in common_util.
  */
 import * as vscode from 'vscode';
 import * as childProcess from 'child_process';
-import * as fs from 'fs';
 
 type ExecFileResult = {
   stdout: string;
@@ -53,8 +52,4 @@ export function createTerminalForHost(host: string, namePrefix: string, extensio
   }
   terminal.sendText(`ssh -i ${testingRsa.fsPath} ${extraOptions} ${portOption} root@${host}; exit $?`);
   return terminal;
-}
-
-export function isInsideChroot(): boolean {
-  return fs.existsSync('/etc/cros_chroot_version')
 }
