@@ -74,37 +74,37 @@ export class VncSession {
 
   private static getWebviewContent(localPort: number) {
     return `<!DOCTYPE html>
-		<html lang="en">
-		<head>
-			<meta charset="UTF-8">
-			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<title>CrOS VNC Client</title>
-			<style>
-				html, body {
-					margin: 0;
-					padding: 0;
-					height: 100%;
-				}
-				#main {
-					border: 0;
-					width: 100%;
-					height: 100%;
-				}
-			</style>
-		</head>
-		<body>
-			<iframe
-			  id="main"
-			  title="iframe"
-				sandbox="allow-scripts allow-same-origin">
-			</iframe>
-			<script>
-  			// Navigate after 5 seconds.
-			  setTimeout(() => {
-					document.getElementById('main').src = 'http://localhost:${localPort}/vnc.html?resize=scale&autoconnect=true';
-				}, 5000);
-			</script>
-		</body>
-		</html>`;
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>CrOS VNC Client</title>
+      <style>
+        html, body {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+        }
+        #main {
+          border: 0;
+          width: 100%;
+          height: 100%;
+        }
+      </style>
+    </head>
+    <body>
+      <iframe
+        id="main"
+        title="iframe"
+        sandbox="allow-scripts allow-same-origin">
+      </iframe>
+      <script>
+        // Navigate after 5 seconds.
+        setTimeout(() => {
+          document.getElementById('main').src = 'http://localhost:${localPort}/vnc.html?resize=scale&autoconnect=true';
+        }, 5000);
+      </script>
+    </body>
+    </html>`;
   }
 }

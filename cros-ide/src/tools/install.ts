@@ -14,64 +14,64 @@ import * as util from 'util';
 import * as commonUtil from '../common/common_util';
 
 function assertInsideChroot() {
-    if (!commonUtil.isInsideChroot()) {
-        throw 'Error: not inside chroot'
-    }
+  if (!commonUtil.isInsideChroot()) {
+    throw 'Error: not inside chroot'
+  }
 }
 
 const GS_PREFIX = 'gs://chromeos-velocity/ide/cros-ide/'
 
 async function execute(cmd: string) {
-    const { stdout, stderr } = await util.promisify(childProcess.exec)(cmd)
-    process.stderr.write(stderr)
-    process.stdout.write(stdout)
-    return stdout
+  const { stdout, stderr } = await util.promisify(childProcess.exec)(cmd)
+  process.stderr.write(stderr)
+  process.stdout.write(stdout)
+  return stdout
 }
 
 async function buildAndUpload() {
-    let td: string | undefined
-    try {
-        td = await fs.promises.mkdtemp(os.tmpdir() + '/')
-        await execute(`npx vsce@1.103.1 package -o ${td}/`)
-        await execute(`gsutil cp ${td}/* ${GS_PREFIX}`)
-    } finally {
-        if (td) {
-            await fs.promises.rmdir(td, { recursive: true })
-        }
+  let td: string | undefined
+  try {
+    td = await fs.promises.mkdtemp(os.tmpdir() + '/')
+    await execute(`npx vsce@1.103.1 package -o ${td}/`)
+    await execute(`gsutil cp ${td}/* ${GS_PREFIX}`)
+  } finally {
+    if (td) {
+      await fs.promises.rmdir(td, { recursive: true })
     }
+  }
 }
 
 async function install() {
-    assertInsideChroot()
-    // The result of `gsutil ls` is lexicographically sorted.
-    const stdout = await execute(`gsutil ls ${GS_PREFIX}`)
-    const src = stdout.trim().split("\n").pop()!
+  assertInsideChroot()
+  // The result of `gsutil ls` is lexicographically sorted.
+  const stdout = await execute(`gsutil ls ${GS_PREFIX}`)
+  const src = stdout.trim().split("\n").pop()!
 
-    let td: string | undefined
-    try {
-        td = await fs.promises.mkdtemp(os.tmpdir() + '/')
-        const dst = path.join(td, path.basename(src))
+  let td: string | undefined
+  try {
+    td = await fs.promises.mkdtemp(os.tmpdir() + '/')
+    const dst = path.join(td, path.basename(src))
 
-        await execute(`gsutil cp ${src} ${dst}`)
-        await execute(`code --install-extension ${dst}`)
-    } finally {
-        if (td) {
-            await fs.promises.rmdir(td, { recursive: true })
-        }
+    await execute(`gsutil cp ${src} ${dst}`)
+    await execute(`code --install-extension ${dst}`)
+  } finally {
+    if (td) {
+      await fs.promises.rmdir(td, { recursive: true })
     }
+  }
 }
 
 async function main() {
-    const upload = process.argv.includes('--upload')
-    if (upload) {
-        await buildAndUpload()
-        return
-    }
-    await install()
+  const upload = process.argv.includes('--upload')
+  if (upload) {
+    await buildAndUpload()
+    return
+  }
+  await install()
 }
 
 main().catch(e => {
-    console.error(e)
-    console.error(`Read quickstart.md and run the script in proper environment`)
-    process.exit(1)
+  console.error(e)
+  console.error(`Read quickstart.md and run the script in proper environment`)
+  process.exit(1)
 })

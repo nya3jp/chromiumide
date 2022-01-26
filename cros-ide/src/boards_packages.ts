@@ -9,10 +9,10 @@ import * as util from 'util';
 import * as vscode from 'vscode';
 
 export function activate() {
-    vscode.window.registerTreeDataProvider(
-        'boards-packages',
-        new BoardPackageProvider()
-    );
+  vscode.window.registerTreeDataProvider(
+    'boards-packages',
+    new BoardPackageProvider()
+  );
 }
 
 /**
@@ -23,49 +23,49 @@ export function activate() {
  * Everything is read-only and does not refresh after the IDE is loaded.
  */
 class BoardPackageProvider implements vscode.TreeDataProvider<ChrootItem> {
-    getChildren(element?: ChrootItem): Thenable<ChrootItem[]> {
-        if (element === undefined) {
-            return this.getBoards();
-        }
-        if (element && element instanceof Board) {
-            return this.getPackages(element);
-        }
-        return Promise.resolve([]);
+  getChildren(element?: ChrootItem): Thenable<ChrootItem[]> {
+    if (element === undefined) {
+      return this.getBoards();
     }
-
-    async getBoards(): Promise<Board[]> {
-        const dirs = await fs.promises.readdir("/build")
-        return dirs
-            .filter(dir => dir !== "bin")
-            .map(dir => new Board(dir));
+    if (element && element instanceof Board) {
+      return this.getPackages(element);
     }
+    return Promise.resolve([]);
+  }
 
-    async getPackages(board: Board): Promise<Package[]> {
-        const cmd = `cros_workon --board=${board.name} list`;
-        const { stdout } = await util.promisify(childProcess.exec)(cmd)
+  async getBoards(): Promise<Board[]> {
+    const dirs = await fs.promises.readdir("/build")
+    return dirs
+      .filter(dir => dir !== "bin")
+      .map(dir => new Board(dir));
+  }
 
-        return stdout
-            .split(/\r?\n/)
-            .filter(line => line.trim() !== "")
-            .map(pkg => new Package(pkg));
-    }
+  async getPackages(board: Board): Promise<Package[]> {
+    const cmd = `cros_workon --board=${board.name} list`;
+    const { stdout } = await util.promisify(childProcess.exec)(cmd)
 
-    getTreeItem(element: ChrootItem): vscode.TreeItem {
-        return element;
-    }
+    return stdout
+      .split(/\r?\n/)
+      .filter(line => line.trim() !== "")
+      .map(pkg => new Package(pkg));
+  }
+
+  getTreeItem(element: ChrootItem): vscode.TreeItem {
+    return element;
+  }
 }
 
 class ChrootItem extends vscode.TreeItem {
 }
 
 class Board extends ChrootItem {
-    constructor(readonly name: string) {
-        super(name, vscode.TreeItemCollapsibleState.Collapsed);
-    }
+  constructor(readonly name: string) {
+    super(name, vscode.TreeItemCollapsibleState.Collapsed);
+  }
 }
 
 class Package extends ChrootItem {
-    constructor(readonly name: string) {
-        super(name, vscode.TreeItemCollapsibleState.None);
-    }
+  constructor(readonly name: string) {
+    super(name, vscode.TreeItemCollapsibleState.None);
+  }
 }
