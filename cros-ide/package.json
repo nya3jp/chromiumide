@@ -79,7 +79,7 @@
           "id": "boards-packages",
           "name": "Boards and Packages"
         }
-        ]
+      ]
     },
     "menus": {
       "view/title": [
@@ -138,9 +138,13 @@
     },
     "languages": [
       {
-      "id": "shellscript",
-      "extensions": [".eclass"],
-      "aliases": ["Eclass"]
+        "id": "shellscript",
+        "extensions": [
+          ".eclass"
+        ],
+        "aliases": [
+          "Eclass"
+        ]
       }
     ]
   },
