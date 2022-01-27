@@ -37,9 +37,9 @@ function parseCrosLint(stdout: string, stderr: string, document: vscode.TextDocu
   // stdout and stderr are merged, because we saw that warnings can go to either.
   // TODO(b/214322467): Figure out when we should use stderr and when stdout.
   while ((match = lineRE.exec(stdout + '\n' + stderr)) !== null) {
-    let file = match[1];
-    let line = parseInt(match[2]);
-    let message = match[3];
+    const file = match[1];
+    const line = parseInt(match[2]);
+    const message = match[3];
     if (file === document.uri.fsPath) {
       const diagnostic: vscode.Diagnostic = {
         severity: vscode.DiagnosticSeverity.Warning,

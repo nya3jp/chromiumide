@@ -27,7 +27,5 @@ module.exports = {
     'semi': 0,
     'arrow-parens': 0,
     'no-throw-literal': 0,
-    'prefer-const': 0,
-    'no-unused-vars': 0,
   },
 };

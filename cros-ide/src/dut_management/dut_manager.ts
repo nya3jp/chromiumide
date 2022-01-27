@@ -130,7 +130,7 @@ export function activateDutManager(context: vscode.ExtensionContext) {
       vscode.commands.registerCommand('cros-ide.addFleetHost',
           async () => {
             const board = await promptBoard('Model');
-            const lease = await crosfleetDutLease({board});
+            await crosfleetDutLease({board});
             // HACK: copy over binaries.
             // TODO: Removing prebuilts till we have an alterative solution
             // const prebuilt = vscode.Uri.joinPath(context.extensionUri, 'resources', 'novnc-prebuilt.tar.gz');
@@ -161,6 +161,8 @@ async function promptBoard(title: string): Promise<string | undefined> {
   });
 }
 
+// TODO(lokeric): remove this code if unnecessary.
+/*
 function crosfleetBoard(lease: Lease): string | undefined {
   for (const tag of lease.Build.tags) {
     if (tag.key === 'label-board') {
@@ -169,6 +171,7 @@ function crosfleetBoard(lease: Lease): string | undefined {
   }
   return undefined;
 }
+*/
 
 type LeaseOpts = {
   board?: string;
