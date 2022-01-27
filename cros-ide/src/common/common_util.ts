@@ -3,8 +3,8 @@
  * script. This file should not depend on 'vscode'.
  */
 
-import * as fs from 'fs'
+import * as fs from 'fs';
 
 export function isInsideChroot(): boolean {
-  return fs.existsSync('/etc/cros_chroot_version')
+  return fs.existsSync('/etc/cros_chroot_version');
 }

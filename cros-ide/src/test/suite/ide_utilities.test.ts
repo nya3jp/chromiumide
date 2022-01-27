@@ -4,7 +4,7 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 
-import * as ide_utilities from '../../ide_utilities'
+import * as ide_utilities from '../../ide_utilities';
 
 suite('Extension Test Suite', () => {
   vscode.window.showInformationMessage('Start all tests.');

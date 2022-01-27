@@ -35,7 +35,7 @@ async function latestArchive() {
   const stdout = await execute(`gsutil ls ${GS_PREFIX}`);
   const archives = stdout.trim().split('\n').map(url => {
     return Archive.parse(url);
-  })
+  });
   archives.sort(Archive.compareFn);
   return archives.pop()!;
 }
@@ -143,7 +143,7 @@ async function install() {
   assertInsideChroot();
 
   const src = await latestArchive();
-  let td: string | undefined
+  let td: string | undefined;
   try {
     td = await fs.promises.mkdtemp(os.tmpdir() + '/');
     const dst = path.join(td, src.name);
@@ -166,7 +166,7 @@ async function main() {
   try {
     await install();
   } catch (e) {
-    const message = (e as Error).message
+    const message = (e as Error).message;
     throw new Error(`${message}\nRead quickstart.md and run the script in proper environment`);
   }
 }
@@ -174,4 +174,4 @@ async function main() {
 main().catch(e => {
   console.error(e);
   process.exit(1);
-})
+});

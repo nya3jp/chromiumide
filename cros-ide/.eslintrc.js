@@ -24,7 +24,6 @@ module.exports = {
     'require-jsdoc': 0,
     'max-len': 0,
     'camelcase': 0,
-    'semi': 0,
     'arrow-parens': 0,
     'no-throw-literal': 0,
   },

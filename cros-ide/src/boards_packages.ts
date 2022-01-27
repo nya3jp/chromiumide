@@ -44,7 +44,7 @@ class BoardPackageProvider implements vscode.TreeDataProvider<ChrootItem> {
   }
 
   async getBoards(): Promise<Board[]> {
-    const dirs = await fs.promises.readdir('/build')
+    const dirs = await fs.promises.readdir('/build');
     return dirs
         .filter(dir => dir !== 'bin')
         .map(dir => new Board(dir));
@@ -52,7 +52,7 @@ class BoardPackageProvider implements vscode.TreeDataProvider<ChrootItem> {
 
   async getPackages(board: Board): Promise<Package[]> {
     const cmd = `cros_workon --board=${board.name} list`;
-    const {stdout} = await util.promisify(childProcess.exec)(cmd)
+    const {stdout} = await util.promisify(childProcess.exec)(cmd);
 
     return stdout
         .split(/\r?\n/)
