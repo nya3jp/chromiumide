@@ -9,7 +9,9 @@ import * as crosLint from '../../cros_lint';
 
 /* eslint max-len: ["error", { "ignoreTemplateLiterals": true }]*/
 
-const inputFileContents =
+const cppFileName = 'cros-disks/aaa.h';
+
+const cppFileContents =
 `#ifndef CROS_DISKS_AAA_H_
 #define CROS_DISKS_AAA_H_
 
@@ -20,13 +22,41 @@ namespace {
 #endif  // CROS_DISKS_AAA_H_
 `;
 
-const crosLintOutput =
+const cppLintOutput =
 `cros-disks/aaa.h:0:  No copyright message found.  You should have a line: "Copyright [year] <Copyright Owner>"  [legal/copyright] [5]
 cros-disks/aaa.h:4:  Do not use unnamed namespaces in header files.  See https://google.github.io/styleguide/cppguide.html#Namespaces for more information.  [build/namespaces] [4]
 Done processing cros-disks/aaa.h
 Total errors found: 2
 11:21:52: ERROR: Found lint errors in 1 files.
 `;
+
+const pythonFileName = 'cros-disks/aaa.py';
+
+const pythonFileContents =
+`#!/usr/bin/env python3
+
+class Foo:
+    pass
+`;
+
+const pythonLintOutput =
+`************ Module aaa
+cros-disks/aaa.py:1:0: C9001: Modules should have docstrings (even a one liner) (module-missing-docstring)
+cros-disks/aaa.py:3:0: C9002: Classes should have docstrings (even a one liner) (class-missing-docstring)
+`;
+
+const shellFileName = 'cros-disks/aaa.sh';
+
+const shellFileContents =
+`#!/bin/bash
+
+echo $1
+`;
+
+const shellLintOutput =
+`cros-disks/aaa.sh:3:6: note: Double quote to prevent globbing and word splitting. [SC2086]
+`;
+
 
 /** Provides virtual documents for testing. */
 class TestDocumentProvider implements vscode.TextDocumentContentProvider {
@@ -40,39 +70,83 @@ class TestDocumentProvider implements vscode.TextDocumentContentProvider {
 }
 
 const documentProvider = new TestDocumentProvider(new Map<string, string>([
-  ['cros-disks/aaa.h', inputFileContents],
+  [cppFileName, cppFileContents],
+  [pythonFileName, pythonFileContents],
+  [shellFileName, shellFileContents],
 ]));
 const scheme = 'testing';
 vscode.workspace.registerTextDocumentContentProvider(scheme, documentProvider);
 
 suite('Cros Lint Test Suite', () => {
   test('Cpp warnings', async () => {
-    const uri = vscode.Uri.from({scheme: scheme, path: 'cros-disks/aaa.h'});
+    const uri = vscode.Uri.from({scheme: scheme, path: cppFileName});
     const textDocument = await vscode.workspace.openTextDocument(uri);
-    const diagnostics =
-      crosLint.parseCrosLintCpp(crosLintOutput, '', textDocument);
-    assert.ok(diagnostics);
-    assert.strictEqual(diagnostics.length, 2);
-    const [copyrightWarn, namespaceWarn] = diagnostics;
+    const actual = crosLint.parseCrosLintCpp(cppLintOutput, '', textDocument);
+    assert.strictEqual(actual.length, 2);
+    const expected = [
+      new vscode.Diagnostic(
+          new vscode.Range(
+              new vscode.Position(0, 0),
+              new vscode.Position(0, Number.MAX_VALUE),
+          ),
+          `No copyright message found.  You should have a line: "Copyright [year] <Copyright Owner>"`,
+          vscode.DiagnosticSeverity.Warning,
+      ),
+      new vscode.Diagnostic(
+          new vscode.Range(
+              new vscode.Position(3, 0),
+              new vscode.Position(3, Number.MAX_VALUE),
+          ),
+          `Do not use unnamed namespaces in header files.  See https://google.github.io/styleguide/cppguide.html#Namespaces for more information.`,
+          vscode.DiagnosticSeverity.Warning,
+      ),
+    ];
+    assert.deepStrictEqual(expected, actual);
+  });
 
-    const expectedCopyrightWarn = new vscode.Diagnostic(
-        new vscode.Range(
-            new vscode.Position(0, 0),
-            new vscode.Position(0, Number.MAX_VALUE),
-        ),
-        `No copyright message found.  You should have a line: "Copyright [year] <Copyright Owner>"`,
-        vscode.DiagnosticSeverity.Warning,
-    );
-    assert.deepStrictEqual(expectedCopyrightWarn, copyrightWarn);
+  test('Python warnings', async () => {
+    const uri = vscode.Uri.from({scheme: scheme, path: pythonFileName});
+    const textDocument = await vscode.workspace.openTextDocument(uri);
+    const actual =
+      crosLint.parseCrosLintShellPython(pythonLintOutput, '', textDocument);
+    assert.strictEqual(actual.length, 2);
+    const expected = [
+      new vscode.Diagnostic(
+          new vscode.Range(
+              new vscode.Position(0, 0),
+              new vscode.Position(0, Number.MAX_VALUE),
+          ),
+          `C9001: Modules should have docstrings (even a one liner) (module-missing-docstring)`,
+          vscode.DiagnosticSeverity.Warning,
+      ),
+      new vscode.Diagnostic(
+          new vscode.Range(
+              new vscode.Position(2, 0),
+              new vscode.Position(2, Number.MAX_VALUE),
+          ),
+          `C9002: Classes should have docstrings (even a one liner) (class-missing-docstring)`,
+          vscode.DiagnosticSeverity.Warning,
+      ),
+    ];
+    assert.deepStrictEqual(expected, actual);
+  });
 
-    const expectedNamespaceWarn = new vscode.Diagnostic(
-        new vscode.Range(
-            new vscode.Position(3, 0),
-            new vscode.Position(3, Number.MAX_VALUE),
-        ),
-        `Do not use unnamed namespaces in header files.  See https://google.github.io/styleguide/cppguide.html#Namespaces for more information.`,
-        vscode.DiagnosticSeverity.Warning,
-    );
-    assert.deepStrictEqual(expectedNamespaceWarn, namespaceWarn);
+  test('Shell warnings', async () => {
+    const uri = vscode.Uri.from({scheme: scheme, path: shellFileName});
+    const textDocument = await vscode.workspace.openTextDocument(uri);
+    const actual =
+      crosLint.parseCrosLintShellPython(shellLintOutput, '', textDocument);
+    assert.strictEqual(actual.length, 1);
+    const expected = [
+      new vscode.Diagnostic(
+          new vscode.Range(
+              new vscode.Position(2, 6),
+              new vscode.Position(2, Number.MAX_VALUE),
+          ),
+          `note: Double quote to prevent globbing and word splitting. [SC2086]`,
+          vscode.DiagnosticSeverity.Warning,
+      ),
+    ];
+    assert.deepStrictEqual(expected, actual);
   });
 });
