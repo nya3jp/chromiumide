@@ -115,7 +115,7 @@
           "command": "cros-ide.codeSearchOpenCurrentFile"
         },
         {
-          "command" : "cros-ide.codeSearchSearchForSelection"
+          "command": "cros-ide.codeSearchSearchForSelection"
         }
       ],
       "view/title": [
