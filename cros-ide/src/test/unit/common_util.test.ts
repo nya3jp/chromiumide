@@ -57,6 +57,7 @@ suite('Job manager', () => {
 
     assert.strictEqual(p3Run, true);
   });
+
   test('Errors', async () => {
     const manager = new commonUtil.JobManager();
 
@@ -81,5 +82,46 @@ suite('Job manager', () => {
     guard.unblock();
     await assert.rejects(p1);
     await assert.rejects(p3);
+  });
+});
+
+suite('Logging exec', () => {
+  test('Stdout is returned and stderr is logged', async () => {
+    let logs = '';
+    const out = await commonUtil.exec('sh',
+        ['-c', 'echo foo; echo bar 1>&2'], log => {
+          logs += log;
+        });
+    assert.strictEqual(out, 'foo\n');
+    assert.strictEqual(logs, 'bar\n');
+  });
+
+  test('Stdout and stderr are mixed if flag is true', async () => {
+    let logs = '';
+    await commonUtil.exec('sh',
+        ['-c', 'echo foo; echo bar 1>&2'], log => {
+          logs += log;
+        }, {logStdout: true});
+    assert.strictEqual(logs.length, 'foo\nbar\n'.length);
+  });
+
+  test('Throw on non-zero exit code', async () => {
+    let logs = '';
+    const p = commonUtil.exec('sh',
+        ['-c', 'echo foo 1>&2; exit 1'], log => {
+          logs += log;
+        }, {logStdout: true});
+    await assert.rejects(p);
+    assert.strictEqual(logs, 'foo\n');
+  });
+
+  test('Newlines are appended to log', async () => {
+    let logs = '';
+    const out = await commonUtil.exec('sh',
+        ['-c', 'echo -n foo; echo -n bar 1>&2;'], log => {
+          logs += log;
+        }, {logStdout: true});
+    assert.strictEqual(out, 'foo');
+    assert.deepStrictEqual(logs.split('\n').sort(), ['', 'bar', 'foo']);
   });
 });

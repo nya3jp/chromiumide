@@ -25,5 +25,6 @@ module.exports = {
     'arrow-parens': 0,
     'no-throw-literal': 0,
     'no-invalid-this': 0,
+    'valid-jsdoc': 0, // has been deprecated in ESLint v5.10.0.
   },
 };
