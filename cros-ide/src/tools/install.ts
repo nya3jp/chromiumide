@@ -30,7 +30,7 @@ async function execute(cmd: string, showStdout?: boolean) {
   return stdout;
 }
 
-async function latestArchive() {
+async function latestArchive(): Promise<Archive> {
   // The result of `gsutil ls` is lexicographically sorted.
   const stdout = await execute(`gsutil ls ${GS_PREFIX}`);
   const archives = stdout.trim().split('\n').map(url => {
@@ -150,7 +150,7 @@ async function install() {
     td = await fs.promises.mkdtemp(os.tmpdir() + '/');
     const dst = path.join(td, src.name);
 
-    await execute(`gsutil cp ${src} ${dst}`);
+    await execute(`gsutil cp ${src.url()} ${dst}`);
     await execute(`code --install-extension ${dst}`, true);
   } finally {
     if (td) {
