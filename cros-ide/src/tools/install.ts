@@ -202,8 +202,9 @@ export async function install(forceVersion?: Version) {
 }
 
 interface Config {
-  upload: boolean
+  upload?: boolean
   forceVersion?: Version
+  help?: boolean
 }
 
 /**
@@ -217,36 +218,58 @@ export function parseArgs(args: string[]): Config {
     args.shift();
   }
 
-  let upload = false;
-  let version: Version | undefined;
+  const config: Config = {};
   while (args.length > 0) {
     const flag = args.shift();
     switch (flag) {
       case '--upload':
-        upload = true;
+        config.upload = true;
         break;
       case '--force':
         const s = args.shift();
         if (!s) {
-          throw new Error('forced version is not given');
+          throw new Error('Version is not given; see --help');
         }
-        version = versionFromString(s);
+        config.forceVersion = versionFromString(s);
+        break;
+      case '--help':
+        config.help = true;
         break;
       default:
-        throw new Error(`Unknown flag ${flag}`);
+        throw new Error(`Unknown flag ${flag}; see --help`);
     }
   }
-  if (upload && version) {
+  if (config.upload && config.forceVersion) {
     throw new Error(`--upload and --force cannot be used together`);
   }
-  return {
-    upload,
-    forceVersion: version,
-  };
+  return config;
 }
+
+const USAGE= `
+Usage:
+ install.sh [options]
+
+Basic options:
+
+ --force version
+    Force install specified version (example: --force 0.0.1)
+    Without this option, the latest version will be installed.
+
+ --help
+    Print this message
+
+Developer options:
+
+ --upload
+    Build and upload the extension
+`;
 
 async function main() {
   const config = parseArgs(process.argv);
+  if (config.help) {
+    console.log(USAGE);
+    return;
+  }
   if (config.upload) {
     await buildAndUpload();
     return;

@@ -210,7 +210,6 @@ suite('Parse args', () => {
     assert.deepStrictEqual(
         install.parseArgs(['ts-node', 'install.ts', '--force', '1.2.3']),
         {
-          upload: false,
           forceVersion: {
             major: 1,
             minor: 2,
@@ -224,7 +223,14 @@ suite('Parse args', () => {
         install.parseArgs(['--upload']),
         {
           upload: true,
-          forceVersion: undefined,
+        },
+    );
+  });
+  test('Help', () => {
+    assert.deepStrictEqual(
+        install.parseArgs(['--help']),
+        {
+          help: true,
         },
     );
   });
