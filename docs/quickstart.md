@@ -55,8 +55,12 @@ It should connect to the chroot, just like `cros_sdk` does.
 ## 3. Connect to chroot via VSCode
 
 Install [Remote development] extension on the VSCode.
-Select SSH target `cros` and open your working directory under
-`/home/$USER/chromiumos/`.
+Click the lower left "Open a Remote Window" button and select \[Connect to
+Host...\] command (alternatively directly choose this command from the command
+palette), and select the host `cros` (see the gif below).
+Open your working directory under `/home/$USER/chromiumos/`.
+
+![Open cros](https://storage.googleapis.com/chromeos-velocity/ide/img/open-cros.gif)
 
 [Remote development]: https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack
 
