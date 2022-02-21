@@ -208,8 +208,11 @@
     "compile-tests": "tsc -p . --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js",
-    "unit-test": "npm run compile-tests && node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit",
+    "test": "npm run unit-test-raw && npm run integration-test-raw",
+    "integration-test-raw": "xvfb-run -a node ./out/test/runTest.js",
+    "integration-test": "npm run compile-tests && npm run integration-test-raw",
+    "unit-test-raw": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit",
+    "unit-test": "npm run compile-tests && npm run unit-test-raw",
     "publish": "./install.sh --upload"
   },
   "devDependencies": {
