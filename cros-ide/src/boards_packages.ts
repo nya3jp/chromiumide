@@ -2,10 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import * as childProcess from 'child_process';
-import * as fs from 'fs';
-import * as util from 'util';
 import * as vscode from 'vscode';
+import * as cros from './common/cros';
 
 export function activate() {
   const boardPackageProvider = new BoardPackageProvider();
@@ -33,31 +31,15 @@ class BoardPackageProvider implements vscode.TreeDataProvider<ChrootItem> {
     new vscode.EventEmitter<ChrootItem | undefined | null | void>();
   readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
 
-  getChildren(element?: ChrootItem): Thenable<ChrootItem[]> {
+  async getChildren(element?: ChrootItem): Promise<ChrootItem[]> {
     if (element === undefined) {
-      return this.getBoards();
+      return (await cros.getSetupBoards()).map(x => new Board(x));
     }
     if (element && element instanceof Board) {
-      return this.getPackages(element);
+      return (await cros.getWorkedOnPackages(element.name)).map(x =>
+        new Package(x));
     }
     return Promise.resolve([]);
-  }
-
-  async getBoards(): Promise<Board[]> {
-    const dirs = await fs.promises.readdir('/build');
-    return dirs
-        .filter(dir => dir !== 'bin')
-        .map(dir => new Board(dir));
-  }
-
-  async getPackages(board: Board): Promise<Package[]> {
-    const cmd = `cros_workon --board=${board.name} list`;
-    const {stdout} = await util.promisify(childProcess.exec)(cmd);
-
-    return stdout
-        .split(/\r?\n/)
-        .filter(line => line.trim() !== '')
-        .map(pkg => new Package(pkg));
   }
 
   getTreeItem(element: ChrootItem): vscode.TreeItem {
