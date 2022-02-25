@@ -57,6 +57,22 @@ const shellLintOutput =
 `cros-disks/aaa.sh:3:6: note: Double quote to prevent globbing and word splitting. [SC2086]
 `;
 
+const gnFileName = 'example/BUILD.gn';
+
+const gnFileContents =
+`executable("my_exec") {
+  ldflags = [ "-lm" ]
+  sources = [ "main.cc" ]
+}
+`;
+
+const gnLintOutput =
+`12:34:56.789: ERROR: **** example/BUILD.gn: found 3 issue(s)
+12:34:56.789: ERROR: CheckFormat: Needs reformatting. Run following command: /your_workdir/src/platform2/common-mk/../../../chroot/usr/bin/gn format example/BUILD.gn
+12:34:56.789: ERROR: example/BUILD.gn:2:15: GnLintLibFlags: Libraries should be specified by "libs", not -l flags in "ldflags": -lm
+12:34:56.789: ERROR: example/BUILD.gn:3:3: GnLintOrderingWithinTarget: wrong parameter order in executable(my_exec): put parameters in the following order: output_name/visibility/testonly, sources, other parameters, public_deps and deps
+12:34:56.789: ERROR: 1 file(s) failed linting
+`;
 
 /** Provides virtual documents for testing. */
 class TestDocumentProvider implements vscode.TextDocumentContentProvider {
@@ -73,6 +89,7 @@ const documentProvider = new TestDocumentProvider(new Map<string, string>([
   [cppFileName, cppFileContents],
   [pythonFileName, pythonFileContents],
   [shellFileName, shellFileContents],
+  [gnFileName, gnFileContents],
 ]));
 const scheme = 'testing';
 vscode.workspace.registerTextDocumentContentProvider(scheme, documentProvider);
@@ -144,6 +161,33 @@ suite('Cros Lint Test Suite', () => {
               new vscode.Position(2, Number.MAX_VALUE),
           ),
           `note: Double quote to prevent globbing and word splitting. [SC2086]`,
+          vscode.DiagnosticSeverity.Warning,
+      ),
+    ];
+    assert.deepStrictEqual(expected, actual);
+  });
+
+  test('GN errors', async () => {
+    const uri = vscode.Uri.from({scheme: scheme, path: gnFileName});
+    const textDocument = await vscode.workspace.openTextDocument(uri);
+    const actual =
+      crosLint.parseCrosLintGn('', gnLintOutput, textDocument);
+    assert.strictEqual(actual.length, 2);
+    const expected = [
+      new vscode.Diagnostic(
+          new vscode.Range(
+              new vscode.Position(1, 15),
+              new vscode.Position(1, Number.MAX_VALUE),
+          ),
+          `GnLintLibFlags: Libraries should be specified by "libs", not -l flags in "ldflags": -lm`,
+          vscode.DiagnosticSeverity.Warning,
+      ),
+      new vscode.Diagnostic(
+          new vscode.Range(
+              new vscode.Position(2, 3),
+              new vscode.Position(2, Number.MAX_VALUE),
+          ),
+          `GnLintOrderingWithinTarget: wrong parameter order in executable(my_exec): put parameters in the following order: output_name/visibility/testonly, sources, other parameters, public_deps and deps`,
           vscode.DiagnosticSeverity.Warning,
       ),
     ];

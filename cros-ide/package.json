@@ -26,6 +26,7 @@
     "onView:fleet-devices",
     "onView:boards-packages",
     "onLanguage:cpp",
+    "onLanguage:gn",
     "onLanguage:python",
     "onLanguage:shellscript"
   ],

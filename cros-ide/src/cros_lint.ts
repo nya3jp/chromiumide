@@ -33,26 +33,27 @@ interface LintConfig {
       : vscode.Diagnostic[];
 }
 
+const GNLINT_PATH = '~/chromiumos/src/platform2/common-mk/gnlint.py';
+
 // Don't forget to update package.json when adding more languages.
-const lintConfigs = new Map<string, LintConfig>()
-    .set(
-        'cpp',
-        {
-          command: (path: string) => `cros lint ${path}`,
-          parse: parseCrosLintCpp,
-        })
-    .set(
-        'python',
-        {
-          command: (path: string) => `cros lint ${path}`,
-          parse: parseCrosLintShellPython,
-        })
-    .set(
-        'shellscript',
-        {
-          command: (path: string) => `cros lint --output=parseable ${path}`,
-          parse: parseCrosLintShellPython,
-        });
+const lintConfigs = new Map<string, LintConfig>([
+  ['cpp', {
+    command: (path: string) => `cros lint ${path}`,
+    parse: parseCrosLintCpp,
+  }],
+  ['gn', {
+    command: (path: string) => GNLINT_PATH + ` ${path}`,
+    parse: parseCrosLintGn,
+  }],
+  ['python', {
+    command: (path: string) => `cros lint ${path}`,
+    parse: parseCrosLintShellPython,
+  }],
+  ['shellscript', {
+    command: (path: string) => `cros lint --output=parseable ${path}`,
+    parse: parseCrosLintShellPython,
+  }],
+]);
 
 function updateCrosLintDiagnostics(
     document: vscode.TextDocument,
@@ -92,6 +93,29 @@ export function parseCrosLintCpp(
     const message = match[3];
     if (file === document.uri.fsPath) {
       diagnostics.push(createDiagnostic(message, line));
+    }
+  }
+  return diagnostics;
+}
+
+// Parse output from platform2/common-mk/gnlint.py on a GN file.
+export function parseCrosLintGn(_stdout: string, stderr: string, document: vscode.TextDocument)
+: vscode.Diagnostic[] {
+  // Only the errors that have location in the file are captured.
+  // There are two categories of errors without line/column number:
+  // - file not formatted by gn-format: should do auto-format upon save
+  // - wrong commandline arguments: should be covered by extension unit test
+  // So these are ignored.
+  const lineRE = /ERROR: ([^ \n\:]+):([0-9]+):([0-9]+): (.*)/gm;
+  const diagnostics: vscode.Diagnostic[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = lineRE.exec(stderr)) !== null) {
+    const file = match[1];
+    const line = Number(match[2]);
+    const startCol = Number(match[3]);
+    const message = match[4];
+    if (file === document.uri.fsPath) {
+      diagnostics.push(createDiagnostic(message, line, startCol));
     }
   }
   return diagnostics;
