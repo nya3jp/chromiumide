@@ -5,59 +5,7 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as install from '../../tools/install';
-
-// Returns fake stdout or undefined if args is not handled.
-type Handler = (args: string[]) => Promise<string | undefined>;
-
-function exactMatch(wantArgs: string[],
-    handle: () => Promise<string>): Handler {
-  return async args => {
-    if (wantArgs.length === args.length &&
-      wantArgs.every((x, i) => x === args[i])) {
-      return await handle();
-    }
-    return undefined;
-  };
-}
-
-function prefixMatch(wantPrefix: string[],
-    handle: (restArgs: string[]) => Promise<string>): Handler {
-  return async args => {
-    if (wantPrefix.length <= args.length &&
-      wantPrefix.every((x, i) => x === args[i])) {
-      return await handle(args.slice(wantPrefix.length));
-    }
-    return undefined;
-  };
-}
-
-function lazyHandler(f: () => Handler): Handler {
-  return async args => {
-    return f()(args);
-  };
-}
-
-class FakeExec {
-  handlers: Map<string, Handler[]> = new Map();
-  on(name: string, handle: Handler): FakeExec {
-    if (!this.handlers.has(name)) {
-      this.handlers.set(name, []);
-    }
-    this.handlers.get(name)!.push(handle);
-    return this;
-  }
-  async exec(name: string, args: string[],
-      _log?: (line: string) => void,
-      _opt?: { logStdout?: boolean }): Promise<string> {
-    for (const handler of (this.handlers.get(name) || [])) {
-      const res = await handler(args);
-      if (res !== undefined) {
-        return res;
-      }
-    }
-    throw new Error(`${name} ${args.join(' ')}: not handled`);
-  }
-}
+import {exactMatch, FakeExec, lazyHandler, prefixMatch} from '../testing';
 
 suite('Install script', () => {
   test('Install', async () => {
