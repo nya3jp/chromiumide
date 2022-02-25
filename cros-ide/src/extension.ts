@@ -8,13 +8,15 @@
  * Keep this minimal - breakout GUI and App-Behavior to separate files.
  */
 import * as vscode from 'vscode';
-import * as dutManager from './dut_management/dut_manager';
-import * as crosLint from './cros_lint';
 import * as boardsPackages from './boards_packages';
-import * as shortLinkProvider from './short_link_provider';
 import * as codesearch from './codesearch';
-import * as workon from './workon';
+import * as coverage from './coverage';
 import * as cppCodeCompletion from './cpp_code_completion';
+import * as crosLint from './cros_lint';
+import * as dutManager from './dut_management/dut_manager';
+import * as ideUtilities from './ide_utilities';
+import * as shortLinkProvider from './short_link_provider';
+import * as workon from './workon';
 
 export function activate(context: vscode.ExtensionContext) {
   dutManager.activateDutManager(context);
@@ -24,4 +26,8 @@ export function activate(context: vscode.ExtensionContext) {
   codesearch.activate(context);
   workon.activate(context);
   cppCodeCompletion.activate(context);
+
+  if (ideUtilities.getConfigRoot().get<boolean>('features.testCoverage')) {
+    coverage.activate(context);
+  }
 }
