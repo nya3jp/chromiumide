@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as fs from 'fs';
+import * as path from 'path';
+
 /** Returns fake stdout or undefined if args is not handled. */
 type Handler = (args: string[]) => Promise<string | undefined>;
 
@@ -52,5 +55,13 @@ export class FakeExec {
       }
     }
     throw new Error(`${name} ${args.join(' ')}: not handled`);
+  }
+}
+
+export async function putFiles(dir: string, files: {[name: string]: string}) {
+  for (const [name, content] of Object.entries(files)) {
+    const filePath = path.join(dir, name);
+    await fs.promises.mkdir(path.dirname(filePath), {recursive: true});
+    await fs.promises.writeFile(path.join(dir, name), content);
   }
 }

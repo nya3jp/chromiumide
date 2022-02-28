@@ -7,19 +7,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as commonUtil from '../../common/common_util';
 import * as cros from '../../common/cros';
-
-async function putFiles(dir: string, files: {[name: string]: string}) {
-  for (const [name, content] of Object.entries(files)) {
-    const filePath = path.join(dir, name);
-    await fs.promises.mkdir(path.dirname(filePath), {recursive: true});
-    await fs.promises.writeFile(path.join(dir, name), content);
-  }
-}
+import * as testing from '../testing';
 
 suite('Cros', () => {
   test('Get worked on boards', async () => {
     await commonUtil.withTempDir(async td => {
-      await putFiles(td, {
+      await testing.putFiles(td, {
         '/build/amd64-generic/x': 'x',
         '/build/betty-pi-arc/x': 'x',
         '/build/bin/x': 'x',
