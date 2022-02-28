@@ -47,7 +47,16 @@ export class DeviceInfo extends vscode.TreeItem {
   }
 }
 
-export function activateDutManager(context: vscode.ExtensionContext) {
+export async function activateDutManager(context: vscode.ExtensionContext) {
+  try {
+    // We need 'version', because without args crosfleet exits with error 2.
+    await commonUtil.exec('crosfleet', ['version']);
+  } catch (error) {
+    vscode.window.showWarningMessage(`DUT manager will not work,` +
+        ` because running 'crosfleet' failed: ${error}`);
+    return;
+  }
+
   const staticDevicesProvider = new localProvider.LocalDevicesProvider();
   const fleetDevicesProvider = new fleetProvider.FleetDevicesProvider();
   const sessions = new Map<string, vnc.VncSession>();

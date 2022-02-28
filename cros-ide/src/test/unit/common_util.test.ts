@@ -124,4 +124,9 @@ suite('Logging exec', () => {
     assert.strictEqual(out, 'foo');
     assert.deepStrictEqual(logs.split('\n').sort(), ['', 'bar', 'foo']);
   });
+
+  test('Throws error when the command fails', async () => {
+    const p = commonUtil.exec('does_not_exist', ['--version']);
+    await assert.rejects(p);
+  });
 });

@@ -122,6 +122,10 @@ export async function exec(name: string, args: string[],
       }
       resolve(response);
     });
+    // 'error' happens when the command is not available
+    command.on('error', (err) => {
+      reject(err);
+    });
   });
 }
 
