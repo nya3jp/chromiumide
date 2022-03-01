@@ -11,13 +11,17 @@ suite('Install script', () => {
   test('Install', async () => {
     let tempFile = '';
     let installed = false;
-    const fake = new FakeExec().on('gsutil', exactMatch(['ls', 'gs://chromeos-velocity/ide/cros-ide'],
-        async () => {
-          return `gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.1.vsix
+    const fake = new FakeExec().on('gsutil',
+        exactMatch(['ls', 'gs://chromeos-velocity/ide/cros-ide'],
+            async () => {
+              return `gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.1.vsix
 gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8f1bb6cc9b6f3d435
 `;
-        }),
-    ).on('gsutil', prefixMatch(['cp', 'gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8f1bb6cc9b6f3d435'],
+            }),
+    ).on('gsutil',
+        prefixMatch(['cp',
+          'gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@' +
+          '253d24b6b54fa72d21f622b8f1bb6cc9b6f3d435'],
         async args => {
           tempFile = args[0];
           return '';
@@ -43,12 +47,13 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
   test('Install with version', async () => {
     let tempFile = '';
     let installed = false;
-    const fake = new FakeExec().on('gsutil', exactMatch(['ls', 'gs://chromeos-velocity/ide/cros-ide'],
-        async () => {
-          return `gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.1.vsix
+    const fake = new FakeExec().on('gsutil',
+        exactMatch(['ls', 'gs://chromeos-velocity/ide/cros-ide'],
+            async () => {
+              return `gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.1.vsix
 gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8f1bb6cc9b6f3d435
 `;
-        }),
+            }),
     ).on('gsutil', prefixMatch(['cp', 'gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.1.vsix'],
         async args => {
           tempFile = args[0];
@@ -184,7 +189,8 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
             return '';
           }),
       ).on('gsutil', lazyHandler(() => exactMatch(
-          ['cp', `${tempDir}${filename}`, `gs://chromeos-velocity/ide/cros-ide/${filename}@${gitHash}`],
+          ['cp', `${tempDir}${filename}`,
+            `gs://chromeos-velocity/ide/cros-ide/${filename}@${gitHash}`],
           async () => {
             uploaded = true;
             return '';

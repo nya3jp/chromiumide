@@ -106,7 +106,8 @@ export class VncSession {
       <script>
         // Navigate after 5 seconds.
         setTimeout(() => {
-          document.getElementById('main').src = 'http://localhost:${localPort}/vnc.html?resize=scale&autoconnect=true';
+          document.getElementById('main').src =
+              'http://localhost:${localPort}/vnc.html?resize=scale&autoconnect=true';
         }, 5000);
       </script>
     </body>
