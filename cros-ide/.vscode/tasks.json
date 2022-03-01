@@ -5,15 +5,13 @@
   "tasks": [
     {
       "type": "npm",
-      "script": "watch",
+      "script": "compile",
       "problemMatcher": [
-        "$ts-webpack-watch",
-        "$tslint-webpack-watch"
+        "$ts-webpack",
+        "$tslint-webpack"
       ],
-      "isBackground": true,
       "presentation": {
         "reveal": "never",
-        "group": "watchers"
       },
       "group": {
         "kind": "build",
@@ -31,7 +29,7 @@
     {
       "label": "tasks: compile-tests",
       "dependsOn": [
-        "npm: watch",
+        "npm: compile",
         "npm: compile-tests"
       ],
       "problemMatcher": []
