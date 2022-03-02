@@ -15,8 +15,13 @@ async function main() {
     // Passed to --extensionTestsPath
     const extensionTestsPath = path.resolve(__dirname, './integration/index');
 
+    // Use . as the workspace to open when the VS Code starts.
+    // This prevents VS Code from opening the last used workspace,
+    // which could involve connecting somewhere over ssh.
+    const launchArgs = ['.'];
+
     // Download VS Code, unzip it and run the integration test
-    await runTests({extensionDevelopmentPath, extensionTestsPath});
+    await runTests({extensionDevelopmentPath, extensionTestsPath, launchArgs});
   } catch (err) {
     console.error('Failed to run tests');
     process.exit(1);
