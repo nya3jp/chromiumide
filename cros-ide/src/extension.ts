@@ -28,11 +28,11 @@ export function activate(context: vscode.ExtensionContext) {
   cppCodeCompletion.activate(context);
   targetBoard.activate(context);
 
-  if (ideUtilities.getConfigRoot().get<boolean>('features.dutManager')) {
+  if (ideUtilities.getConfigRoot().get<boolean>('underDevelopment.dutManager')) {
     dutManager.activateDutManager(context);
   }
 
-  if (ideUtilities.getConfigRoot().get<boolean>('features.testCoverage')) {
+  if (ideUtilities.getConfigRoot().get<boolean>('underDevelopment.testCoverage')) {
     coverage.activate(context);
   }
 }
