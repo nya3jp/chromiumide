@@ -1,9 +1,9 @@
 # Change Log
 
-All notable changes to the "cros-ide" extension will be documented in this file.
+## Initial Dogfood Release
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
-## [Unreleased]
-
-- Initial release
+* Autocompletion, cross references, and symbol definitions for C++ in `platform2`.
+* Linting (C++, Python, Shell, GN).
+* Read-only view for boards and packages worked on.
+* Code Search integration.
+* Google-internal links (crbug/, b/, and so on).
