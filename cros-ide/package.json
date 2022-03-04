@@ -1,15 +1,21 @@
 {
   "name": "cros-ide",
-  "displayName": "cros-ide",
-  "description": "Connect to Chrome OS DUTs over VNC",
+  "displayName": "CrOS IDE",
+  "description": "Chrome OS Development",
   "version": "0.0.4",
-  "publisher": "cros-velocity",
+  "publisher": "Google",
+  "author": {
+    "name": "ChromeOS Velocity Team at Google"
+  },
   "repository": "https://chromium.googlesource.com/chromiumos/chromite/+/HEAD/ide_tooling",
   "engines": {
     "vscode": "^1.60.0"
   },
   "categories": [
-    "Other"
+    "Linters",
+    "Other",
+    "Programming Languages",
+    "Testing"
   ],
   "activationEvents": [
     "onCommand:cros-ide.addHost",
@@ -108,12 +114,12 @@
       "cros-devices": [
         {
           "id": "static-devices",
-          "name": "my devices",
+          "name": "My Devices",
           "when": "config.cros-ide.underDevelopment.dutManager"
         },
         {
           "id": "fleet-devices",
-          "name": "crosfleet devices",
+          "name": "Crosfleet Devices",
           "when": "config.cros-ide.underDevelopment.dutManager"
         },
         {
