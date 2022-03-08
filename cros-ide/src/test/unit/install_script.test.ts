@@ -36,7 +36,7 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
 
     const revert = commonUtil.setExecForTesting(fake.exec.bind(fake));
     try {
-      await install.install();
+      await install.install('code');
       assert.deepStrictEqual(installed, true);
       const name = tempFile.split('/').pop();
       assert.deepStrictEqual(name, 'cros-ide-0.0.2.vsix');
@@ -69,12 +69,12 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
 
     const revert = commonUtil.setExecForTesting(fake.exec.bind(fake));
     try {
-      await install.install({major: 0, minor: 0, patch: 1});
+      await install.install('code', {major: 0, minor: 0, patch: 1});
       assert.deepStrictEqual(installed, true);
       const name = tempFile.split('/').pop();
       assert.deepStrictEqual(name, 'cros-ide-0.0.1.vsix');
 
-      await assert.rejects(install.install({major: 0, minor: 0, patch: 99}));
+      await assert.rejects(install.install('code', {major: 0, minor: 0, patch: 99}));
     } finally {
       revert();
     }
@@ -240,7 +240,7 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
 
     const revert = commonUtil.setExecForTesting(fake.exec.bind(fake));
     try {
-      await install.installDev();
+      await install.installDev('code');
       assert.strictEqual(built, true);
       assert.strictEqual(installed, true);
     } finally {
@@ -254,6 +254,7 @@ suite('Parse args', () => {
     assert.deepStrictEqual(
         install.parseArgs(['--dev']),
         {
+          exe: 'code',
           dev: true,
         },
     );
@@ -262,7 +263,16 @@ suite('Parse args', () => {
     assert.deepStrictEqual(
         install.parseArgs(['--upload']),
         {
+          exe: 'code',
           upload: true,
+        },
+    );
+  });
+  test('Exe', () => {
+    assert.deepStrictEqual(
+        install.parseArgs(['--exe', '/path/to/code-server']),
+        {
+          exe: '/path/to/code-server',
         },
     );
   });
@@ -270,6 +280,7 @@ suite('Parse args', () => {
     assert.deepStrictEqual(
         install.parseArgs(['ts-node', 'install.ts', '--force', '1.2.3']),
         {
+          exe: 'code',
           forceVersion: {
             major: 1,
             minor: 2,
@@ -282,6 +293,7 @@ suite('Parse args', () => {
     assert.deepStrictEqual(
         install.parseArgs(['--help']),
         {
+          exe: 'code',
           help: true,
         },
     );

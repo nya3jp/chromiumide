@@ -161,15 +161,15 @@ export async function buildAndUpload() {
   });
 }
 
-export async function installDev() {
+export async function installDev(exe: string) {
   await commonUtil.withTempDir(async td => {
     const built = await build(td);
     const src = path.join(td, built.name);
-    await execute('code', ['--install-extension', src], true);
+    await execute(exe, ['--install-extension', src], true);
   });
 }
 
-export async function install(forceVersion?: Version) {
+export async function install(exe: string, forceVersion?: Version) {
   const src = await findArchive(forceVersion);
 
   await commonUtil.withTempDir(async td => {
@@ -180,7 +180,8 @@ export async function install(forceVersion?: Version) {
     if (forceVersion) {
       args.push('--force');
     }
-    await execute('code', args, true);
+
+    await execute(exe, args, true);
   });
 }
 
@@ -188,6 +189,7 @@ interface Config {
   forceVersion?: Version
   dev?: boolean
   upload?: boolean
+  exe: string
   help?: boolean
 }
 
@@ -202,7 +204,9 @@ export function parseArgs(args: string[]): Config {
     args.shift();
   }
 
-  const config: Config = {};
+  const config: Config = {
+    exe: 'code',
+  };
   while (args.length > 0) {
     const flag = args.shift();
     switch (flag) {
@@ -218,6 +222,13 @@ export function parseArgs(args: string[]): Config {
           throw new Error('Version is not given; see --help');
         }
         config.forceVersion = versionFromString(s);
+        break;
+      case '--exe':
+        const exe = args.shift();
+        if (!exe) {
+          throw new Error('Executable path is not given; see --help');
+        }
+        config.exe = exe;
         break;
       case '--help':
         config.help = true;
@@ -238,6 +249,10 @@ Usage:
  install.sh [options]
 
 Basic options:
+
+ --exe path|name
+    Specify the VS Code executable. By default 'code' is used. You need to set this flag
+    if you are using code-server or code-insiders
 
  --force version
     Force install specified version (example: --force 0.0.1)
@@ -267,12 +282,12 @@ async function main() {
   }
   if (config.dev) {
     assertInsideChroot();
-    await installDev();
+    await installDev(config.exe);
     return;
   }
   try {
     assertInsideChroot();
-    await install(config.forceVersion);
+    await install(config.exe, config.forceVersion);
   } catch (e) {
     const message = (e as Error).message;
     throw new Error(
