@@ -67,7 +67,11 @@ async function generateCompilationDatabase(
       await commonUtil.exec('cros_workon', ['--board', board, 'start', pkg],
           ideUtilities.getLogger().append);
 
-      await runEmerge(board, pkg);
+      const {error} = await runEmerge(board, pkg);
+      if (error !== undefined) {
+        vscode.window.showErrorMessage(error);
+        return;
+      }
 
       // Make the generated compilation database available from clangd.
       await commonUtil.exec(
@@ -85,15 +89,24 @@ async function generateCompilationDatabase(
 }
 
 /** Runs emerge and shows a spinning progress indicator in the status bar. */
-async function runEmerge(board: string, pkg: string): Promise<string> {
+function runEmerge(board: string, pkg: string): Thenable<{error?: string}> {
   return vscode.window.withProgress({
     location: vscode.ProgressLocation.Window,
     title: `Building refs for ${pkg}`,
     cancellable: false,
   }, (progress, token) => {
-    return commonUtil.exec('env',
-        ['USE=compilation_database', `emerge-${board}`, pkg],
-        ideUtilities.getLogger().append, {logStdout: true});
+    async function f() {
+      try {
+        await commonUtil.exec('env',
+            ['USE=compilation_database', `emerge-${board}`, pkg],
+            ideUtilities.getLogger().append, {logStdout: true});
+        return {};
+      } catch (error) {
+        // TODO(b/223534220): Use error after the error message becomes useful.
+        return {error: `emerge-${board} ${pkg} failed`};
+      }
+    };
+    return f();
   });
 }
 
