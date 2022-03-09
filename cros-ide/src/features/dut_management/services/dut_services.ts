@@ -6,6 +6,7 @@
  * Common libs specific to DUT management.
  */
 import * as commonUtil from '../../../common/common_util';
+import * as metrics from '../../../features/metrics/metrics';
 import * as dutManager from '../dut_manager';
 import * as ideutil from '../../../ide_utilities';
 
@@ -22,7 +23,6 @@ export async function crosfleetLeases(): Promise<dutManager.Leases> {
   if (!leases.Leases) {
     leases.Leases = [];
   }
-
   return leases;
 }
 
@@ -46,4 +46,5 @@ export async function queryHostVersion(host: string, testingRsaPath: string)
 
 export async function crosfleetDutAbandon(host: string) {
   await commonUtil.exec('crosfleet', ['dut', 'abandon', host]);
+  metrics.send({category: 'crosfleet', action: 'abandon dut'});
 }

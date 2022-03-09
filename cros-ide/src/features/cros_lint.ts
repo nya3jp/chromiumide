@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import * as commonUtil from '../common/common_util';
 import * as bgTaskStatus from '../ui/bg_task_status';
+import * as metrics from '../features/metrics/metrics';
 
 export function activate(context: vscode.ExtensionContext,
     statusManager: bgTaskStatus.StatusManager) {
@@ -96,6 +97,12 @@ async function updateCrosLintDiagnostics(
       collection.set(document.uri, diagnostics);
       statusManager.setTask(LINTER_TASK_ID,
           {status: bgTaskStatus.TaskStatus.OK, command: SHOW_LOG_COMMAND});
+      metrics.send({
+        category: 'cros lint',
+        action: 'update diagnostics',
+        label: document.languageId,
+        value: diagnostics.length,
+      });
     }
   } else {
     collection.clear();

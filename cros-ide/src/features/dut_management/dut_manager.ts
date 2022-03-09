@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import * as commonUtil from '../../common/common_util';
 import * as ideutil from '../../ide_utilities';
+import * as metrics from '../../features/metrics/metrics';
 import * as fleetProvider from './services/fleet_devices_provider';
 import * as vnc from './services/vnc_session';
 import * as localProvider from './services/local_devices_provider';
@@ -89,6 +90,12 @@ export async function activateDutManager(context: vscode.ExtensionContext) {
             newSession.onDidDispose(() => {
               sessions.delete(host!);
             });
+
+            metrics.send({
+              category: 'dut',
+              action: 'connect to host',
+              label: 'screen',
+            });
           }),
       vscode.commands.registerCommand('cros-ide.connectToHostForShell',
           async (host?: string) => {
@@ -105,6 +112,12 @@ export async function activateDutManager(context: vscode.ExtensionContext) {
             const terminal = ideutil.createTerminalForHost(
                 host, 'CrOS: Shell', context);
             terminal.show();
+
+            metrics.send({
+              category: 'dut',
+              action: 'connect to host',
+              label: 'shell',
+            });
           }),
       vscode.commands.registerCommand('cros-ide.addHost',
           async () => {
@@ -118,6 +131,8 @@ export async function activateDutManager(context: vscode.ExtensionContext) {
             hosts.push(host);
             configRoot.update(
                 'hosts', hosts, vscode.ConfigurationTarget.Global);
+
+            metrics.send({category: 'dut', action: 'add host'});
           }),
       vscode.commands.registerCommand('cros-ide.deleteHost',
           async (host?: string) => {
@@ -139,6 +154,7 @@ export async function activateDutManager(context: vscode.ExtensionContext) {
               configRoot.update(
                   'hosts', newHosts, vscode.ConfigurationTarget.Global);
             }
+            metrics.send({category: 'dut', action: 'delete'});
           }),
       vscode.commands.registerCommand('cros-ide.refreshCrosfleet',
           () => {
@@ -221,7 +237,9 @@ async function crosfleetDutLease(opts?: LeaseOpts): Promise<Lease> {
   }
   const res = await commonUtil.exec('crosfleet', args);
   if (res instanceof Error) {
+    metrics.send({category: 'crosfleet', action: 'lease dut', label: `Failed: {res.stderr}`});
     throw res;
   }
+  metrics.send({category: 'crosfleet', action: 'lease dut'});
   return JSON.parse(res.stdout) as Lease;
 }

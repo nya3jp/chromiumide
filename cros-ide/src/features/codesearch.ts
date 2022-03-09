@@ -4,6 +4,7 @@
 import * as vscode from 'vscode';
 import * as commonUtil from '../common/common_util';
 import * as ideUtilities from '../ide_utilities';
+import * as metrics from './metrics/metrics';
 
 export function activate(context: vscode.ExtensionContext) {
   const codeSearch = new CodeSearch();
@@ -56,11 +57,21 @@ class CodeSearch {
     const {exitStatus, stdout, stderr} = res;
     if (exitStatus) {
       vscode.window.showErrorMessage(`generate_cs_path returned an error: ${stderr}`);
+      metrics.send({
+        category: 'codesearch',
+        action: 'generate CodeSearch path',
+        label: `Failed: ${stderr}`,
+      });
       return;
     }
 
     // trimEnd() to get rid of the newline.
     this.openExternal(vscode.Uri.parse(stdout.trimEnd()));
+    metrics.send({
+      category: 'codesearch',
+      action: 'open current file',
+      label: `${fullpath}:${line}`,
+    });
   }
 
   // TODO: Figure out if the search should be limited to the current repo.
@@ -80,6 +91,11 @@ class CodeSearch {
         vscode.Uri.parse(csBase)
             .with({path: '/search', query: `q=${selectedText}`});
     this.openExternal(uri);
+    metrics.send({
+      category: 'codesearch',
+      action: 'search selection',
+      label: selectedText,
+    });
   }
 }
 

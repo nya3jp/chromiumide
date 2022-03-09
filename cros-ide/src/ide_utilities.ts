@@ -10,6 +10,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as commonUtil from './common/common_util';
 import * as cros from './common/cros';
+import * as metrics from './features/metrics/metrics';
 
 export function getConfigRoot(): vscode.WorkspaceConfiguration {
   return vscode.workspace.getConfiguration('cros-ide');
@@ -24,6 +25,7 @@ export function createTerminalForHost(
       // eslint-disable-next-line max-len
       'ssh '.concat(sshFormatArgs(host, `; exit $?`, getTestingRsaPath(context), extraOptions).join(' ')),
   );
+  metrics.send({category: 'ideutil', action: 'create terminal for host'});
   return terminal;
 }
 
