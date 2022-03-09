@@ -90,6 +90,7 @@ class Board extends ChrootItem {
   }
 
   contextValue = 'board';
+  iconPath = new vscode.ThemeIcon('circuit-board');
 }
 
 class Package extends ChrootItem {
@@ -98,4 +99,5 @@ class Package extends ChrootItem {
   }
 
   contextValue = 'package';
+  iconPath = new vscode.ThemeIcon('package');
 }
