@@ -157,3 +157,16 @@ export async function withTempDir(
     }
   }
 }
+
+/**
+ * Takes possibly blocking Thenable f and timeout millis, and returns a Thenable that is fulfilled
+ * with f's value or undefined in case f doesn't return before the timeout.
+ */
+export function withTimeout<T>(f: Thenable<T>, millis: number): Thenable<T | undefined> {
+  return Promise.race(
+      [
+        f,
+        new Promise<undefined>(resolve => setTimeout(() => resolve(undefined), millis)),
+      ],
+  );
+}

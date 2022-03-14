@@ -149,15 +149,13 @@ async function shouldRunCrosWorkon(board: string, pkg: string): Promise<{
       AUTO_CROS_WORKON_CONFIG) || 'Once';
 
   const showPrompt = async () => {
-    const choice = await Promise.race([
-      vscode.window.showInformationMessage(`Generating cross references requires 'cros_workon ` +
+    // withTimeout makes sure showPrompt returns. showInformationMessage doesn't resolve nor reject
+    // if the prompt is dismissed due to timeout (about 15 seconds).
+    const choice = await commonUtil.withTimeout(
+        vscode.window.showInformationMessage(`Generating cross references requires 'cros_workon ` +
         `--board=${board} start ${pkg}'. Proceed?`, {}, YES, ALWAYS, NEVER),
-      // Make sure showPrompt returns. showInformationMessage doesn't resolve nor reject if the
-      // prompt is dismissed due to timeout (about 15 seconds).
-      new Promise(resolve => {
-        setTimeout(() => resolve(undefined), 30 * 1000);
-      }),
-    ]);
+        30 * 1000,
+    );
     return choice as UserChoice | undefined;
   };
   const {ok, remember} = await getUserConsent(currentChoice, showPrompt);

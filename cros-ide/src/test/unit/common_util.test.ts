@@ -5,19 +5,19 @@
 import * as assert from 'assert';
 import * as commonUtil from '../../common/common_util';
 
-class BlockingPromise {
-  readonly promise: Promise<void>;
+class BlockingPromise<T> {
+  readonly promise: Promise<T | undefined>;
   unblock: () => void;
-  private constructor(created: (p: BlockingPromise) => void) {
+  private constructor(created: (p: BlockingPromise<T>) => void, value?: T) {
     this.unblock = () => { }; // placeholder to satisfy type system.
     this.promise = new Promise(resolve => {
-      this.unblock = resolve;
+      this.unblock = () => resolve(value);
       created(this);
     });
   }
-  static async new(): Promise<BlockingPromise> {
+  static async new<T>(value?: T): Promise<BlockingPromise<T>> {
     return new Promise(resolve => {
-      return new BlockingPromise(resolve);
+      return new BlockingPromise(resolve, value);
     });
   }
 }
@@ -128,5 +128,20 @@ suite('Logging exec', () => {
   test('Throws error when the command fails', async () => {
     const p = commonUtil.exec('does_not_exist', ['--version']);
     await assert.rejects(p);
+  });
+});
+
+suite('withTimeout', () => {
+  test('Returns before timeout', async () => {
+    assert.strictEqual(await commonUtil.withTimeout(Promise.resolve(true), 1 /* millis*/), true);
+  });
+
+  test('Timeout', async () => {
+    const f = await BlockingPromise.new(true);
+    try {
+      assert.strictEqual(await commonUtil.withTimeout(f.promise, 1), undefined);
+    } finally {
+      f.unblock();
+    }
   });
 });
