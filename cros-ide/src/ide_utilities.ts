@@ -6,6 +6,7 @@
  * Keep all general utility functions here, or in common_util.
  */
 import * as vscode from 'vscode';
+import * as commonUtil from './common/common_util';
 import * as cros from './common/cros';
 
 export function getConfigRoot(): vscode.WorkspaceConfiguration {
@@ -58,26 +59,34 @@ export async function getOrSelectTargetBoard(): Promise<string | null> {
 export async function selectAndUpdateTargetBoard(
     config: {suggestMostRecent: boolean}): Promise<string | null> {
   const boards = await cros.getSetupBoardsRecentFirst();
+  const board = await selectBoard(boards, config.suggestMostRecent);
+
+  if (board) {
+    // TODO(oka): This should be per chroot (i.e. Remote) setting, instead of global (i.e. User).
+    await getConfigRoot().update(BOARD, board, vscode.ConfigurationTarget.Global);
+  }
+  return board;
+}
+
+async function selectBoard(boards: string[], suggestMostRecent: boolean): Promise<string | null> {
   if (boards.length === 0) {
     await vscode.window.showErrorMessage('No board has been setup; run ' +
         'setup_board for a board you want to work on.');
     return null;
   }
-  const mostRecent = boards[0];
-
-  if (config.suggestMostRecent) {
-    const selection = await vscode.window.showWarningMessage(
+  if (suggestMostRecent) {
+    const mostRecent = boards[0];
+    const selection = await commonUtil.withTimeout(vscode.window.showWarningMessage(
         `Target board is not set. Do you use ${mostRecent}?`, {
           title: 'Yes',
         }, {
           title: 'Customize',
-        });
+        }), 30 * 1000);
     if (!selection) {
       return null;
     }
     switch (selection.title) {
       case 'Yes':
-        await getConfigRoot().update(BOARD, mostRecent);
         return mostRecent;
       case 'Customize':
         break;
@@ -85,13 +94,7 @@ export async function selectAndUpdateTargetBoard(
         return null;
     }
   }
-
-  const board = await vscode.window.showQuickPick(boards, {
+  return await vscode.window.showQuickPick(boards, {
     title: 'Target board',
   }) || null;
-  if (!board) {
-    return null;
-  }
-  await getConfigRoot().update(BOARD, board);
-  return board;
 }
