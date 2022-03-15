@@ -84,3 +84,46 @@ Open terminal in the VSCode connected to `cros`, and run
 You need to reload the VS Code to activate the extension. Either simply restart
 the IDE, or open the command palette (Ctrl+Shift+P) and type "Developer: Reload
 Window".
+
+# Features
+
+### Code Completion and Navigation
+
+Code completion in C++ is available in platform2 packages which support
+`USE=compilation_database`. Press F12 to [Go to Definition], Ctrl+F12 to
+Go to Implementation, and so on.
+
+![Example of Code Completion](https://storage.googleapis.com/chromeos-velocity/ide/img/code-completion.gif)
+
+[Go to Definition]: https://code.visualstudio.com/docs/editor/editingevolved#_go-to-definition
+
+### Linter Integration
+
+CrOS IDE exposes lint errors found by `cros lint` and similar tools in C++,
+Python, shell, and GN files. We run linters every time a file is saved,
+and mark errors with squiggly lines in the editor and show them in
+the *Problems* box and on mouse hover. This feature bring to your attention
+errors which block `repo upload`.
+
+![Lint Errors in the IDE](https://storage.googleapis.com/chromeos-velocity/ide/img/lint-virtual.png)
+
+### Boards and Packages
+
+CrOS IDE shows which packages you are working on and lets you run
+`cros_workon start/stop` directly from the UI. Access it by clicking on
+*CrOS Development* [activity bar]. Use +/– buttons to start and stop working
+on packages.
+
+![Boards and Packages in the IDE](https://storage.googleapis.com/chromeos-velocity/ide/img/boards-and-packages.gif)
+
+[activity bar]: https://code.visualstudio.com/docs/getstarted/userinterface
+
+### Code Search
+
+You can easily open the current file in Code Search from the context menu in
+a text editor. Go to [settings] to choose whether to chose which instance
+to use (public, internal, or Gitiles).
+
+![Code Search integration](https://storage.googleapis.com/chromeos-velocity/ide/img/code-search.gif)
+
+[settings]: https://code.visualstudio.com/docs/getstarted/settings
