@@ -127,3 +127,10 @@ to use (public, internal, or Gitiles).
 ![Code Search integration](https://storage.googleapis.com/chromeos-velocity/ide/img/code-search.gif)
 
 [settings]: https://code.visualstudio.com/docs/getstarted/settings
+
+# Known issues
+
+* C++ code completion runs  `USE=compilation_database emerge-$BOARD $PKG`
+  in the background and overrides existing files in `/build/$BOARD/`. For
+  example, if you generate coverage with `USE=coverage cros_run_unit_tests ...`,
+  CrOS IDE will override the coverage data.
