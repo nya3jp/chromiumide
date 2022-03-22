@@ -1,6 +1,6 @@
 # CrOS IDE quickstart (go/cros-ide-quickstart)
 
-CrOS IDE is a VS Code Extension for Chrome OS development. It is a new project,
+CrOS IDE is a VSCode Extension for Chrome OS development. It is a new project,
 and we currently support only internal developers at Google.
 
 ## Prerequisites
@@ -14,7 +14,7 @@ your development environment, so you can [enter the chroot via cros_sdk].
 
 ## 1. Install Visual Studio Code
 
-First, you need to install Visual Studio on your client machine.
+First, you need to install Visual Studio Code (VSCode) on your client machine.
 
 ### gLinux
 ```
@@ -25,15 +25,15 @@ Learn more at [go/vscode/install#glinux]
 [go/vscode/install#glinux]: http://go/vscode/install#glinux
 
 ### gMac
-Install [VS Code from the Software Center] or [go/mule]
+Install [VSCode from the Software Center] or [go/mule]
 (`sudo mule install visual-studio-code`).
 
-[VS Code from the Software Center]: https://device-portal.corp.google.com/#/software-center/list//appid%3AMAC_OS-visual-studio-code/MAC_OS
+[VSCode from the Software Center]: https://device-portal.corp.google.com/#/software-center/list//appid%3AMAC_OS-visual-studio-code/MAC_OS
 [go/mule]: http://go/mule
 
 ### Chrome OS
 
-CrOS IDE supports only platform-specific VS Code, which is not available for
+CrOS IDE supports only platform-specific VSCode, which is not available for
 Chrome OS. There are two workarounds:
 - Check out [go/cros-ide-on-chromebooks] to learn more about
   [Code Server], which is a Web IDE accessible in the browser.
@@ -70,7 +70,7 @@ Open terminal in the VSCode connected to `cros`, and run
 
 ### Additional installation options
 
-* In case you are using code-server or VS Code Insiders, specify the VS Code executable with
+* In case you are using code-server or VSCode Insiders, specify the VSCode executable with
   `--exe` flag. For example
 
 ```
@@ -81,7 +81,7 @@ Open terminal in the VSCode connected to `cros`, and run
 
 ## 5. Reload the IDE
 
-You need to reload the VS Code to activate the extension. Either simply restart
+You need to reload the VSCode to activate the extension. Either simply restart
 the IDE, or open the command palette (Ctrl+Shift+P) and type "Developer: Reload
 Window".
 
