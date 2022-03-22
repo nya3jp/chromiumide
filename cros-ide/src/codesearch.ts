@@ -19,12 +19,13 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 const generateCsPath = '~/chromiumos/chromite/contrib/generate_cs_path';
+const codeSearch = 'codeSearch';
 
 function openCurrentFile(textEditor: vscode.TextEditor) {
   const fullpath = textEditor.document.fileName;
 
   // Which CodeSearch to use, options are public, internal, or gitiles.
-  const csInstance = ideUtilities.getConfigRoot().get<string>('codeSearch');
+  const csInstance = ideUtilities.getConfigRoot().get<string>(codeSearch);
 
   const line = textEditor.selection.active.line + 1;
 
@@ -50,9 +51,9 @@ function searchSelection(textEditor: vscode.TextEditor) {
   }
 
   // If the setting is gitiles, we use public CodeSearch
-  const csInstance = ideUtilities.getConfigRoot().get<string>('codesearch');
+  const csInstance = ideUtilities.getConfigRoot().get<string>(codeSearch);
   const csBase =
-    csInstance == 'internal' ?
+    csInstance === 'internal' ?
         'https://source.corp.google.com/' : 'https://source.chromium.org/';
 
   const selectedText = textEditor.document.getText(textEditor.selection);
