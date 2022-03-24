@@ -13,7 +13,7 @@ async function main() {
 
     // The path to test runner
     // Passed to --extensionTestsPath
-    const extensionTestsPath = path.resolve(__dirname, './integration/index');
+    const extensionTestsPath = path.resolve(__dirname, './index');
 
     // Use . as the workspace to open when the VS Code starts.
     // This prevents VS Code from opening the last used workspace,
