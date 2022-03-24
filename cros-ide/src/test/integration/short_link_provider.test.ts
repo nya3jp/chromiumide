@@ -19,8 +19,8 @@ async function getLinks(text: string) {
   return provider.provideDocumentLinks(document, fakeCancellationToken);
 }
 
-suite('Short Link Provider Test Suite', () => {
-  test('One Buganizer link', async () => {
+describe('Short Link Provider', () => {
+  it('extracts a Buganizer link', async () => {
     const links = await getLinks('Duplicate of b/123456.');
     assert.ok(links);
     assert.strictEqual(links.length, 1);
@@ -33,7 +33,7 @@ suite('Short Link Provider Test Suite', () => {
     assert.deepStrictEqual(link.range, expectedRange);
   });
 
-  test('Two links', async () => {
+  it('extracts two links', async () => {
     const links = await getLinks('We created b/123456 for the crash.\n' +
       'Migrated from crbug/987654 because Monorail is deprecated.');
 
@@ -57,7 +57,7 @@ suite('Short Link Provider Test Suite', () => {
     assert.deepStrictEqual(crbug.range, expectedCrbugRange);
   });
 
-  test('Bug tracker with number', async () => {
+  it('extracts bugs with numbers for chromium and b', async () => {
     const links = await getLinks('TODO(chromium:123313): see also b:6527146.');
     assert.ok(links);
     assert.strictEqual(links.length, 2);
@@ -78,7 +78,7 @@ suite('Short Link Provider Test Suite', () => {
     assert.deepStrictEqual(links, expectedLinks);
   });
 
-  test('Todo with ldap', async () => {
+  it('extracts teams link from a todo with ldap', async () => {
     const links = await getLinks('// TODO(hiroshi): create a chat app.');
     assert.ok(links);
     assert.strictEqual(links.length, 1);
@@ -93,7 +93,7 @@ suite('Short Link Provider Test Suite', () => {
     assert.deepStrictEqual(links, expectedLinks);
   });
 
-  test('crrev and crbug', async () => {
+  it('extracts crrev and crbug links', async () => {
     const links = await getLinks('TODO(crbug.com/123456) crrev/c/3406219\n' +
          'crrev.com/c/3406220');
     assert.ok(links);
@@ -121,7 +121,7 @@ suite('Short Link Provider Test Suite', () => {
     assert.deepStrictEqual(links, expectedLinks);
   });
 
-  test('Mixed link types', async () => {
+  it('handles mixed link types', async () => {
     // Test that we can extract links matching different regular expressions.
     const links = await getLinks(
         'Duplicate of b/123456.\n' +
@@ -134,7 +134,7 @@ suite('Short Link Provider Test Suite', () => {
     assert.strictEqual(links.length, 3);
   });
 
-  test('Negative examples', async () => {
+  it('ignores negative examples', async () => {
     // Note, that VS Code provides links for things starting with http[s],
     // so we should ignore such links.
     const links = await getLinks(

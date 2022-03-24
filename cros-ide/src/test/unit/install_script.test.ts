@@ -8,8 +8,8 @@ import * as commonUtil from '../../common/common_util';
 import * as install from '../../tools/install';
 import {exactMatch, FakeExec, lazyHandler, prefixMatch} from '../testing';
 
-suite('Install script', () => {
-  test('Install', async () => {
+describe('Install script', () => {
+  it('installs default (latest) version', async () => {
     let tempFile = '';
     let installed = false;
     const fake = new FakeExec().on('gsutil',
@@ -45,7 +45,7 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
     }
   });
 
-  test('Install with version', async () => {
+  it('installs specified version', async () => {
     let tempFile = '';
     let installed = false;
     const fake = new FakeExec().on('gsutil',
@@ -81,7 +81,7 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
   });
 });
 
-suite('Build and publish', async () => {
+describe('Build and publish', async () => {
   interface TestCase {
     name: string,
     isDirty?: boolean,
@@ -93,24 +93,24 @@ suite('Build and publish', async () => {
     wantUploaded?: boolean,
   };
   const testCases: TestCase[] = [{
-    name: 'Success',
+    name: 'succeeds',
     wantBuilt: true,
     wantUploaded: true,
   }, {
-    name: 'Git status is dirty',
+    name: 'fails when git status is dirty',
     isDirty: true,
     wantReject: true,
   }, {
-    name: 'HEAD is not merged to cros/main',
+    name: 'fails when HEAD is not merged to cros/main',
     headIsNotMerged: true,
     wantReject: true,
   }, {
-    name: 'package.json is not updated',
+    name: 'fails when package.json is not updated',
     // eslint-disable-next-line max-len
     customDiffOutput: '',
     wantReject: true,
   }, {
-    name: 'Version is not updated',
+    name: 'fails when version is not updated',
     // eslint-disable-next-line max-len
     customDiffOutput: `diff --git a/ide_tooling/cros-ide/package.json b/ide_tooling/cros-ide/package.json
 index 11eef9ccd..0ee259d51 100644
@@ -128,13 +128,13 @@ index 11eef9ccd..0ee259d51 100644
 `,
     wantReject: true,
   }, {
-    name: 'Generated version is old',
+    name: 'fails when generated version is old',
     customFilename: 'cros-ide-0.0.2.vsix',
     wantReject: true,
     wantBuilt: true,
   }];
   testCases.forEach((testCase) => {
-    test(testCase.name, async () => {
+    it(testCase.name, async () => {
       const gitHash = 'b9dfaf485e2caf5030199166469ce28e91680255';
       const filename = testCase.customFilename || 'cros-ide-0.0.3.vsix';
 
@@ -218,7 +218,7 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
     );
   });
 
-  test('Dev install', async () => {
+  it('installs dev version', async () => {
     let tempDir = '';
     let built = false;
     let installed = false;
@@ -249,8 +249,8 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
   });
 });
 
-suite('Parse args', () => {
-  test('Dev', () => {
+describe('Argument parser', () => {
+  it('recognizes --dev', () => {
     assert.deepStrictEqual(
         install.parseArgs(['--dev']),
         {
@@ -259,7 +259,7 @@ suite('Parse args', () => {
         },
     );
   });
-  test('Upload', () => {
+  it('recognizes --upload', () => {
     assert.deepStrictEqual(
         install.parseArgs(['--upload']),
         {
@@ -268,7 +268,7 @@ suite('Parse args', () => {
         },
     );
   });
-  test('Exe', () => {
+  it('recognizes --exe', () => {
     assert.deepStrictEqual(
         install.parseArgs(['--exe', '/path/to/code-server']),
         {
@@ -276,7 +276,7 @@ suite('Parse args', () => {
         },
     );
   });
-  test('Force version', () => {
+  it('recognizes --version', () => {
     assert.deepStrictEqual(
         install.parseArgs(['ts-node', 'install.ts', '--force', '1.2.3']),
         {
@@ -289,7 +289,7 @@ suite('Parse args', () => {
         },
     );
   });
-  test('Help', () => {
+  it('recognizes --help', () => {
     assert.deepStrictEqual(
         install.parseArgs(['--help']),
         {
@@ -298,7 +298,7 @@ suite('Parse args', () => {
         },
     );
   });
-  test('Throw on invalid input', () => {
+  it('throws on invalid input', () => {
     assert.throws(() => install.parseArgs(['--force']));
     assert.throws(() => install.parseArgs(['--force', 'invalid']));
     assert.throws(() => install.parseArgs(['--force', 'v1.2.3']));

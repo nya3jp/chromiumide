@@ -22,8 +22,8 @@ async function prepareBoardsDir(td: string) {
   await fs.promises.utimes(path.join(td, '/build/coral'), 3, 3);
 }
 
-suite('Cros', () => {
-  test('Get worked on boards, most recent first', async () => {
+describe('Boards that are set up', () => {
+  it('are listed most recent first', async () => {
     await commonUtil.withTempDir(async td => {
       await prepareBoardsDir(td);
 
@@ -35,7 +35,7 @@ suite('Cros', () => {
     });
   });
 
-  test('Get worked on boards in alphabetic order', async () => {
+  it('are listed in alphabetic order', async () => {
     await commonUtil.withTempDir(async td => {
       await prepareBoardsDir(td);
 

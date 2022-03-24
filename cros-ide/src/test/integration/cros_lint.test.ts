@@ -99,8 +99,8 @@ const documentProvider = new TestDocumentProvider(new Map<string, string>([
 const scheme = 'testing';
 vscode.workspace.registerTextDocumentContentProvider(scheme, documentProvider);
 
-suite('Cros Lint Test Suite', () => {
-  test('Cpp warnings', async () => {
+describe('Lint Integration', () => {
+  it('parses C++ errors', async () => {
     const uri = vscode.Uri.from({scheme: scheme, path: cppFileName});
     const textDocument = await vscode.workspace.openTextDocument(uri);
     const actual = crosLint.parseCrosLintCpp(cppLintOutput, '', textDocument);
@@ -126,7 +126,7 @@ suite('Cros Lint Test Suite', () => {
     assert.deepStrictEqual(expected, actual);
   });
 
-  test('Python warnings', async () => {
+  it('parses Python errors', async () => {
     const uri = vscode.Uri.from({scheme: scheme, path: pythonFileName});
     const textDocument = await vscode.workspace.openTextDocument(uri);
     const actual =
@@ -161,7 +161,7 @@ suite('Cros Lint Test Suite', () => {
     assert.deepStrictEqual(expected, actual);
   });
 
-  test('Shell warnings', async () => {
+  it('parses shell errors', async () => {
     const uri = vscode.Uri.from({scheme: scheme, path: shellFileName});
     const textDocument = await vscode.workspace.openTextDocument(uri);
     const actual =
@@ -180,7 +180,7 @@ suite('Cros Lint Test Suite', () => {
     assert.deepStrictEqual(actual, expected);
   });
 
-  test('GN errors', async () => {
+  it('parses GN errors', async () => {
     const uri = vscode.Uri.from({scheme: scheme, path: gnFileName});
     const textDocument = await vscode.workspace.openTextDocument(uri);
     const actual =

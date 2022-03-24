@@ -22,8 +22,8 @@ class BlockingPromise<T> {
   }
 }
 
-suite('Job manager', () => {
-  test('Jobs are throttled', async () => {
+describe('Job manager', () => {
+  it('throttles jobs', async () => {
     const manager = new commonUtil.JobManager();
 
     const guard = await BlockingPromise.new();
@@ -58,7 +58,7 @@ suite('Job manager', () => {
     assert.strictEqual(p3Run, true);
   });
 
-  test('Errors', async () => {
+  it('handles errors', async () => {
     const manager = new commonUtil.JobManager();
 
     const guard = await BlockingPromise.new();
@@ -85,8 +85,8 @@ suite('Job manager', () => {
   });
 });
 
-suite('Logging exec', () => {
-  test('Stdout is returned and stderr is logged', async () => {
+describe('Logging exec', () => {
+  it('returns stdout and logs stderr', async () => {
     let logs = '';
     const out = await commonUtil.exec('sh',
         ['-c', 'echo foo; echo bar 1>&2'], log => {
@@ -96,7 +96,7 @@ suite('Logging exec', () => {
     assert.strictEqual(logs, 'bar\n');
   });
 
-  test('Stdout and stderr are mixed if flag is true', async () => {
+  it('mixes stdout and stderr if logStdout flag is true', async () => {
     let logs = '';
     await commonUtil.exec('sh',
         ['-c', 'echo foo; echo bar 1>&2'], log => {
@@ -105,7 +105,7 @@ suite('Logging exec', () => {
     assert.strictEqual(logs.length, 'foo\nbar\n'.length);
   });
 
-  test('Throw on non-zero exit code', async () => {
+  it('throws error on non-zero exit code', async () => {
     let logs = '';
     const p = commonUtil.exec('sh',
         ['-c', 'echo foo 1>&2; exit 1'], log => {
@@ -115,7 +115,7 @@ suite('Logging exec', () => {
     assert.strictEqual(logs, 'foo\n');
   });
 
-  test('Newlines are appended to log', async () => {
+  it('appends new lines to log', async () => {
     let logs = '';
     const out = await commonUtil.exec('sh',
         ['-c', 'echo -n foo; echo -n bar 1>&2;'], log => {
@@ -125,18 +125,18 @@ suite('Logging exec', () => {
     assert.deepStrictEqual(logs.split('\n').sort(), ['', 'bar', 'foo']);
   });
 
-  test('Throws error when the command fails', async () => {
+  it('throws error when the command fails', async () => {
     const p = commonUtil.exec('does_not_exist', ['--version']);
     await assert.rejects(p);
   });
 });
 
-suite('withTimeout', () => {
-  test('Returns before timeout', async () => {
+describe('withTimeout utility', () => {
+  it('returns before timeout', async () => {
     assert.strictEqual(await commonUtil.withTimeout(Promise.resolve(true), 1 /* millis*/), true);
   });
 
-  test('Timeout', async () => {
+  it('returns undefined after timeout', async () => {
     const f = await BlockingPromise.new(true);
     try {
       assert.strictEqual(await commonUtil.withTimeout(f.promise, 1), undefined);

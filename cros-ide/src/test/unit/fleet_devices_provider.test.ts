@@ -9,8 +9,8 @@ import * as commonUtil from '../../common/common_util';
 import * as fleetProvider from '../../dut_management/services/fleet_devices_provider';
 import {exactMatch, FakeExec} from '../testing';
 
-suite('Fleet Devices Provider', () => {
-  test('No leases', async () => {
+describe('Fleet Devices Provider retrieves', () => {
+  it('no leases', async () => {
     const fakeExec = new FakeExec().on(
         'crosfleet',
         exactMatch(['dut', 'leases', '-json'], async () => {
@@ -25,7 +25,7 @@ suite('Fleet Devices Provider', () => {
     }
   });
 
-  test('One lease', async () => {
+  it('one lease', async () => {
     // __dirname points to the generated JS code running in out/, but we do not copy test data.
     // so we need to reach to src/ instead.
     const testDataDir = path.resolve(__dirname, '../../../src/test/testdata/dut_management/');

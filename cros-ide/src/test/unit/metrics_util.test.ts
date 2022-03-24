@@ -8,8 +8,8 @@ import * as path from 'path';
 import * as commonUtil from '../../common/common_util';
 import * as metricsUtil from '../../metrics/metrics_util';
 
-suite('Metrics util', () => {
-  test('get initialized id', async () => {
+describe('Metrics util', () => {
+  it('gets initialized id', async () => {
     const testUid = 'testing-uid';
     await commonUtil.withTempDir(async td => {
       const configPathFull = path.join(td, metricsUtil.getConfigPath());
@@ -21,7 +21,7 @@ suite('Metrics util', () => {
     });
   });
 
-  test('set new id', async () => {
+  it('sets new id', async () => {
     const testUid = 'testing-uid';
     await commonUtil.withTempDir(async td => {
       // File containing user id not found, getUserId should create a new one containing testUid.

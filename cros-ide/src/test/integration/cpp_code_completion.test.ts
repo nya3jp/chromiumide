@@ -8,8 +8,8 @@ import * as commonUtil from '../../common/common_util';
 import * as cppCodeCompletion from '../../cpp_code_completion';
 import * as testing from '../testing';
 
-suite('Code completion', () => {
-  test('Get package', async () => {
+describe('C++ code completion', () => {
+  it('gets package for a source file', async () => {
     await commonUtil.withTempDir(async td => {
       await testing.putFiles(td, {
         '/mnt/host/source/src/platform2/cros-disks/foo.cc': 'x',
@@ -35,7 +35,7 @@ suite('Code completion', () => {
     });
   });
 
-  test('Get user consent', async () => {
+  it('obtains user consent to run commands', async () => {
     const {
       ALWAYS, NEVER, YES,
       getUserConsent,

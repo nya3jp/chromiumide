@@ -24,19 +24,19 @@ const coverageJsonPath =
   '/build/amd64-generic/build/coverage_data/chromeos-base/chaps-0/0.0.1-r3594/coverage.json';
 
 
-suite('Coverage Test Suite', () => {
+describe('Test coverage', () => {
   let testRoot: string = '';
 
-  suiteSetup(async () => {
+  before(async () => {
     testRoot = await fs.promises.mkdtemp(os.tmpdir() + '/');
     await testing.putFiles(testRoot, {[coverageJsonPath]: coverageJsonContents});
   });
 
-  suiteTeardown(async () => {
+  after(async () => {
     await fs.promises.rmdir(testRoot, {recursive: true});
   });
 
-  test('Not platform2', async () => {
+  it('ignores files not in platform2', async () => {
     assert.deepStrictEqual(
         await coverage.readDocumentCoverage(
             '/mnt/host/source/chromite/ide_tooling/cros-ide/package.cc', testRoot),
@@ -47,7 +47,7 @@ suite('Coverage Test Suite', () => {
 
   // TODO(ttylenda): coverage.json does not contain data for the file
 
-  test('Coverage exists', async () => {
+  it('reads coverage data if it exists', async () => {
     const {covered: cov, uncovered: uncov} =
         await coverage.readDocumentCoverage(
             '/mnt/host/source/src/platform2/chaps/slot_manager_impl.cc', testRoot);
