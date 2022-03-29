@@ -24,7 +24,7 @@
       "args": [
         "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionTestsPath=${workspaceFolder}/out/test/integration/index"
+        "--extensionTestsPath=${workspaceFolder}/out/test/index"
       ],
       "outFiles": [
         "${workspaceFolder}/out/**/*.js",
