@@ -213,6 +213,6 @@ async function crosfleetDutLease(opts?: LeaseOpts): Promise<Lease> {
   if (opts?.reason !== undefined) {
     args.push('-reason', opts?.reason);
   }
-  const out = await commonUtil.exec('crosfleet', args);
-  return JSON.parse(out) as Lease;
+  const {stdout} = await commonUtil.exec('crosfleet', args);
+  return JSON.parse(stdout) as Lease;
 }

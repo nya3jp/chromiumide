@@ -11,9 +11,9 @@ import * as dutManager from '../dut_manager';
 const BUILDER_PATH_RE = /CHROMEOS_RELEASE_BUILDER_PATH=(.*)/;
 
 export async function crosfleetLeases(): Promise<dutManager.Leases> {
-  const out = await commonUtil.exec('crosfleet', ['dut', 'leases', '-json']);
+  const {stdout} = await commonUtil.exec('crosfleet', ['dut', 'leases', '-json']);
   // TODO: validation...
-  const leases = JSON.parse(out) as dutManager.Leases;
+  const leases = JSON.parse(stdout) as dutManager.Leases;
   if (!leases.Leases) {
     leases.Leases = [];
   }
@@ -21,8 +21,8 @@ export async function crosfleetLeases(): Promise<dutManager.Leases> {
 }
 
 export async function queryHostVersion(host: string): Promise<string> {
-  const output = await commonUtil.exec('ssh', [host, 'cat', '/etc/lsb-release']);
-  const match = BUILDER_PATH_RE.exec(output);
+  const {stdout} = await commonUtil.exec('ssh', [host, 'cat', '/etc/lsb-release']);
+  const match = BUILDER_PATH_RE.exec(stdout);
   if (!match) {
     throw new Error(`Failed to connect to ${host}`);
   }

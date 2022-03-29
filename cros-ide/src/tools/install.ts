@@ -18,9 +18,10 @@ function assertInsideChroot() {
 
 const GS_PREFIX = 'gs://chromeos-velocity/ide/cros-ide';
 
-async function execute(name: string, args: string[], showStdout?: boolean) {
-  return await commonUtil.exec(
+async function execute(name: string, args: string[], showStdout?: boolean): Promise<string> {
+  const {stdout} = await commonUtil.exec(
       name, args, log => process.stderr.write(log), {logStdout: showStdout});
+  return stdout;
 }
 
 /**

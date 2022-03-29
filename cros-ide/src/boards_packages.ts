@@ -128,6 +128,6 @@ class Package extends ChrootItem {
  * @returns Packages that are worked on.
  */
 async function getWorkedOnPackages(board: string): Promise<string[]> {
-  const stdout = await commonUtil.exec('cros_workon', ['--board', board, 'list']);
+  const {stdout} = await commonUtil.exec('cros_workon', ['--board', board, 'list']);
   return stdout.split('\n').filter(x => x.trim() !== '');
 }

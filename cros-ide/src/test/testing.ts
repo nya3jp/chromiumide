@@ -4,6 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as commonUtil from '../common/common_util';
 
 /** Returns fake stdout or undefined if args is not handled. */
 type Handler = (args: string[]) => Promise<string | undefined>;
@@ -47,11 +48,11 @@ export class FakeExec {
   }
   async exec(name: string, args: string[],
       _log?: (line: string) => void,
-      _opt?: { logStdout?: boolean }): Promise<string> {
+      _opt?: { logStdout?: boolean }): Promise<commonUtil.ExecResult> {
     for (const handler of (this.handlers.get(name) || [])) {
-      const res = await handler(args);
-      if (res !== undefined) {
-        return res;
+      const stdout = await handler(args);
+      if (stdout !== undefined) {
+        return {stdout};
       }
     }
     throw new Error(`${name} ${args.join(' ')}: not handled`);

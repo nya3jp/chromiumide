@@ -88,11 +88,11 @@ describe('Job manager', () => {
 describe('Logging exec', () => {
   it('returns stdout and logs stderr', async () => {
     let logs = '';
-    const out = await commonUtil.exec('sh',
+    const {stdout} = await commonUtil.exec('sh',
         ['-c', 'echo foo; echo bar 1>&2'], log => {
           logs += log;
         });
-    assert.strictEqual(out, 'foo\n');
+    assert.strictEqual(stdout, 'foo\n');
     assert.strictEqual(logs, 'bar\n');
   });
 
@@ -117,11 +117,11 @@ describe('Logging exec', () => {
 
   it('appends new lines to log', async () => {
     let logs = '';
-    const out = await commonUtil.exec('sh',
+    const {stdout} = await commonUtil.exec('sh',
         ['-c', 'echo -n foo; echo -n bar 1>&2;'], log => {
           logs += log;
         }, {logStdout: true});
-    assert.strictEqual(out, 'foo');
+    assert.strictEqual(stdout, 'foo');
     assert.deepStrictEqual(logs.split('\n').sort(), ['', 'bar', 'foo']);
   });
 

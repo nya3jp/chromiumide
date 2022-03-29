@@ -117,8 +117,8 @@ class CompilationDatabase {
 }
 
 async function workonList(board: string): Promise<string[]> {
-  const out = await commonUtil.exec('cros_workon', ['--board', board, 'list']);
-  return out.split('\n').filter(x => x !== '');
+  const {stdout} = await commonUtil.exec('cros_workon', ['--board', board, 'list']);
+  return stdout.split('\n').filter(x => x !== '');
 }
 
 export type PersistentConsent = 'Never' | 'Always'

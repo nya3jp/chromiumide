@@ -76,6 +76,10 @@ export class JobManager<T> {
   }
 }
 
+export interface ExecResult {
+  stdout: string
+}
+
 /**
  * Executes command with optionally logging its output. The promise will be
  * resolved with stdout of the command. It's guaranteed that data passed to log
@@ -86,7 +90,7 @@ export class JobManager<T> {
  */
 export function exec(name: string, args: string[],
     log?: (line: string) => void,
-    opt?: { logStdout?: boolean }): Promise<string> {
+    opt?: { logStdout?: boolean }): Promise<ExecResult> {
   return execPtr(name, args, log, opt);
 }
 
@@ -102,13 +106,13 @@ export function setExecForTesting(fakeExec: typeof exec): () => void {
 
 function realExec(name: string, args: string[],
     log?: (line: string) => void,
-    opt?: { logStdout?: boolean }): Promise<string> {
+    opt?: { logStdout?: boolean }): Promise<ExecResult> {
   return new Promise((resolve, reject) => {
     const command = childProcess.spawn(name, args);
 
     let remainingStdout = '';
     let remainingStderr = '';
-    let response = '';
+    let stdout = '';
     command.stdout.on('data', data => {
       if (log && opt && opt.logStdout) {
         remainingStdout += data;
@@ -116,7 +120,7 @@ function realExec(name: string, args: string[],
         log(remainingStdout.substring(0, i + 1));
         remainingStdout = remainingStdout.substring(i + 1);
       }
-      response += data;
+      stdout += data;
     });
     if (log) {
       command.stderr.on('data', data => {
@@ -136,7 +140,7 @@ function realExec(name: string, args: string[],
       if (code !== 0) {
         reject(new Error(`Exit code: ${code}`));
       }
-      resolve(response);
+      resolve({stdout});
     });
     // 'error' happens when the command is not available
     command.on('error', (err) => {
