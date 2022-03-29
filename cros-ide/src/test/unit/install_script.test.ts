@@ -81,7 +81,7 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
   });
 });
 
-describe('Build and publish', () => {
+describe('Build and publish', async () => {
   interface TestCase {
     name: string,
     isDirty?: boolean,

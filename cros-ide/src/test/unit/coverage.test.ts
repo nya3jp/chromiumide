@@ -27,12 +27,12 @@ const coverageJsonPath =
 describe('Test coverage', () => {
   let testRoot: string = '';
 
-  beforeAll(async () => {
+  before(async () => {
     testRoot = await fs.promises.mkdtemp(os.tmpdir() + '/');
     await testing.putFiles(testRoot, {[coverageJsonPath]: coverageJsonContents});
   });
 
-  afterAll(async () => {
+  after(async () => {
     await fs.promises.rmdir(testRoot, {recursive: true});
   });
 

@@ -1,12 +1,17 @@
 // Copyright 2022 The Chromium OS Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-import * as glob from 'glob';
 import * as path from 'path';
-
-const Jasmine = require('jasmine');
+import * as Mocha from 'mocha';
+import * as glob from 'glob';
 
 export function run(): Promise<void> {
+  // Create the mocha test
+  const mocha = new Mocha({
+    ui: 'bdd',
+    color: true,
+  });
+
   const testsRoot = __dirname;
 
   return new Promise((c, e) => {
@@ -15,16 +20,22 @@ export function run(): Promise<void> {
         return e(err);
       }
 
-      const jasmine = new Jasmine();
+      // Add files to the test suite
+      files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)));
 
-      files.forEach(f => jasmine.addSpecFile(path.resolve(testsRoot, f)));
-
-      jasmine.execute().then((jasimineDoneInfo: jasmine.JasmineDoneInfo) => {
-        if (jasimineDoneInfo.overallStatus === 'passed') {
-          return c();
-        }
-        return e(new Error(jasimineDoneInfo.overallStatus));
-      });
+      try {
+        // Run the mocha test
+        mocha.run(failures => {
+          if (failures > 0) {
+            e(new Error(`${failures} tests failed.`));
+          } else {
+            c();
+          }
+        });
+      } catch (err) {
+        console.error(err);
+        e(err);
+      }
     });
   });
 }
