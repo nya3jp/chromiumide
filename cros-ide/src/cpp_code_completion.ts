@@ -6,11 +6,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import * as bgTaskStatus from './ui/bg_task_status';
 import * as commonUtil from './common/common_util';
 import * as ideUtilities from './ide_utilities';
 
-export function activate(context: vscode.ExtensionContext) {
-  const compildationDatabase = new CompilationDatabase();
+export function activate(context: vscode.ExtensionContext,
+    statusManager: bgTaskStatus.StatusManager) {
+  const compildationDatabase = new CompilationDatabase(statusManager);
 
   context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(
       editor => {
@@ -42,11 +44,13 @@ export interface PackageInfo {
 
 const MNT_HOST_SOURCE = '/mnt/host/source'; // realpath of ~/chromiumos
 
+const STATUS_BAR_TASK_ID = 'cpp_code_completion';
+
 class CompilationDatabase {
   private enabled = true;
   private readonly manager = new commonUtil.JobManager<void>();
 
-  constructor() {}
+  constructor(private readonly statusManager: bgTaskStatus.StatusManager) {}
 
   // Generate compilation database for clangd.
   // TODO(oka): Add unit test.
@@ -112,11 +116,12 @@ class CompilationDatabase {
         if (res instanceof Error) {
           throw res;
         }
+
+        this.statusManager.deleteError(STATUS_BAR_TASK_ID);
       } catch (e) {
-        // TODO(oka): show error message for user to manually resolve problem
-        // (e.g. compile error).
         ideUtilities.getLogger().appendLine((e as Error).message);
         console.error(e);
+        this.statusManager.addError(STATUS_BAR_TASK_ID);
       }
     });
   }

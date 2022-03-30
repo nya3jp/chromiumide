@@ -24,14 +24,15 @@ import * as targetBoard from './target_board';
 import * as bgTaskStatus from './ui/bg_task_status';
 
 export function activate(context: vscode.ExtensionContext) {
+  const statusManager = bgTaskStatus.activate(context);
+
   crosLint.activate(context);
   boardsPackages.activate();
   shortLinkProvider.activate(context);
   codesearch.activate(context);
-  cppCodeCompletion.activate(context);
+  cppCodeCompletion.activate(context, statusManager);
   suggestExtension.activate(context);
   targetBoard.activate(context);
-  bgTaskStatus.activate(context);
   feedback.activate(context);
 
   if (ideUtilities.getConfigRoot().get<boolean>('underDevelopment.dutManager')) {
