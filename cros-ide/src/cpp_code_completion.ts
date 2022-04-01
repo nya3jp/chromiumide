@@ -85,9 +85,9 @@ class CompilationDatabase {
           }
         }
 
-        const {error} = await runEmerge(board, pkg);
-        if (error !== undefined) {
-          vscode.window.showErrorMessage(error);
+        const error = await runEmerge(board, pkg);
+        if (error) {
+          vscode.window.showErrorMessage(error.message);
           return;
         }
 
@@ -201,7 +201,7 @@ async function shouldRunCrosWorkon(board: string, pkg: string): Promise<{
 }
 
 /** Runs emerge and shows a spinning progress indicator in the status bar. */
-function runEmerge(board: string, pkg: string): Thenable<{error?: string}> {
+function runEmerge(board: string, pkg: string): Thenable<Error|undefined> {
   return vscode.window.withProgress({
     location: vscode.ProgressLocation.Window,
     title: `Building refs for ${pkg}`,
@@ -211,11 +211,7 @@ function runEmerge(board: string, pkg: string): Thenable<{error?: string}> {
       const res = await commonUtil.exec('env',
           ['USE=compilation_database', `emerge-${board}`, pkg],
           ideUtilities.getLogger().append, {logStdout: true});
-      if (res instanceof Error) {
-        // TODO(b/223534220): Use error after the error message becomes useful.
-        return {error: `emerge-${board} ${pkg} failed`};
-      }
-      return {};
+      return (res instanceof Error) ? res : undefined;
     };
     return f();
   });

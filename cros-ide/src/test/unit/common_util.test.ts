@@ -112,7 +112,10 @@ describe('Logging exec', () => {
         ['-c', 'echo foo 1>&2; exit 1'], log => {
           logs += log;
         }, {logStdout: true});
-    assert(res instanceof commonUtil.ExecutionError);
+    assert(res instanceof commonUtil.AbnormalExitError);
+    assert(
+        res.message.includes(`sh -c 'echo foo 1>&2; exit 1'`),
+        'actual message: ' + res.message);
     assert.strictEqual(logs, 'foo\n');
   });
 
@@ -122,7 +125,10 @@ describe('Logging exec', () => {
         ['-c', 'echo foo 1>&2; exit 1'], log => {
           logs += log;
         });
-    assert(res instanceof commonUtil.ExecutionError);
+    assert(res instanceof commonUtil.AbnormalExitError);
+    assert(
+        res.message.includes(`sh -c 'echo foo 1>&2; exit 1'`),
+        'actual message: ' + res.message);
     assert.strictEqual(logs, 'foo\n');
   });
 
@@ -153,7 +159,10 @@ describe('Logging exec', () => {
 
   it('returns error when the command fails', async () => {
     const res = await commonUtil.exec('does_not_exist', ['--version']);
-    assert(res instanceof Error);
+    assert(res instanceof commonUtil.ProcessError);
+    assert(
+        res.message.includes('does_not_exist --version'),
+        'actual message: ' + res.message);
   });
 });
 

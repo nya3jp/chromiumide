@@ -10,6 +10,7 @@
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
+import * as shutil from './shutil';
 
 export function isInsideChroot(): boolean {
   return fs.existsSync('/etc/cros_chroot_version');
@@ -93,9 +94,23 @@ export interface ExecOptions {
   ignoreNonZeroExit?: boolean,
 }
 
-export class ExecutionError extends Error {
-  constructor(exitStatus: number) {
-    super(`Exit status: ${exitStatus}`);
+/**
+ * Command was run, returned non-zero exit status,
+ * and `exec` option was to return an error.
+ */
+export class AbnormalExitError extends Error {
+  constructor(cmd: string, args: string[], exitStatus: number) {
+    super(`"${shutil.escapeArray([cmd, ...args])}" failed, exit status: ${exitStatus}`);
+  }
+}
+
+/**
+ * Command did not run, for example, it was not found.
+ */
+export class ProcessError extends Error {
+  constructor(cmd: string, args: string[], cause: Error) {
+    // Chain errors with `cause` option is not available.
+    super(`"${shutil.escapeArray([cmd, ...args])}" failed: ${cause.message}`);
   }
 }
 
@@ -166,14 +181,14 @@ function realExec(name: string, args: string[],
         log(remainingStderr + '\n');
       }
       if (!(opt && opt.ignoreNonZeroExit) && exitStatus !== 0) {
-        resolve(new ExecutionError(exitStatus));
+        resolve(new AbnormalExitError(name, args, exitStatus));
       }
 
       resolve({exitStatus, stdout, stderr});
     });
     // 'error' happens when the command is not available
     command.on('error', (err) => {
-      resolve(err);
+      resolve(new ProcessError(name, args, err));
     });
   });
 }
