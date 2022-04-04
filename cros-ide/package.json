@@ -17,9 +17,6 @@
     "Programming Languages",
     "Testing"
   ],
-  "extensionDependencies": [
-    "llvm-vs-code-extensions.vscode-clangd"
-  ],
   "activationEvents": [
     "onCommand:cros-ide.addHost",
     "onCommand:cros-ide.deleteHost",

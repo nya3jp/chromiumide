@@ -7,6 +7,12 @@ import * as vscode from 'vscode';
 export function activate(context: vscode.ExtensionContext) {
   const suggester = new SuggestExtension([
     {
+      languageId: 'cpp',
+      languageName: 'C++',
+      extensionId: 'llvm-vs-code-extensions.vscode-clangd',
+      extensionName: 'clangd',
+    },
+    {
       languageId: 'go',
       languageName: 'Go',
       extensionId: 'golang.Go',
