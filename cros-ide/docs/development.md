@@ -6,10 +6,11 @@
    your working directory.
 2. Run `npm ci` in the `cros-ide` directory (inside chroot).
 3. *Outside chroot* (open a different terminal), run `npm test` in the `cros-ide` directory to
-   confirm tests pass. `node --version` should return v12.* for the test to pass. If you are using a
-   newer version, please uninstall or downgrade it.
+   confirm tests pass. `node --version` should return v14.* for the test to pass. To install the
+   proper version, you may use [nvm].
 
 [QuickStart Guide]: https://chromium.googlesource.com/chromiumos/chromite/+/HEAD/ide_tooling/docs/quickstart.md
+[nvm]: https://github.com/nvm-sh/nvm
 
 ## Testing
 

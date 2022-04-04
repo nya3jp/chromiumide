@@ -39,8 +39,8 @@ async function main(commitHash: string | undefined) {
   if (nodeVersion instanceof Error) {
     throw nodeVersion;
   }
-  if (!nodeVersion.stdout.startsWith('v12.')) {
-    throw new Error('Node version should be v12.*');
+  if (!nodeVersion.stdout.startsWith('v14.')) {
+    throw new Error('Node version should be v14. (Hint: use nvm to install the version locally)');
   }
 
   const npmRunTest = await commonUtil.exec('npm', ['run', 'test'], console.error,
