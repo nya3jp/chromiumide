@@ -206,20 +206,16 @@ async function shouldRunCrosWorkon(board: string, pkg: string): Promise<{
 }
 
 /** Runs emerge and shows a spinning progress indicator in the status bar. */
-function runEmerge(board: string, pkg: string): Thenable<Error|undefined> {
-  return vscode.window.withProgress({
-    location: vscode.ProgressLocation.Window,
-    title: `Building refs for ${pkg}`,
-    cancellable: false,
-  }, (progress, token) => {
-    async function f() {
-      const res = await commonUtil.exec('env',
-          ['USE=compilation_database', `emerge-${board}`, pkg],
-          ideUtilities.getLogger().append, {logStdout: true});
-      return (res instanceof Error) ? res : undefined;
-    };
-    return f();
-  });
+async function runEmerge(board: string, pkg: string): Promise<Error|undefined> {
+  const progress = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+  progress.text = `$(sync~spin)Building refs for ${pkg}`;
+  progress.command = 'cros-ide.showIdeLog';
+  progress.show();
+  const res = await commonUtil.exec('env',
+      ['USE=compilation_database', `emerge-${board}`, pkg],
+      ideUtilities.getLogger().append, {logStdout: true});
+  progress.dispose();
+  return (res instanceof Error) ? res : undefined;
 }
 
 // Known source code location to package name mapping which supports
