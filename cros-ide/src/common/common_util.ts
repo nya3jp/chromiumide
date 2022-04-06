@@ -78,7 +78,7 @@ export class JobManager<T> {
 }
 
 export interface ExecResult {
-  exitStatus: number,
+  exitStatus: number|null,
   stdout: string,
   stderr: string
 }
@@ -99,7 +99,7 @@ export interface ExecOptions {
  * and `exec` option was to return an error.
  */
 export class AbnormalExitError extends Error {
-  constructor(cmd: string, args: string[], exitStatus: number) {
+  constructor(cmd: string, args: string[], exitStatus: number|null) {
     super(`"${shutil.escapeArray([cmd, ...args])}" failed, exit status: ${exitStatus}`);
   }
 }
