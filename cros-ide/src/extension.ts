@@ -34,6 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
   suggestExtension.activate(context);
   targetBoard.activate(context);
   feedback.activate(context);
+  metrics.activate(context);
 
   if (ideUtilities.getConfigRoot().get<boolean>('underDevelopment.dutManager')) {
     dutManager.activateDutManager(context);

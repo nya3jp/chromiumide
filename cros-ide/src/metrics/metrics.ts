@@ -5,7 +5,15 @@
 import * as https from 'https';
 import * as os from 'os';
 import * as queryString from 'querystring';
+import * as vscode from 'vscode';
+import * as ideUtilities from '../ide_utilities';
 import * as metricsUtils from './metrics_util';
+
+export function activate(context: vscode.ExtensionContext) {
+  vscode.commands.registerCommand('cros-ide.resetUserID', () => {
+    metricsUtils.resetUserId();
+  });
+}
 
 const protocolVersion = '1';
 const trackingIdTesting = 'UA-221509619-1';
@@ -77,8 +85,10 @@ export class Analytics {
   */
   send(event: Event, options = optionsGA) {
     // Disable sending metrics at all until privacy review is approved.
-    // Do not send event if userId fails to initialize or user is not a googler.
-    if (true || !this.userId || this.userId === metricsUtils.externalUserIdStub()) {
+    // Do not send event if userId fails to initialize or user is not a googler, or user opt-out of
+    // metrics collection.
+    if (true || !this.userId || this.userId === metricsUtils.externalUserIdStub() ||
+        !ideUtilities.getConfigRoot().get<boolean>('metrics.collectMetrics')) {
       return;
     }
 

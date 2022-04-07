@@ -105,6 +105,10 @@
       {
         "command": "cros-ide.fileIdeBug",
         "title": "CrOS IDE: File a bug on Buganizer"
+      },
+      {
+        "command": "cros-ide.resetUserID",
+        "title": "CrOS IDE: Generate a new random user ID for metrics collection"
       }
     ],
     "viewsContainers": {
@@ -259,6 +263,11 @@
           ],
           "description": "Automatically run cros_workon, without prompting the user",
           "default": "Once"
+        },
+        "cros-ide.metrics.collectMetrics": {
+          "type": "boolean",
+          "description": "Enable pseudonymous metrics collection. Randomly generated unique user ID resets automatically every 180 days. You can also reset it anytime by running the command in the Command Palette.",
+          "default": false
         }
       }
     },
