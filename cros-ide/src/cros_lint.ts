@@ -1,24 +1,28 @@
 // Copyright 2022 The Chromium OS Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-import * as childProcess from 'child_process';
-import * as vscode from 'vscode';
 
-export function activate(context: vscode.ExtensionContext) {
+import * as vscode from 'vscode';
+import * as commonUtil from './common/common_util';
+import * as ideUtilities from './ide_utilities';
+import * as bgTaskStatus from './ui/bg_task_status';
+
+export function activate(context: vscode.ExtensionContext,
+    statusManager: bgTaskStatus.StatusManager) {
   const collection = vscode.languages.createDiagnosticCollection('cros-lint');
   if (vscode.window.activeTextEditor) {
     updateCrosLintDiagnostics(
-        vscode.window.activeTextEditor.document, collection);
+        vscode.window.activeTextEditor.document, collection, statusManager);
   }
   context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(
       editor => {
         if (editor) {
-          updateCrosLintDiagnostics(editor.document, collection);
+          updateCrosLintDiagnostics(editor.document, collection, statusManager);
         }
       }));
   context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(
       document => {
-        updateCrosLintDiagnostics(document, collection);
+        updateCrosLintDiagnostics(document, collection, statusManager);
       }));
   context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(
       document => {
@@ -26,9 +30,10 @@ export function activate(context: vscode.ExtensionContext) {
       }));
 }
 
-// Describes how to run a linter and parse its output.
+/** Describes how to run a linter and parse its output. */
 interface LintConfig {
-  command(path: string) : string;
+  executable: string;
+  arguments(path: string) : string[];
   parse(stdout: string, stderr: string, document: vscode.TextDocument)
       : vscode.Diagnostic[];
 }
@@ -38,34 +43,49 @@ const GNLINT_PATH = '~/chromiumos/src/platform2/common-mk/gnlint.py';
 // Don't forget to update package.json when adding more languages.
 const lintConfigs = new Map<string, LintConfig>([
   ['cpp', {
-    command: (path: string) => `cros lint ${path}`,
+    executable: 'cros',
+    arguments: (path: string) => ['lint', path],
     parse: parseCrosLintCpp,
   }],
   ['gn', {
-    command: (path: string) => GNLINT_PATH + ` ${path}`,
+    executable: GNLINT_PATH,
+    arguments: (path: string) => [path],
     parse: parseCrosLintGn,
   }],
   ['python', {
-    command: (path: string) => `cros lint ${path}`,
+    executable: 'cros',
+    arguments: (path: string) => ['lint', path],
     parse: parseCrosLintPython,
   }],
   ['shellscript', {
-    command: (path: string) => `cros lint --output=parseable ${path}`,
+    executable: 'cros',
+    arguments: (path: string) => ['lint', '--output=parseable', path],
     parse: parseCrosLintShell,
   }],
 ]);
 
-function updateCrosLintDiagnostics(
+const LINTER_TASK_ID = 'Linter';
+
+async function updateCrosLintDiagnostics(
     document: vscode.TextDocument,
-    collection: vscode.DiagnosticCollection): void {
+    collection: vscode.DiagnosticCollection,
+    statusManager: bgTaskStatus.StatusManager): Promise<void> {
   if (document && document.uri.scheme === 'file') {
     const lintConfig = lintConfigs.get(document.languageId);
     if (lintConfig) {
-      childProcess.exec(lintConfig.command(document.uri.fsPath),
-          (_error, stdout, stderr) => {
-            const diagnostics = lintConfig.parse(stdout, stderr, document);
-            collection.set(document.uri, diagnostics);
-          });
+      const res = await commonUtil.exec(
+          lintConfig.executable, lintConfig.arguments(document.uri.fsPath),
+          ideUtilities.getLogger().append,
+          {ignoreNonZeroExit: true, logStdout: true});
+      if (res instanceof Error) {
+        ideUtilities.getLogger().append(res.message),
+        statusManager.setTask(LINTER_TASK_ID, bgTaskStatus.TaskStatus.ERROR);
+        return;
+      }
+      const {stdout, stderr} = res;
+      const diagnostics = lintConfig.parse(stdout, stderr, document);
+      collection.set(document.uri, diagnostics);
+      statusManager.setTask(LINTER_TASK_ID, bgTaskStatus.TaskStatus.OK);
     }
   } else {
     collection.clear();

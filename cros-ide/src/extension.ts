@@ -26,7 +26,7 @@ import * as bgTaskStatus from './ui/bg_task_status';
 export function activate(context: vscode.ExtensionContext) {
   const statusManager = bgTaskStatus.activate(context);
 
-  crosLint.activate(context);
+  crosLint.activate(context, statusManager);
   boardsPackages.activate();
   shortLinkProvider.activate(context);
   codesearch.activate(context);
