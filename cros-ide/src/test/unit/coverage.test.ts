@@ -5,7 +5,7 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as os from 'os';
-import * as coverage from '../../coverage';
+import * as coverage from '../../features/coverage';
 import * as testing from '../testing';
 
 const coverageJsonContents =

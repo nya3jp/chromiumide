@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import * as commonUtil from './common/common_util';
-import * as ideUtilities from './ide_utilities';
-import * as bgTaskStatus from './ui/bg_task_status';
+import * as commonUtil from '../common/common_util';
+import * as ideUtilities from '../ide_utilities';
+import * as bgTaskStatus from '../ui/bg_task_status';
 
 export function activate(context: vscode.ExtensionContext,
     statusManager: bgTaskStatus.StatusManager) {

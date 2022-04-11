@@ -6,7 +6,7 @@
  * Represents a VNC Session
  */
 import * as vscode from 'vscode';
-import * as ideutil from '../../ide_utilities';
+import * as ideutil from '../../../ide_utilities';
 
 export class VncSession {
   private static nextAvailablePort = 6080;

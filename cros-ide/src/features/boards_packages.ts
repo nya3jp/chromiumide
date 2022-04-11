@@ -6,9 +6,9 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import * as commonUtil from './common/common_util';
-import * as cros from './common/cros';
-import * as ideUtilities from './ide_utilities';
+import * as commonUtil from '../common/common_util';
+import * as cros from '../common/cros';
+import * as ideUtilities from '../ide_utilities';
 
 export async function activate() {
   const boardPackageProvider = new BoardPackageProvider();

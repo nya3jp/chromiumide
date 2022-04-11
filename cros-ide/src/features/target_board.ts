@@ -7,7 +7,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as ideUtilities from './ide_utilities';
+import * as ideUtilities from '../ide_utilities';
 
 const BOARD_CONFIG = 'cros-ide.board';
 

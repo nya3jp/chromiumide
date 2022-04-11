@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as commonUtil from '../../common/common_util';
-import * as fleetProvider from '../../dut_management/services/fleet_devices_provider';
+import * as fleetProvider from '../../features/dut_management/services/fleet_devices_provider';
 import {exactMatch, FakeExec} from '../testing';
 
 describe('Fleet Devices Provider retrieves', () => {

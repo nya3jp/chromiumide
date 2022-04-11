@@ -5,9 +5,9 @@
 /**
  * Common libs specific to DUT management.
  */
-import * as commonUtil from '../../common/common_util';
+import * as commonUtil from '../../../common/common_util';
 import * as dutManager from '../dut_manager';
-import * as ideutil from '../../ide_utilities';
+import * as ideutil from '../../../ide_utilities';
 
 const BUILDER_PATH_RE = /CHROMEOS_RELEASE_BUILDER_PATH=(.*)/;
 

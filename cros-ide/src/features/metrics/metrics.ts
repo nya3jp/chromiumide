@@ -6,7 +6,7 @@ import * as https from 'https';
 import * as os from 'os';
 import * as queryString from 'querystring';
 import * as vscode from 'vscode';
-import * as ideUtilities from '../ide_utilities';
+import * as ideUtilities from '../../ide_utilities';
 import * as metricsUtils from './metrics_util';
 
 const informationMessageTitle = 'We would like to collect metrics to have a better understanding ' +

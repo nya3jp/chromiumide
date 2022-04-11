@@ -6,7 +6,7 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as commonUtil from '../../common/common_util';
-import * as metricsUtil from '../../metrics/metrics_util';
+import * as metricsUtil from '../../features/metrics/metrics_util';
 
 describe('Metrics util', () => {
   it('initializes and read id', async () => {

@@ -6,7 +6,7 @@
  * Manages Local Devices
  */
 import * as vscode from 'vscode';
-import * as ideutil from '../../ide_utilities';
+import * as ideutil from '../../../ide_utilities';
 import * as dutManager from '../dut_manager';
 import * as dutServices from './dut_services';
 

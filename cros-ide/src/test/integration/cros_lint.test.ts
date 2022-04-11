@@ -5,7 +5,7 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 
-import * as crosLint from '../../cros_lint';
+import * as crosLint from '../../features/cros_lint';
 
 /* eslint max-len: ["error", { "ignoreTemplateLiterals": true }]*/
 

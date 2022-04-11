@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import * as vscode from 'vscode';
-import * as commonUtil from './common/common_util';
-import * as ideUtilities from './ide_utilities';
+import * as commonUtil from '../common/common_util';
+import * as ideUtilities from '../ide_utilities';
 
 export function activate(context: vscode.ExtensionContext) {
   const openFileCmd =
