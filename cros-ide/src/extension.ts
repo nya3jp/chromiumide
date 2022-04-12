@@ -12,7 +12,7 @@ import * as checkUpdates from './check_updates';
 import * as boardsPackages from './features/boards_packages';
 import * as codesearch from './features/codesearch';
 import * as coverage from './features/coverage';
-import * as cppCodeCompletion from './features/cpp_code_completion';
+import * as cppCodeCompletion from './features/cpp_code_completion/cpp_code_completion';
 import * as crosLint from './features/cros_lint';
 import * as dutManager from './features/dut_management/dut_manager';
 import * as feedback from './features/metrics/feedback';

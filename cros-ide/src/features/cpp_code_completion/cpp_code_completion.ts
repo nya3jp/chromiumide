@@ -5,10 +5,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-
-import * as bgTaskStatus from '../ui/bg_task_status';
-import * as commonUtil from '../common/common_util';
-import * as ideUtil from '../ide_util';
+import * as commonUtil from '../../common/common_util';
+import * as ideUtil from '../../ide_util';
+import * as bgTaskStatus from '../../ui/bg_task_status';
 
 export function activate(
   context: vscode.ExtensionContext,

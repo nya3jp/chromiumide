@@ -5,7 +5,7 @@
 import * as assert from 'assert';
 import * as path from 'path';
 import * as commonUtil from '../../common/common_util';
-import * as cppCodeCompletion from '../../features/cpp_code_completion';
+import * as cppCodeCompletion from '../../features/cpp_code_completion/cpp_code_completion';
 import * as testing from '../testing';
 
 describe('C++ code completion', () => {
