@@ -6,6 +6,7 @@ import * as assert from 'assert';
 import * as path from 'path';
 import * as commonUtil from '../../common/common_util';
 import * as cppCodeCompletion from '../../features/cpp_code_completion/cpp_code_completion';
+import * as packages from '../../features/cpp_code_completion/packages';
 import * as testing from '../testing';
 
 describe('C++ code completion', () => {
@@ -16,7 +17,7 @@ describe('C++ code completion', () => {
         '/mnt/host/source/src/platform2/unknown_dir/foo.cc': 'x',
       });
       assert.deepStrictEqual(
-        await cppCodeCompletion.getPackage(
+        await packages.getPackage(
           path.join(td, '/mnt/host/source/src/platform2/cros-disks/foo.cc'),
           path.join(td, '/mnt/host/source')
         ),
@@ -28,7 +29,7 @@ describe('C++ code completion', () => {
       );
 
       assert.deepStrictEqual(
-        await cppCodeCompletion.getPackage(
+        await packages.getPackage(
           path.join(td, '/mnt/host/source/src/platform2/unknown_dir/foo.cc'),
           path.join(td, '/mnt/host/source')
         ),
@@ -37,7 +38,7 @@ describe('C++ code completion', () => {
       );
 
       assert.deepStrictEqual(
-        await cppCodeCompletion.getPackage(
+        await packages.getPackage(
           path.join(td, '/mnt/host/source/not_exist'),
           path.join(td, '/mnt/host/source')
         ),
