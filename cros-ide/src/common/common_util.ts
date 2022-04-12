@@ -147,6 +147,10 @@ function realExec(name: string, args: string[],
     log?: (line: string) => void,
     opt?: ExecOptions): Promise<ExecResult|Error> {
   return new Promise((resolve, _reject) => {
+    if (log) {
+      log(shutil.escapeArray([name, ...args]) + '\n');
+    }
+
     const command = childProcess.spawn(name, args);
 
     let remainingStdout = '';

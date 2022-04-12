@@ -94,7 +94,7 @@ describe('Logging exec', () => {
         });
     assert(!(res instanceof Error));
     assert.strictEqual(res.stdout, 'foo\n');
-    assert.strictEqual(logs, 'bar\n');
+    assert.strictEqual(logs, `sh -c 'echo foo; echo bar 1>&2'\nbar\n`);
   });
 
   it('mixes stdout and stderr if logStdout flag is true', async () => {
@@ -103,7 +103,7 @@ describe('Logging exec', () => {
         ['-c', 'echo foo; echo bar 1>&2'], log => {
           logs += log;
         }, {logStdout: true});
-    assert.strictEqual(logs.length, 'foo\nbar\n'.length);
+    assert.strictEqual(logs.length, `sh -c 'echo foo; echo bar 1>&2'\nfoo\nbar\n`.length);
   });
 
   it('returns error on non-zero exit status when unrelated flags are set', async () => {
@@ -116,7 +116,7 @@ describe('Logging exec', () => {
     assert(
         res.message.includes(`sh -c 'echo foo 1>&2; exit 1'`),
         'actual message: ' + res.message);
-    assert.strictEqual(logs, 'foo\n');
+    assert.strictEqual(logs, `sh -c 'echo foo 1>&2; exit 1'\nfoo\n`);
   });
 
   it('returns error on non-zero exit status when no flags are specified', async () => {
@@ -129,7 +129,7 @@ describe('Logging exec', () => {
     assert(
         res.message.includes(`sh -c 'echo foo 1>&2; exit 1'`),
         'actual message: ' + res.message);
-    assert.strictEqual(logs, 'foo\n');
+    assert.strictEqual(logs, `sh -c 'echo foo 1>&2; exit 1'\nfoo\n`);
   });
 
   it('ignores non-zero exit status if ignoreNonZeroExit flag is true', async () => {
@@ -143,7 +143,7 @@ describe('Logging exec', () => {
     assert.strictEqual(exitStatus, 1);
     assert.strictEqual(stdout, 'bar\n');
     assert.strictEqual(stderr, 'foo\n');
-    assert.strictEqual(logs, 'foo\n');
+    assert.strictEqual(logs, `sh -c 'echo foo 1>&2; echo bar; exit 1'\nfoo\n`);
   });
 
   it('appends new lines to log', async () => {
@@ -154,7 +154,8 @@ describe('Logging exec', () => {
         }, {logStdout: true});
     assert(!(res instanceof Error));
     assert.strictEqual(res.stdout, 'foo');
-    assert.deepStrictEqual(logs.split('\n').sort(), ['', 'bar', 'foo']);
+    assert.deepStrictEqual(logs.split('\n').sort(),
+        ['', 'bar', 'foo', `sh -c 'echo -n foo; echo -n bar 1>&2;'`]);
   });
 
   it('returns error when the command fails', async () => {
