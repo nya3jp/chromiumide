@@ -17,8 +17,7 @@ export function activate(context: vscode.ExtensionContext): StatusManager {
   });
 
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
-  // TODO(b:228411680): Show new errors view instead.
-  statusBarItem.command = 'cros-ide.showIdeLog';
+  statusBarItem.command = 'cros-ide-status.focus';
   statusBarItem.show();
 
   const statusManager = new StatusManagerImpl();
@@ -56,27 +55,36 @@ function getIcon(ts: TaskStatus): string {
 
 export type TaskId = string
 
+export interface TaskData {
+  status: TaskStatus,
+
+  /**
+   * Command to be executed when the task is clicked in the UI. It can, for instance,
+   * open a UI panel with logs.
+   */
+  command?: vscode.Command
+}
+
 /**
  * Reports the status of background tasks indicating if the IDE works well or not.
  * It is meant for continuously running background tasks, which should not overuse popups.
  *
- * The status is shown in an abbreviated for in the status bar.
+ * The status is shown in an abbreviated for in the status bar. Clicking on the status bar item
+ * takes the user to a longer view, with a detailed view of all available tasks.
  */
-// TODO(b:228411680): Clicking on the status bar item takes the user to a longer view,
-// with a detailed view of all available tasks.
 export interface StatusManager {
-  setTask(taskId: TaskId, status: TaskStatus): void;
+  setTask(taskId: TaskId, taskData: TaskData): void;
   deleteTask(taskId: TaskId): void;
 }
 
 type ChangeHandler = (arg: StatusManagerImpl) => void;
 
 class StatusManagerImpl implements StatusManager {
-  private tasks = new Map<TaskId, TaskStatus>();
+  private tasks = new Map<TaskId, TaskData>();
   private handlers: ChangeHandler[] = [];
 
-  setTask(taskId: TaskId, status: TaskStatus) {
-    this.tasks.set(taskId, status);
+  setTask(taskId: TaskId, taskData: TaskData) {
+    this.tasks.set(taskId, taskData);
     this.handleChange();
   }
 
@@ -89,15 +97,13 @@ class StatusManagerImpl implements StatusManager {
     return Array.from(this.tasks.keys());
   }
 
-  getTaskData(taskId: TaskId): {status?: TaskStatus} {
-    return {
-      status: this.tasks.get(taskId),
-    };
+  getTaskData(taskId: TaskId): TaskData|undefined {
+    return this.tasks.get(taskId);
   }
 
   private has(status: TaskStatus): boolean {
-    for (const s of this.tasks.values()) {
-      if (s === status) {
+    for (const td of this.tasks.values()) {
+      if (td.status === status) {
         return true;
       }
     }
@@ -168,8 +174,9 @@ class StatusTreeData implements vscode.TreeDataProvider<TaskId> {
   readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
 
   getTreeItem(element: TaskId): vscode.TreeItem | Thenable<vscode.TreeItem> {
-    const taskData = this.statusManagerImpl!.getTaskData(element);
-    return new TaskTreeItem(element, taskData.status!);
+    const statusManagerImp = this.statusManagerImpl!;
+    const taskData = statusManagerImp.getTaskData(element)!;
+    return new TaskTreeItem(element, taskData.status, taskData.command);
   }
 
   getChildren(_element?: TaskId): vscode.ProviderResult<TaskId[]> {
@@ -183,9 +190,10 @@ class StatusTreeData implements vscode.TreeDataProvider<TaskId> {
 }
 
 class TaskTreeItem extends vscode.TreeItem {
-  constructor(readonly title: string, status: TaskStatus) {
+  constructor(readonly title: string, status: TaskStatus, command?: vscode.Command) {
     super(title, vscode.TreeItemCollapsibleState.None);
     this.iconPath = new vscode.ThemeIcon(getIcon(status));
+    this.command = command;
   }
 }
 

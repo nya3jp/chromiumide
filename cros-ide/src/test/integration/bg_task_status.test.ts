@@ -48,8 +48,8 @@ describe('Background Task Status', () => {
   it('changes status bar item when tasks are added and removed', () => {
     assertShowsOk(statusBarItem);
 
-    statusManager.setTask('error-A', TaskStatus.ERROR);
-    statusManager.setTask('error-B', TaskStatus.ERROR);
+    statusManager.setTask('error-A', {status: TaskStatus.ERROR});
+    statusManager.setTask('error-B', {status: TaskStatus.ERROR});
     assertShowsError(statusBarItem);
 
     statusManager.deleteTask('error-A');
@@ -65,9 +65,9 @@ describe('Background Task Status', () => {
   });
 
   it('shows abbreviated status of tasks (running -> errors -> warnings -> ok)', () => {
-    statusManager.setTask('running', TaskStatus.RUNNING);
-    statusManager.setTask('ok', TaskStatus.OK);
-    statusManager.setTask('error', TaskStatus.ERROR);
+    statusManager.setTask('running', {status: TaskStatus.RUNNING});
+    statusManager.setTask('ok', {status: TaskStatus.OK});
+    statusManager.setTask('error', {status: TaskStatus.ERROR});
     assert.deepStrictEqual(statusBarItem.text, '$(sync~spin) CrOS IDE');
     assert.deepStrictEqual(statusBarItem.backgroundColor, errorBgColor);
 
@@ -85,17 +85,17 @@ describe('Background Task Status', () => {
   });
 
   it('implements TreeDataProvider.getChildren()', () => {
-    statusManager.setTask('task-1', TaskStatus.OK);
-    statusManager.setTask('task-2', TaskStatus.OK);
+    statusManager.setTask('task-1', {status: TaskStatus.OK});
+    statusManager.setTask('task-2', {status: TaskStatus.OK});
 
     const children = statusTreeData.getChildren(undefined) as TaskId[];
     assert.deepStrictEqual(children.sort(), ['task-1', 'task-2']);
   });
 
   it('provides TreeItems with status icons', () => {
-    statusManager.setTask('task-ok', TaskStatus.OK);
-    statusManager.setTask('task-error', TaskStatus.ERROR);
-    statusManager.setTask('task-running', TaskStatus.RUNNING);
+    statusManager.setTask('task-ok', {status: TaskStatus.OK});
+    statusManager.setTask('task-error', {status: TaskStatus.ERROR});
+    statusManager.setTask('task-running', {status: TaskStatus.RUNNING});
 
     const testCases: {
       taskName: string,
@@ -111,5 +111,18 @@ describe('Background Task Status', () => {
       const icon = treeItem.iconPath! as vscode.ThemeIcon;
       assert.deepStrictEqual(icon.id, tc.iconId);
     }
+  });
+
+  it('provides TreeItems with commands', () => {
+    const command: vscode.Command = {title: '', command: 'command1'};
+    statusManager.setTask('task-1', {status: TaskStatus.OK, command});
+
+    let treeItem = statusTreeData.getTreeItem('task-1') as vscode.TreeItem;
+    assert.deepStrictEqual(treeItem.command, command);
+
+    statusManager.deleteTask('task-1');
+    statusManager.setTask('task-1', {status: TaskStatus.OK});
+    treeItem = statusTreeData.getTreeItem('task-1') as vscode.TreeItem;
+    assert.deepStrictEqual(treeItem.command, undefined);
   });
 });

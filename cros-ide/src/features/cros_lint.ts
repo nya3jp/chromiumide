@@ -65,6 +65,10 @@ const lintConfigs = new Map<string, LintConfig>([
 
 const LINTER_TASK_ID = 'Linter';
 
+const SHOW_LOG_COMMAND: vscode.Command = {
+  title: '', command: 'cros-ide.showIdeLog',
+};
+
 async function updateCrosLintDiagnostics(
     document: vscode.TextDocument,
     collection: vscode.DiagnosticCollection,
@@ -78,13 +82,15 @@ async function updateCrosLintDiagnostics(
           {ignoreNonZeroExit: true, logStdout: true});
       if (res instanceof Error) {
         ideUtilities.getLogger().append(res.message),
-        statusManager.setTask(LINTER_TASK_ID, bgTaskStatus.TaskStatus.ERROR);
+        statusManager.setTask(LINTER_TASK_ID,
+            {status: bgTaskStatus.TaskStatus.ERROR, command: SHOW_LOG_COMMAND});
         return;
       }
       const {stdout, stderr} = res;
       const diagnostics = lintConfig.parse(stdout, stderr, document);
       collection.set(document.uri, diagnostics);
-      statusManager.setTask(LINTER_TASK_ID, bgTaskStatus.TaskStatus.OK);
+      statusManager.setTask(LINTER_TASK_ID,
+          {status: bgTaskStatus.TaskStatus.OK, command: SHOW_LOG_COMMAND});
     }
   } else {
     collection.clear();

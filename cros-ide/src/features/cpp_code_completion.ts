@@ -46,6 +46,10 @@ const MNT_HOST_SOURCE = '/mnt/host/source'; // realpath of ~/chromiumos
 
 const STATUS_BAR_TASK_ID = 'cpp_code_completion';
 
+const SHOW_LOG_COMMAND: vscode.Command = {
+  title: '', command: 'cros-ide.showIdeLog',
+};
+
 class CompilationDatabase {
   private enabled = true;
   private readonly manager = new commonUtil.JobManager<void>();
@@ -120,11 +124,13 @@ class CompilationDatabase {
           throw res;
         }
 
-        this.statusManager.setTask(STATUS_BAR_TASK_ID, bgTaskStatus.TaskStatus.OK);
+        this.statusManager.setTask(STATUS_BAR_TASK_ID,
+            {status: bgTaskStatus.TaskStatus.OK, command: SHOW_LOG_COMMAND});
       } catch (e) {
         ideUtilities.getLogger().appendLine((e as Error).message);
         console.error(e);
-        this.statusManager.setTask(STATUS_BAR_TASK_ID, bgTaskStatus.TaskStatus.ERROR);
+        this.statusManager.setTask(STATUS_BAR_TASK_ID,
+            {status: bgTaskStatus.TaskStatus.ERROR, command: SHOW_LOG_COMMAND});
       }
     });
   }
@@ -132,7 +138,8 @@ class CompilationDatabase {
   /** Runs emerge and shows a spinning progress indicator in the status bar. */
   async runEmerge(board: string, pkg: string): Promise<Error|undefined> {
     const task = `Building refs for ${pkg}`;
-    this.statusManager.setTask(task, bgTaskStatus.TaskStatus.RUNNING);
+    this.statusManager.setTask(task,
+        {status: bgTaskStatus.TaskStatus.RUNNING, command: SHOW_LOG_COMMAND});
 
     // TODO(b/228411680): Handle additional status bar items in StatusManager,
     // so we don't have to do it here.
