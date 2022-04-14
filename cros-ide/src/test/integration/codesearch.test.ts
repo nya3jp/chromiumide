@@ -33,11 +33,15 @@ class FakeWorkspaceConfiguration {
   }
 }
 
-describe('CodeSearch: searching for selection', async () => {
-  const textDocument = await vscode.workspace.openTextDocument({
-    content: 'Give people the power to share\nand make the world more open and connected.'});
-  const textEditor = await vscode.window.showTextDocument(textDocument);
-  textEditor.selection = new vscode.Selection(0, 5, 0, 11); // selects 'people'
+describe('CodeSearch: searching for selection', () => {
+  let textEditor: vscode.TextEditor;
+
+  before(async () => {
+    const textDocument = await vscode.workspace.openTextDocument({
+      content: 'Give people the power to share\nand make the world more open and connected.'});
+    textEditor = await vscode.window.showTextDocument(textDocument);
+    textEditor.selection = new vscode.Selection(0, 5, 0, 11); // selects 'people'
+  });
 
   it('in public CS', async () => {
     const config = new FakeWorkspaceConfiguration('public').asVscodeType();
