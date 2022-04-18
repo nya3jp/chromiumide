@@ -36,7 +36,7 @@ class FakeWorkspaceConfiguration {
 describe('CodeSearch: searching for selection', () => {
   let textEditor: vscode.TextEditor;
 
-  before(async () => {
+  beforeAll(async () => {
     const textDocument = await vscode.workspace.openTextDocument({
       content: 'Give people the power to share\nand make the world more open and connected.'});
     textEditor = await vscode.window.showTextDocument(textDocument);

@@ -29,20 +29,15 @@ Remarks: Unrestrictive license along the lines of MIT\
 Used for unit-tests\
 License: ISC
 
+Name: Jasmine\
+URL: https://jasmine.github.io/\
+Remarks:\
+License: MIT
+
 Name: Typescript\
 URL: https://github.com/microsoft/TypeScript\
 Remarks:\
 License: Apache-2.0
-
-Name: mocha\
-URL: https://github.com/mochajs/mocha\
-Remarks:\
-License: MIT
-
-Name: SinonJS\
-URL: https://github.com/sinonjs/sinon\
-Remarks:\
-License: BSD-3-Clause
 
 Name: ts-loader\
 URL: https://github.com/TypeStrong/ts-loader\
