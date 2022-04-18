@@ -25,7 +25,6 @@ export function createTerminalForHost(
   const terminal = vscode.window.createTerminal(`${namePrefix} ${host}`);
 
   terminal.sendText(
-    // eslint-disable-next-line max-len
     'ssh '.concat(
       sshFormatArgs(
         host,
@@ -87,7 +86,6 @@ export function sshFormatArgs(
   }
 
   let args = ['-i', testingRsaPath];
-  // eslint-disable-next-line max-len
   const trailingArgs = [
     '-o StrictHostKeyChecking=no',
     '-o UserKnownHostsFile=/dev/null',
