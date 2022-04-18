@@ -26,7 +26,7 @@ class FakeWorkspaceConfiguration {
   }
 
   get(section: string): string {
-    if (section != 'codeSearch') {
+    if (section !== 'codeSearch') {
       throw new Error(`unexpected section: ${section}`);
     }
     return this.value;

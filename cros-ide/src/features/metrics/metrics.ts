@@ -95,7 +95,7 @@ export class Analytics {
    * https://developers.google.com/analytics/devguides/collection/protocol/v1/devguide
    */
   private eventToQuery(event: Event) {
-    const data: any = {
+    const data: Record<string, string | number> = {
       v: protocolVersion,
       tid: this.trackingId,
       uid: this.userId,
@@ -132,8 +132,8 @@ export class Analytics {
 
     const req = https.request(options, res => {
       console.debug(`Sent request, status code = ${res.statusCode}`);
-      const body: any[] = [];
-      res.on('data', chunk => {
+      const body: Buffer[] = [];
+      res.on('data', (chunk: Buffer) => {
         body.push(chunk);
       });
       res.on(`end`, () => {

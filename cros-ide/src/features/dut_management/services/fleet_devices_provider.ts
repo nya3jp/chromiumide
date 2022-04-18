@@ -48,10 +48,12 @@ export class FleetDevicesProvider implements vscode.TreeDataProvider<string> {
         continue;
       }
       const p = (async () => {
-        let version = '???';
+        let version;
         try {
           version = await dutServices.queryHostVersion(dut.hostname, this.testingRsaPath);
-        } catch (_) { }
+        } catch (_) {
+          version = '???';
+        }
         dut.version = version;
         this.onDidChangeTreeDataEmitter.fire();
       })().catch((_) => { });

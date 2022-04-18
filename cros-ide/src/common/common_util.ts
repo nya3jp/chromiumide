@@ -19,7 +19,7 @@ export function isInsideChroot(): boolean {
 class Task<T> {
   constructor(readonly job: () => Promise<T>,
     readonly resolve: (x: T | null) => void,
-    readonly reject: (reason?: any) => void) {
+    readonly reject: (reason?: unknown) => void) {
   }
   cancel() {
     this.resolve(null);

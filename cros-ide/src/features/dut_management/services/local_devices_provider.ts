@@ -47,10 +47,12 @@ export class LocalDevicesProvider implements vscode.TreeDataProvider<string> {
         continue;
       }
       (async () => {
-        let version = '???';
+        let version;
         try {
           version = await dutServices.queryHostVersion(host, this.testingRsaPath);
-        } catch (_) { }
+        } catch (_) {
+          version = '???';
+        }
         this.cachedVersions.set(host, version);
         this.onDidChangeTreeDataEmitter.fire();
       })().catch((_) => { });

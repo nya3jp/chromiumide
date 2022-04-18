@@ -65,7 +65,7 @@ export function sshFormatArgs(host: string, cmd: string, testingRsaPath: string,
     extraOptions ?: string): string[] {
   let port = '22';
   const [hostname, portname] = host.split(':');
-  if (portname != null) {
+  if (portname !== undefined) {
     host = hostname;
     port = portname;
   }
@@ -73,7 +73,7 @@ export function sshFormatArgs(host: string, cmd: string, testingRsaPath: string,
   let args = ['-i', testingRsaPath];
   // eslint-disable-next-line max-len
   const trailingArgs = ['-o StrictHostKeyChecking=no', '-o UserKnownHostsFile=/dev/null', '-p', port, `root@${host}`, cmd];
-  if (extraOptions != null) {
+  if (extraOptions !== undefined) {
     args.push(extraOptions);
   }
   args = args.concat(trailingArgs);

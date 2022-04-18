@@ -88,7 +88,7 @@ function todoLdapUri(match: RegExpMatchArray): vscode.Uri {
 //  - start of line
 //  - whitespace
 //  - match to '(', because links are often used in "TODO(link)"
-const shortLinkPattern = /(?<=^|\s|\()\b([a-z]{1,5}(?:\.com)?)\/([^)\s.,;'\"]+)/g;
+const shortLinkPattern = /(?<=^|\s|\()\b([a-z]{1,5}(?:\.com)?)\/([^)\s.,;'"]+)/g;
 
 // Extract the uri from matches to shortLinkPattern.
 function shortLinkUri(match: RegExpMatchArray): vscode.Uri {

@@ -228,20 +228,22 @@ export function parseArgs(args: string[]): Config {
       case '--upload':
         config.upload = true;
         break;
-      case '--force':
+      case '--force': {
         const s = args.shift();
         if (!s) {
           throw new Error('Version is not given; see --help');
         }
         config.forceVersion = versionFromString(s);
         break;
-      case '--exe':
+      }
+      case '--exe': {
         const exe = args.shift();
         if (!exe) {
           throw new Error('Executable path is not given; see --help');
         }
         config.exe = exe;
         break;
+      }
       case '--help':
         config.help = true;
         break;

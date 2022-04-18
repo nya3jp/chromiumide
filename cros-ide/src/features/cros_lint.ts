@@ -143,7 +143,7 @@ export function parseCrosLintGn(_stdout: string, stderr: string, document: vscod
   // - file not formatted by gn-format: should do auto-format upon save
   // - wrong commandline arguments: should be covered by extension unit test
   // So these are ignored.
-  const lineRE = /ERROR: ([^ \n\:]+):([0-9]+):([0-9]+): (.*)/gm;
+  const lineRE = /ERROR: ([^ \n:]+):([0-9]+):([0-9]+): (.*)/gm;
   const diagnostics: vscode.Diagnostic[] = [];
   let match: RegExpExecArray | null;
   while ((match = lineRE.exec(stderr)) !== null) {
@@ -162,7 +162,7 @@ export function parseCrosLintGn(_stdout: string, stderr: string, document: vscod
 export function parseCrosLintPython(
     stdout: string, _stderr: string, document: vscode.TextDocument)
   : vscode.Diagnostic[] {
-  const lineRE = /^([^ \n\:]+):([0-9]+):([0-9]+): (.*)/gm;
+  const lineRE = /^([^ \n:]+):([0-9]+):([0-9]+): (.*)/gm;
   const diagnostics: vscode.Diagnostic[] = [];
   let match: RegExpExecArray | null;
   while ((match = lineRE.exec(stdout)) !== null) {
@@ -182,7 +182,7 @@ export function parseCrosLintPython(
 export function parseCrosLintShell(
     stdout: string, _stderr: string, document: vscode.TextDocument)
   : vscode.Diagnostic[] {
-  const lineRE = /^([^ \n\:]+):([0-9]+):([0-9]+): (.*)/gm;
+  const lineRE = /^([^ \n:]+):([0-9]+):([0-9]+): (.*)/gm;
   const diagnostics: vscode.Diagnostic[] = [];
   let match: RegExpExecArray | null;
   while ((match = lineRE.exec(stdout)) !== null) {

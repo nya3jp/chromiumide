@@ -9,7 +9,7 @@ import * as shortLinkProvider from '../../features/short_link_provider';
 
 const fakeCancellationToken = new class implements vscode.CancellationToken {
   isCancellationRequested!: boolean;
-  onCancellationRequested!: vscode.Event<any>;
+  onCancellationRequested!: vscode.Event<never>;
 };
 
 // Create vscode.TextDocument from text and run ShortLinkProvider on it.
