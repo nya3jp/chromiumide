@@ -23,8 +23,7 @@ export async function run(_context: vscode.ExtensionContext) {
 
 const INSTALL = 'Install';
 
-// TODO(oka): Test this function.
-async function showInstallPrompt(installed: string, available: string) {
+export async function showInstallPrompt(installed: string, available: string) {
   const selection = await vscode.window.showInformationMessage(
       `New version of CrOS IDE is available (installed: ${installed}, available: ${available}).`,
       INSTALL, 'Dismiss');

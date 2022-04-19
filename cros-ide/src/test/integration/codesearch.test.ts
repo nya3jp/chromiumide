@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'jasmine';
 import * as vscode from 'vscode';
 import * as codesearch from '../../features/codesearch';
+import {installVscodeDouble} from './doubles';
 
 const {CodeSearch} = codesearch.TEST_ONLY;
 
@@ -34,6 +34,8 @@ class FakeWorkspaceConfiguration {
 }
 
 describe('CodeSearch: searching for selection', () => {
+  const {vscodeSpy} = installVscodeDouble();
+
   let textEditor: vscode.TextEditor;
 
   beforeAll(async () => {
@@ -46,27 +48,24 @@ describe('CodeSearch: searching for selection', () => {
   it('in public CS', async () => {
     // TODO(ttylenda): Figure our how to stub WorkspaceConfiguration better.
     const config = new FakeWorkspaceConfiguration('public').asVscodeType();
-    const openExternal = spyOn(vscode.env, 'openExternal');
-
     const codeSearch = new CodeSearch(() => config);
 
     // TODO(ttylenda): Call the VSCode command instead calling the TS method.
     codeSearch.searchSelection(textEditor);
 
     const expectedUri = vscode.Uri.parse('https://source.chromium.org/search?q=people');
-    expect(openExternal).toHaveBeenCalledWith(expectedUri);
+    expect(vscodeSpy.env.openExternal).toHaveBeenCalledWith(expectedUri);
   });
 
-  it('in internal CS', async () => {
+  it('in internal CS', () => {
     const config = new FakeWorkspaceConfiguration('internal').asVscodeType();
-    const openExternal = spyOn(vscode.env, 'openExternal');
 
     const codeSearch = new CodeSearch(() => config);
 
     codeSearch.searchSelection(textEditor);
 
     const expectedUri = vscode.Uri.parse('https://source.corp.google.com/search?q=people');
-    expect(openExternal).toHaveBeenCalledWith(expectedUri);
+    expect(vscodeSpy.env.openExternal).toHaveBeenCalledWith(expectedUri);
   });
 });
 
