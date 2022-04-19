@@ -306,7 +306,7 @@
     "package": "webpack --mode production --devtool hidden-source-map",
     "compile-tests": "tsc -p . --outDir out",
     "lint": "eslint src --ext ts",
-    "test": "npm run compile-tests && npm run compile && npm run lint && xvfb-run -a node ./out/test/runTest.js",
+    "test": "rm -rf out && npm run compile-tests && npm run compile && npm run lint && xvfb-run -a node ./out/test/runTest.js",
     "unit-test": "npm run compile-tests && node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit",
     "publish": "./install.sh --upload"
   },
