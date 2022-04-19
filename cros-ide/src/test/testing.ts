@@ -4,13 +4,19 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as commonUtil from '../common/common_util';
+import {ExecResult} from '../common/common_util';
 
-/** Returns fake stdout or undefined if args is not handled. */
-type Handler = (args: string[]) => Promise<string | undefined>;
+/**
+ * Returns execution result or undefined if args is not handled.
+ *
+ * The result can be just a string, which will be returned as stdout with zero exit status.
+ * `ExecResult`, can emulate return with stderr and non-zero exit status.
+ * `Error` can be used to simulate that the command was not found.
+ */
+type Handler = (args: string[]) => Promise<string|ExecResult|Error|undefined>;
 
 export function exactMatch(wantArgs: string[],
-    handle: () => Promise<string>): Handler {
+    handle: () => Promise<string|ExecResult|Error>): Handler {
   return async args => {
     if (wantArgs.length === args.length &&
       wantArgs.every((x, i) => x === args[i])) {
@@ -48,12 +54,16 @@ export class FakeExec {
   }
   async exec(name: string, args: string[],
       _log?: (line: string) => void,
-      _opt?: { logStdout?: boolean }): Promise<commonUtil.ExecResult> {
+      _opt?: { logStdout?: boolean }): Promise<ExecResult|Error> {
     for (const handler of (this.handlers.get(name) || [])) {
-      const stdout = await handler(args);
-      if (stdout !== undefined) {
-        return {exitStatus: 0, stdout, stderr: ''};
+      const result = await handler(args);
+      if (result === undefined) {
+        continue;
       }
+      if (typeof(result) === 'string') {
+        return {exitStatus: 0, stdout: result, stderr: ''};
+      }
+      return result;
     }
     throw new Error(`${name} ${args.join(' ')}: not handled`);
   }
