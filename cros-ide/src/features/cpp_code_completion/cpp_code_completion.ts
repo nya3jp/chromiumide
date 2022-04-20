@@ -9,7 +9,7 @@ import * as commonUtil from '../../common/common_util';
 import * as ideUtil from '../../ide_util';
 import * as bgTaskStatus from '../../ui/bg_task_status';
 import * as constants from './constants';
-import {Packages} from './packages';
+import {Packages, PackageInfo} from './packages';
 
 export function activate(
   context: vscode.ExtensionContext,
@@ -20,8 +20,8 @@ export function activate(
 
   const compildationDatabase = new CompilationDatabase(
     statusManager,
-    log,
-    new Packages()
+    new Packages(),
+    log
   );
 
   context.subscriptions.push(
@@ -60,8 +60,8 @@ class CompilationDatabase {
 
   constructor(
     private readonly statusManager: bgTaskStatus.StatusManager,
-    private readonly log: vscode.OutputChannel,
-    private readonly packages: Packages
+    private readonly packages: Packages,
+    private readonly log: vscode.OutputChannel
   ) {}
 
   // Generate compilation database for clangd.
@@ -74,7 +74,6 @@ class CompilationDatabase {
     if (!packageInfo) {
       return;
     }
-    const {sourceDir, atom} = packageInfo;
 
     const board = await ideUtil.getOrSelectTargetBoard();
     if (board instanceof ideUtil.NoBoardError) {
@@ -94,65 +93,7 @@ class CompilationDatabase {
         return; // early return from queued job.
       }
       try {
-        const {shouldRun, userConsent} = await shouldRunCrosWorkon(board, atom);
-        if (shouldRun && !userConsent) {
-          return;
-        }
-        if (shouldRun) {
-          const res = await commonUtil.exec(
-            'cros_workon',
-            ['--board', board, 'start', atom],
-            this.log.append
-          );
-          if (res instanceof Error) {
-            throw res;
-          }
-        }
-
-        const error = await this.runEmerge(board, atom);
-        if (error) {
-          vscode.window.showErrorMessage(error.message);
-          return;
-        }
-
-        const filepath = `/build/${board}/build/compilation_database/${atom}/compile_commands_chroot.json`;
-        if (!fs.existsSync(filepath)) {
-          const dismiss = 'Dismiss';
-          const dialog = vscode.window.showErrorMessage(
-            'Compilation database not found. ' +
-              `Update the ebuild file for ${atom} to generate it. ` +
-              'Example: https://crrev.com/c/2909734',
-            dismiss
-          );
-          const answer = await commonUtil.withTimeout(dialog, 30 * 1000);
-          if (answer === dismiss) {
-            this.enabled = false;
-          }
-          return;
-        }
-
-        // Make the generated compilation database available from clangd.
-        const res = await commonUtil.exec(
-          'ln',
-          [
-            '-sf',
-            filepath,
-            path.join(
-              constants.MNT_HOST_SOURCE,
-              sourceDir,
-              'compile_commands.json'
-            ),
-          ],
-          this.log.append
-        );
-        if (res instanceof Error) {
-          throw res;
-        }
-
-        this.statusManager.setTask(STATUS_BAR_TASK_ID, {
-          status: bgTaskStatus.TaskStatus.OK,
-          command: SHOW_LOG_COMMAND,
-        });
+        await this.generateCompilationDatabase(board, packageInfo);
       } catch (e) {
         this.log.appendLine((e as Error).message);
         console.error(e);
@@ -160,8 +101,74 @@ class CompilationDatabase {
           status: bgTaskStatus.TaskStatus.ERROR,
           command: SHOW_LOG_COMMAND,
         });
+        return;
       }
+      this.statusManager.setTask(STATUS_BAR_TASK_ID, {
+        status: bgTaskStatus.TaskStatus.OK,
+        command: SHOW_LOG_COMMAND,
+      });
     });
+  }
+
+  /**
+   * Actual logic to generate compilation database.
+   */
+  async generateCompilationDatabase(
+    board: string,
+    {sourceDir, atom}: PackageInfo
+  ) {
+    const {shouldRun, userConsent} = await shouldRunCrosWorkon(board, atom);
+    if (shouldRun && !userConsent) {
+      return;
+    }
+    if (shouldRun) {
+      const res = await commonUtil.exec(
+        'cros_workon',
+        ['--board', board, 'start', atom],
+        this.log.append
+      );
+      if (res instanceof Error) {
+        throw res;
+      }
+    }
+
+    const error = await this.runEmerge(board, atom);
+    if (error) {
+      vscode.window.showErrorMessage(error.message);
+      return;
+    }
+
+    const filepath = `/build/${board}/build/compilation_database/${atom}/compile_commands_chroot.json`;
+    if (!fs.existsSync(filepath)) {
+      const dismiss = 'Dismiss';
+      const dialog = vscode.window.showErrorMessage(
+        `Compilation database not found. Update the ebuild file for ${atom} to generate it. Example: https://crrev.com/c/2909734`,
+        dismiss
+      );
+      const answer = await commonUtil.withTimeout(dialog, 30 * 1000);
+      if (answer === dismiss) {
+        this.enabled = false;
+      }
+      return;
+    }
+
+    // Make the generated compilation database available from clangd.
+    const res = await commonUtil.exec(
+      'ln',
+      [
+        '-sf',
+        filepath,
+        path.join(
+          constants.MNT_HOST_SOURCE,
+          sourceDir,
+          'compile_commands.json'
+        ),
+      ],
+      this.log.append
+    );
+    if (res instanceof Error) {
+      throw res;
+    }
   }
 
   /** Runs emerge and shows a spinning progress indicator in the status bar. */
