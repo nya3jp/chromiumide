@@ -53,7 +53,7 @@ class CodeSearch {
     );
 
     if (res instanceof Error) {
-      vscode.window.showErrorMessage('Could not run generate_cs_path:' + res);
+      vscode.window.showErrorMessage('Could not run generate_cs_path: ' + res);
       return;
     }
 

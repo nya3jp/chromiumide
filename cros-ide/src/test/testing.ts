@@ -89,3 +89,20 @@ export async function putFiles(dir: string, files: {[name: string]: string}) {
     await fs.promises.writeFile(path.join(dir, name), content);
   }
 }
+
+type StateInitializer<T> = (() => Promise<T>) | (() => T);
+
+/** See go/cleanstate. */
+export function cleanState<NewState extends {}>(
+  init: StateInitializer<NewState>
+): NewState {
+  const state = {} as NewState;
+  beforeEach(async () => {
+    // Clear state before every test case.
+    for (const prop of Object.getOwnPropertyNames(state)) {
+      delete (state as {[k: string]: unknown})[prop];
+    }
+    Object.assign(state, await init());
+  });
+  return state;
+}

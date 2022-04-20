@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import * as commonUtil from '../../common/common_util';
 import * as codesearch from '../../features/codesearch';
+import {cleanState, exactMatch, FakeExec} from '../testing';
 import {installVscodeDouble} from './doubles';
 
 const {CodeSearch} = codesearch.TEST_ONLY;
@@ -75,4 +77,94 @@ describe('CodeSearch: searching for selection', () => {
   });
 });
 
-// TODO(ttylenda): Test opening the current file.
+describe('CodeSearch: opening current file', () => {
+  const {vscodeSpy} = installVscodeDouble();
+
+  const t = cleanState(() => ({
+    codeSearch: new CodeSearch(() =>
+      new FakeWorkspaceConfiguration('public').asVscodeType()
+    ),
+
+    // We need an editor with file path, so we cannot use a real object
+    // like in the tests which open selection.
+    fakeTextEditor: {
+      document: {
+        fileName:
+          '/home/sundar/chromiumos/src/platform2/cros-disks/archive_mounter.cc',
+      },
+      selection: {
+        active: {
+          line: 40,
+        },
+      },
+    } as unknown as vscode.TextEditor,
+
+    generateCsLinkInvocation:
+      '~/chromiumos/chromite/contrib/generate_cs_path ' +
+      '--show "--public" --line=41 ' +
+      '"/home/sundar/chromiumos/src/platform2/cros-disks/archive_mounter.cc"',
+  }));
+
+  it('opens browser window', async () => {
+    const CS_LINK =
+      'https://source.chromium.org/chromiumos/chromiumos/codesearch/+/HEAD:' +
+      'src/platform2/cros-disks/archive_mounter.cc;l=41';
+
+    const fakeExec = new FakeExec().on(
+      'sh',
+      exactMatch(['-c', t.generateCsLinkInvocation], async () => {
+        return CS_LINK;
+      })
+    );
+    const cleanUp = commonUtil.setExecForTesting(fakeExec.exec.bind(fakeExec));
+
+    try {
+      await t.codeSearch.openCurrentFile(t.fakeTextEditor);
+
+      const expectedUri = vscode.Uri.parse(CS_LINK);
+      expect(vscodeSpy.env.openExternal).toHaveBeenCalledWith(expectedUri);
+    } finally {
+      cleanUp();
+    }
+  });
+
+  it('shows error popup when generate_cs_link cannot be found', async () => {
+    const fakeExec = new FakeExec().on(
+      'sh',
+      exactMatch(['-c', t.generateCsLinkInvocation], async () => {
+        return Error('not found');
+      })
+    );
+    const cleanUp = commonUtil.setExecForTesting(fakeExec.exec.bind(fakeExec));
+
+    try {
+      await t.codeSearch.openCurrentFile(t.fakeTextEditor);
+
+      expect(vscodeSpy.window.showErrorMessage).toHaveBeenCalledWith(
+        'Could not run generate_cs_path: Error: not found'
+      );
+    } finally {
+      cleanUp();
+    }
+  });
+
+  it('shows error popup when generate_cs_link fails', async () => {
+    const fakeExec = new FakeExec().on(
+      'sh',
+      exactMatch(['-c', t.generateCsLinkInvocation], async () => {
+        return {stdout: '', stderr: 'error msg', exitStatus: 1};
+      })
+    );
+    const cleanUp = commonUtil.setExecForTesting(fakeExec.exec.bind(fakeExec));
+
+    try {
+      await t.codeSearch.openCurrentFile(t.fakeTextEditor);
+
+      expect(vscodeSpy.window.showErrorMessage).toHaveBeenCalledWith(
+        'generate_cs_path returned an error: error msg'
+      );
+    } finally {
+      cleanUp();
+    }
+  });
+});

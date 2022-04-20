@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import {cleanState} from '../testing';
 
 const VSCODE_SPY = newVscodeSpy();
 
@@ -17,6 +18,7 @@ type SpiableVscodeWindow = Omit<
 > & {
   // Original type doesn't work due to
   // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/42455 .
+  showErrorMessage: jasmine.Func;
   showInformationMessage: jasmine.Func;
 };
 
@@ -30,6 +32,7 @@ function newVscodeSpy() {
       'openExternal',
     ]),
     window: jasmine.createSpyObj<SpiableVscodeWindow>('vscode.window', [
+      'showErrorMessage',
       'showInformationMessage',
     ]),
     workspace: jasmine.createSpyObj<typeof vscode.workspace>(
@@ -109,21 +112,4 @@ function buildNamespace(
     ]),
     ...Object.entries(emitters).map(([key, emitter]) => [key, emitter.event]),
   ]);
-}
-
-type StateInitializer<T> = (() => Promise<T>) | (() => T);
-
-// See go/cleanstate.
-function cleanState<NewState extends {}>(
-  init: StateInitializer<NewState>
-): NewState {
-  const state = {} as NewState;
-  beforeEach(async () => {
-    // Clear state before every test case.
-    for (const prop of Object.getOwnPropertyNames(state)) {
-      delete (state as {[k: string]: unknown})[prop];
-    }
-    Object.assign(state, await init());
-  });
-  return state;
 }
