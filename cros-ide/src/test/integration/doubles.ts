@@ -14,9 +14,9 @@ export interface VscodeSpy {
     openExternal: jasmine.Spy<typeof vscode.env.openExternal>;
   };
   window: {
-    // any instead of `typeof vscode.window.showInformationMessage` to workaround
-    // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/42455
-    showInformationMessage: jasmine.Spy<any>;
+    // `typeof vscode.window.showInformationMessage` doesn't work due to
+    // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/42455 .
+    showInformationMessage: jasmine.Spy<jasmine.Func>;
   };
 }
 
@@ -44,8 +44,8 @@ export function installVscodeDouble(): {vscodeSpy: VscodeSpy} {
   };
   const real = vscode;
   beforeEach(() => {
-    real.window = vscodeSpy.window as any as typeof vscode.window;
-    real.env = vscodeSpy.env as any as typeof vscode.env;
+    real.window = vscodeSpy.window as unknown as typeof vscode.window;
+    real.env = vscodeSpy.env as unknown as typeof vscode.env;
   });
   afterEach(() => {
     real.window = original.window;
@@ -67,7 +67,7 @@ function cleanState<NewState extends {}>(
   beforeEach(async () => {
     // Clear state before every test case.
     for (const prop of Object.getOwnPropertyNames(state)) {
-      delete (state as {[k: string]: any})[prop];
+      delete (state as {[k: string]: unknown})[prop];
     }
     Object.assign(state, await init());
   });
