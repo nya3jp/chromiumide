@@ -107,6 +107,5 @@ Note that we have slight deviations from [Google TypeScript style guide]:
 
 * [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
 * [Project Documentation (Google Internal)](http://go/cros-ide)
-* [Project Dependencies](./dependencies.md)
 
 -----------------------------------------------------------------------------------------------------------
