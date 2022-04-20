@@ -8,7 +8,7 @@
 import * as commonUtil from '../../../common/common_util';
 import * as metrics from '../../../features/metrics/metrics';
 import * as dutManager from '../dut_manager';
-import * as ideutil from '../../../ide_utilities';
+import * as ideUtil from '../../../ide_util';
 
 const BUILDER_PATH_RE = /CHROMEOS_RELEASE_BUILDER_PATH=(.*)/;
 
@@ -30,10 +30,10 @@ export async function queryHostVersion(
   host: string,
   testingRsaPath: string
 ): Promise<string> {
-  ideutil.getUiLogger().appendLine('Querying host version');
+  ideUtil.getUiLogger().appendLine('Querying host version');
   const res = await commonUtil.exec(
     'ssh',
-    ideutil.sshFormatArgs(host, 'cat /etc/lsb-release', testingRsaPath)
+    ideUtil.sshFormatArgs(host, 'cat /etc/lsb-release', testingRsaPath)
   );
 
   if (res instanceof Error) {

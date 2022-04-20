@@ -5,7 +5,7 @@
 import * as assert from 'assert';
 import * as path from 'path';
 import * as commonUtil from '../../common/common_util';
-import * as ideUtilities from '../../ide_utilities';
+import * as ideUtil from '../../ide_util';
 import * as testing from '../testing';
 
 describe('IDE utilities', () => {
@@ -46,7 +46,7 @@ describe('IDE utilities', () => {
         const appName = tc.appName;
         const expected = path.join(home, tc.exe);
         assert.strictEqual(
-          ideUtilities.vscodeExecutablePath(appRoot, appName),
+          ideUtil.vscodeExecutablePath(appRoot, appName),
           expected,
           tc.name
         );
@@ -62,22 +62,19 @@ describe('IDE utilities', () => {
 
       // Assert test is properly set up
       assert.strictEqual(
-        ideUtilities.vscodeExecutablePath(
-          path.join(home, 'foo'),
-          'code-server'
-        ),
+        ideUtil.vscodeExecutablePath(path.join(home, 'foo'), 'code-server'),
         path.join(home, 'foo/bin/code-server')
       );
 
       assert(
-        ideUtilities.vscodeExecutablePath(
+        ideUtil.vscodeExecutablePath(
           path.join(home, 'bar'),
           'code-server'
         ) instanceof Error,
         'not found'
       );
       assert(
-        ideUtilities.vscodeExecutablePath(
+        ideUtil.vscodeExecutablePath(
           path.join(home, 'foo'),
           'unknown app'
         ) instanceof Error,

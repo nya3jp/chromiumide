@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import * as ideUtilities from './ide_utilities';
+import * as ideUtil from './ide_util';
 import * as install from './tools/install';
 
 export async function run(_context: vscode.ExtensionContext) {
@@ -36,7 +36,7 @@ export async function showInstallPrompt(installed: string, available: string) {
     return;
   }
 
-  const exe = ideUtilities.vscodeExecutablePath();
+  const exe = ideUtil.vscodeExecutablePath();
   if (exe instanceof Error) {
     await handleFailure(exe);
     return;

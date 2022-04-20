@@ -7,7 +7,7 @@
  */
 import * as vscode from 'vscode';
 import * as commonUtil from '../../common/common_util';
-import * as ideutil from '../../ide_utilities';
+import * as ideUtil from '../../ide_util';
 import * as metrics from '../../features/metrics/metrics';
 import * as fleetProvider from './services/fleet_devices_provider';
 import * as vnc from './services/vnc_session';
@@ -60,7 +60,7 @@ export async function activateDutManager(context: vscode.ExtensionContext) {
   // }
 
   rsaKeyFixPermission(context);
-  const testRsaPath = ideutil.getTestingRsaPath(context);
+  const testRsaPath = ideUtil.getTestingRsaPath(context);
   const localDevicesProvider = new localProvider.LocalDevicesProvider(
     testRsaPath
   );
@@ -116,7 +116,7 @@ export async function activateDutManager(context: vscode.ExtensionContext) {
         }
 
         // Create a new terminal.
-        const terminal = ideutil.createTerminalForHost(
+        const terminal = ideUtil.createTerminalForHost(
           host,
           'CrOS: Shell',
           context
@@ -136,7 +136,7 @@ export async function activateDutManager(context: vscode.ExtensionContext) {
         return;
       }
 
-      const configRoot = ideutil.getConfigRoot();
+      const configRoot = ideUtil.getConfigRoot();
       const hosts = configRoot.get<string[]>('hosts') || [];
       hosts.push(host);
       configRoot.update('hosts', hosts, vscode.ConfigurationTarget.Global);
@@ -158,7 +158,7 @@ export async function activateDutManager(context: vscode.ExtensionContext) {
         // Try deleting crossfleet first. If not found, then try deleting
         // from "my devices"
         if (!(await fleetDevicesProvider.removeTreeItem(host))) {
-          const configRoot = ideutil.getConfigRoot();
+          const configRoot = ideUtil.getConfigRoot();
           const oldHosts = configRoot.get<string[]>('hosts') || [];
           const newHosts = oldHosts.filter(h => h !== host);
           configRoot.update(
@@ -198,7 +198,7 @@ export async function activateDutManager(context: vscode.ExtensionContext) {
  * Ensures that test_rsa key perms are 0600, otherwise cannot be used for ssh
  */
 async function rsaKeyFixPermission(context: vscode.ExtensionContext) {
-  const rsaKeyPath = ideutil.getTestingRsaPath(context);
+  const rsaKeyPath = ideUtil.getTestingRsaPath(context);
   await fs.promises.chmod(rsaKeyPath, '0600').catch(_err => {
     vscode.window.showErrorMessage(
       'Fatal: unable to update testing_rsa permission: ' + rsaKeyPath

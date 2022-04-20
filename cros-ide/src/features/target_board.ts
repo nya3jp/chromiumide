@@ -7,7 +7,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as ideUtilities from '../ide_utilities';
+import * as ideUtil from '../ide_util';
 
 const BOARD_CONFIG = 'cros-ide.board';
 
@@ -29,10 +29,10 @@ export function activate(context: vscode.ExtensionContext) {
   updateBoardStatus(boardStatusBarItem);
 
   vscode.commands.registerCommand('cros-ide.selectBoard', async () => {
-    const board = await ideUtilities.selectAndUpdateTargetBoard({
+    const board = await ideUtil.selectAndUpdateTargetBoard({
       suggestMostRecent: false,
     });
-    if (board instanceof ideUtilities.NoBoardError) {
+    if (board instanceof ideUtil.NoBoardError) {
       await vscode.window.showErrorMessage(`Selecting board: ${board.message}`);
       return;
     }
@@ -42,8 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 function updateBoardStatus(boardStatusBarItem: vscode.StatusBarItem) {
-  const board =
-    ideUtilities.getConfigRoot().get<string>(ideUtilities.BOARD) || '';
+  const board = ideUtil.getConfigRoot().get<string>(ideUtil.BOARD) || '';
   boardStatusBarItem.text = board;
   if (board) {
     boardStatusBarItem.show();

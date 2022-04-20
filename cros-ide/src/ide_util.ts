@@ -34,7 +34,7 @@ export function createTerminalForHost(
       ).join(' ')
     )
   );
-  metrics.send({category: 'ideutil', action: 'create terminal for host'});
+  metrics.send({category: 'ideUtil', action: 'create terminal for host'});
   return terminal;
 }
 

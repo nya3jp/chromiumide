@@ -6,7 +6,7 @@ import * as https from 'https';
 import * as os from 'os';
 import * as queryString from 'querystring';
 import * as vscode from 'vscode';
-import * as ideUtilities from '../../ide_utilities';
+import * as ideUtil from '../../ide_util';
 import * as metricsUtils from './metrics_util';
 
 const informationMessageTitle =
@@ -31,7 +31,7 @@ const informationMessageDetail =
   'Would you like to assist us by turning on metrics collection?';
 
 export function activate(_context: vscode.ExtensionContext) {
-  const showMessage = ideUtilities
+  const showMessage = ideUtil
     .getConfigRoot()
     .get<boolean>('metrics.showMessage');
   if (showMessage) {
@@ -43,7 +43,7 @@ export function activate(_context: vscode.ExtensionContext) {
       )
       .then(selection => {
         if (selection && selection === 'Yes') {
-          ideUtilities
+          ideUtil
             .getConfigRoot()
             .update(
               'metrics.collectMetrics',
@@ -52,7 +52,7 @@ export function activate(_context: vscode.ExtensionContext) {
             );
         }
       });
-    ideUtilities
+    ideUtil
       .getConfigRoot()
       .update('metrics.showMessage', false, vscode.ConfigurationTarget.Global);
   }
@@ -151,7 +151,7 @@ export class Analytics {
       true ||
       !this.userId ||
       this.userId === metricsUtils.externalUserIdStub() ||
-      !ideUtilities.getConfigRoot().get<boolean>('metrics.collectMetrics')
+      !ideUtil.getConfigRoot().get<boolean>('metrics.collectMetrics')
     ) {
       return;
     }

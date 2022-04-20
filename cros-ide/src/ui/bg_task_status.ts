@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import * as ideUtilities from '../ide_utilities';
+import * as ideUtil from '../ide_util';
 
 /**
  * Manages two UI elements showing task status: `StatusBarItem`, which is created here,
@@ -13,7 +13,7 @@ import * as ideUtilities from '../ide_utilities';
  */
 export function activate(_context: vscode.ExtensionContext): StatusManager {
   vscode.commands.registerCommand('cros-ide.showIdeLog', () => {
-    ideUtilities.getUiLogger().show();
+    ideUtil.getUiLogger().show();
   });
 
   const statusBarItem = vscode.window.createStatusBarItem(

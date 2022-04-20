@@ -20,21 +20,21 @@ import * as metrics from './features/metrics/metrics';
 import * as shortLinkProvider from './features/short_link_provider';
 import * as suggestExtension from './features/suggest_extension';
 import * as targetBoard from './features/target_board';
-import * as ideUtilities from './ide_utilities';
+import * as ideUtil from './ide_util';
 import * as bgTaskStatus from './ui/bg_task_status';
 
 export function activate(context: vscode.ExtensionContext) {
   const statusManager = bgTaskStatus.activate(context);
 
-  vscode.commands.registerCommand(ideUtilities.SHOW_UI_LOG.command, () =>
-    ideUtilities.getUiLogger().show()
+  vscode.commands.registerCommand(ideUtil.SHOW_UI_LOG.command, () =>
+    ideUtil.getUiLogger().show()
   );
 
   // We need an item in the IDE status, which lets users discover the UI log. Since UI actions
   // which result in an error should show a popup, we will not be changing the status
   statusManager.setTask('UI Actions', {
     status: bgTaskStatus.TaskStatus.OK,
-    command: ideUtilities.SHOW_UI_LOG,
+    command: ideUtil.SHOW_UI_LOG,
   });
 
   crosLint.activate(context, statusManager);
@@ -47,15 +47,11 @@ export function activate(context: vscode.ExtensionContext) {
   feedback.activate(context);
   metrics.activate(context);
 
-  if (
-    ideUtilities.getConfigRoot().get<boolean>('underDevelopment.dutManager')
-  ) {
+  if (ideUtil.getConfigRoot().get<boolean>('underDevelopment.dutManager')) {
     dutManager.activateDutManager(context);
   }
 
-  if (
-    ideUtilities.getConfigRoot().get<boolean>('underDevelopment.testCoverage')
-  ) {
+  if (ideUtil.getConfigRoot().get<boolean>('underDevelopment.testCoverage')) {
     coverage.activate(context);
   }
 

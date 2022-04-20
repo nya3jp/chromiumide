@@ -6,7 +6,7 @@
  * Manages Leased Devices
  */
 import * as vscode from 'vscode';
-import * as ideutil from '../../../ide_utilities';
+import * as ideUtil from '../../../ide_util';
 import * as dutManager from '../dut_manager';
 import * as dutServices from './dut_services';
 
@@ -97,6 +97,6 @@ export class FleetDevicesProvider implements vscode.TreeDataProvider<string> {
   }
 
   private getHosts(): string[] {
-    return ideutil.getConfigRoot().get<string[]>('hosts') || [];
+    return ideUtil.getConfigRoot().get<string[]>('hosts') || [];
   }
 }

@@ -6,7 +6,7 @@
  * Represents a VNC Session
  */
 import * as vscode from 'vscode';
-import * as ideutil from '../../../ide_utilities';
+import * as ideUtil from '../../../ide_util';
 
 export class VncSession {
   private static nextAvailablePort = 6080;
@@ -57,7 +57,7 @@ export class VncSession {
     localPort: number,
     context: vscode.ExtensionContext
   ): vscode.Terminal {
-    const terminal = ideutil.createTerminalForHost(
+    const terminal = ideUtil.createTerminalForHost(
       host,
       'CrOS: VNC forwarding',
       context,

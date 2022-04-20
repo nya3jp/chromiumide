@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 import * as vscode from 'vscode';
 import * as commonUtil from '../common/common_util';
-import * as ideUtilities from '../ide_utilities';
+import * as ideUtil from '../ide_util';
 import * as metrics from './metrics/metrics';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -29,7 +29,7 @@ class CodeSearch {
   constructor(
     // WorkspaceConfiguration objects do not change when users change settings
     // so we need to obtain them every time the user opens a CS link.
-    private readonly getConfigRoot: () => vscode.WorkspaceConfiguration = ideUtilities.getConfigRoot
+    private readonly getConfigRoot: () => vscode.WorkspaceConfiguration = ideUtil.getConfigRoot
   ) {}
 
   async openCurrentFile(textEditor: vscode.TextEditor) {
@@ -48,7 +48,7 @@ class CodeSearch {
         '-c',
         `${generateCsPath} --show "--${csInstance}" --line=${line} "${fullpath}"`,
       ],
-      ideUtilities.getUiLogger().append,
+      ideUtil.getUiLogger().append,
       {logStdout: true, ignoreNonZeroExit: true}
     );
 

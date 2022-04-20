@@ -8,7 +8,7 @@ import * as vscode from 'vscode';
 
 import * as bgTaskStatus from '../ui/bg_task_status';
 import * as commonUtil from '../common/common_util';
-import * as ideUtilities from '../ide_utilities';
+import * as ideUtil from '../ide_util';
 
 export function activate(
   context: vscode.ExtensionContext,
@@ -77,8 +77,8 @@ class CompilationDatabase {
     }
     const {sourceDir, pkg} = packageInfo;
 
-    const board = await ideUtilities.getOrSelectTargetBoard();
-    if (board instanceof ideUtilities.NoBoardError) {
+    const board = await ideUtil.getOrSelectTargetBoard();
+    if (board instanceof ideUtil.NoBoardError) {
       await vscode.window.showErrorMessage(
         `Generate compilation database: ${board.message}`
       );
@@ -249,8 +249,7 @@ async function shouldRunCrosWorkon(
   }
 
   const currentChoice =
-    ideUtilities.getConfigRoot().get<UserConsent>(AUTO_CROS_WORKON_CONFIG) ||
-    'Once';
+    ideUtil.getConfigRoot().get<UserConsent>(AUTO_CROS_WORKON_CONFIG) || 'Once';
 
   const showPrompt = async () => {
     // withTimeout makes sure showPrompt returns. showInformationMessage doesn't resolve nor reject
@@ -270,7 +269,7 @@ async function shouldRunCrosWorkon(
   };
   const {ok, remember} = await getUserConsent(currentChoice, showPrompt);
   if (remember) {
-    ideUtilities
+    ideUtil
       .getConfigRoot()
       .update(
         AUTO_CROS_WORKON_CONFIG,
