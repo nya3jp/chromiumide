@@ -34,7 +34,7 @@ export class CompdbServiceImpl implements CompdbService {
   }
 
   private useLegacy(): boolean {
-    return !!ideUtil
+    return !ideUtil
       .getConfigRoot()
       .get('underDevelopment.fasterCppXrefGeneration');
   }
