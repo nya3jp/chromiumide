@@ -6,27 +6,13 @@ import * as assert from 'assert';
 import 'jasmine';
 import * as util from 'util';
 import * as vscode from 'vscode';
-import {CompdbService} from '../../../features/cpp_code_completion/compdb_service';
 import {CompilationDatabase} from '../../../features/cpp_code_completion/cpp_code_completion';
-import {
-  PackageInfo,
-  Packages,
-} from '../../../features/cpp_code_completion/packages';
+import {Packages} from '../../../features/cpp_code_completion/packages';
 import * as bgTaskStatus from '../../../ui/bg_task_status';
 import {installVscodeDouble} from '../doubles';
 import {FakeOutputChannel} from '../fakes/output_channel';
 import {fakeGetConfiguration} from '../fakes/workspace_configuration';
-
-class SpiedCompdbService implements CompdbService {
-  readonly requests: Array<{board: string; packageInfo: PackageInfo}> = [];
-
-  async generate(board: string, packageInfo: PackageInfo) {
-    this.requests.push({board, packageInfo});
-  }
-  isEnabled(): boolean {
-    return true;
-  }
-}
+import {SpiedCompdbService} from './spied_compdb_service';
 
 describe('C++ code completion', () => {
   const {vscodeSpy, vscodeEmitters} = installVscodeDouble();

@@ -6,7 +6,13 @@ import * as vscode from 'vscode';
 import * as commonUtil from '../../common/common_util';
 import * as ideUtil from '../../ide_util';
 import * as bgTaskStatus from '../../ui/bg_task_status';
-import {CompdbService, CompdbServiceImpl} from './compdb_service';
+import {
+  CompdbError,
+  CompdbErrorKind,
+  CompdbService,
+  CompdbServiceImpl,
+} from './compdb_service';
+import {LegacyCompdbService} from './compdb_service_legacy';
 import {SHOW_LOG_COMMAND} from './constants';
 import {Packages} from './packages';
 
@@ -17,14 +23,17 @@ export function activate(
   const log = vscode.window.createOutputChannel('CrOS IDE: C++ Support');
   vscode.commands.registerCommand(SHOW_LOG_COMMAND.command, () => log.show());
 
+  const legacyService = new LegacyCompdbService(statusManager, log);
+  const compdbService = new CompdbServiceImpl(legacyService, useLegacy);
   context.subscriptions.push(
-    new CompilationDatabase(
-      statusManager,
-      new Packages(),
-      log,
-      new CompdbServiceImpl(statusManager, log)
-    )
+    new CompilationDatabase(statusManager, new Packages(), log, compdbService)
   );
+}
+
+const FASTER_CPP_XREF_GENERATION = 'underDevelopment.fasterCppXrefGeneration';
+
+function useLegacy(): boolean {
+  return !ideUtil.getConfigRoot().get(FASTER_CPP_XREF_GENERATION);
 }
 
 const STATUS_BAR_TASK_ID = 'C++ Support';
@@ -98,6 +107,23 @@ export class CompilationDatabase implements vscode.Disposable {
       try {
         await this.compdbService.generate(board, packageInfo);
       } catch (e) {
+        if (e instanceof CompdbError) {
+          switch (e.kind) {
+            case CompdbErrorKind.Unimplemented:
+              // TODO(oka): Add a button to disable the faster compdb generation.
+              vscode.window.showErrorMessage(
+                'New logic is not implemented. Consider disabling the setting ' +
+                  FASTER_CPP_XREF_GENERATION
+              );
+              break;
+            default:
+              vscode.window.showErrorMessage(
+                'BUG: unknown CompdbErrorKind ' + e.kind
+              );
+          }
+          return;
+        }
+
         this.log.appendLine((e as Error).message);
         console.error(e);
         this.statusManager.setTask(STATUS_BAR_TASK_ID, {
