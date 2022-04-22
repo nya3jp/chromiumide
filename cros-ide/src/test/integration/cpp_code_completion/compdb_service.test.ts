@@ -15,4 +15,6 @@ describe('Compdb service', () => {
       {board: 'foo', packageInfo: {sourceDir: 'bar', atom: 'baz'}},
     ]);
   });
+
+  // TODO(oka): test faster compdb generation.
 });

@@ -106,10 +106,15 @@ export class CompilationDatabase implements vscode.Disposable {
       }
       try {
         await this.compdbService.generate(board, packageInfo);
+        // TODO(oka): reload clangd with 'clangd.restart' command.
       } catch (e) {
         if (e instanceof CompdbError) {
           switch (e.kind) {
-            case CompdbErrorKind.Unimplemented:
+            // TODO(oka): Handle errors here.
+            case CompdbErrorKind.RemoveCache:
+            case CompdbErrorKind.RunEbuild:
+            case CompdbErrorKind.NotGenerated:
+            case CompdbErrorKind.CopyFailed:
               // TODO(oka): Add a button to disable the faster compdb generation.
               vscode.window.showErrorMessage(
                 'New logic is not implemented. Consider disabling the setting ' +
