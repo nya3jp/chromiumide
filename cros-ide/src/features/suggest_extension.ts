@@ -4,7 +4,7 @@
 
 import * as vscode from 'vscode';
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   const recommendations: Recommendation[] = [
     {
       languageId: 'cpp',
@@ -21,7 +21,11 @@ export function activate(context: vscode.ExtensionContext) {
   ];
 
   for (const recommended of recommendations) {
-    activateSingle(context, recommended);
+    const disposable = await activateSingle(recommended);
+    if (disposable === undefined) {
+      continue;
+    }
+    context.subscriptions.push(disposable);
   }
 }
 
@@ -32,33 +36,46 @@ export interface Recommendation {
   extensionName: string;
 }
 
-// TODO(oka): Test this function.
-async function activateSingle(
-  context: vscode.ExtensionContext,
+/**
+ * Registers a recommendation if the recommended extension is not installed.
+ *
+ * @returns Disposable which should be called on deactivation, or undefined if
+ * the extension is already installed.
+ */
+export async function activateSingle(
   recommended: Recommendation
-) {
+): Promise<vscode.Disposable | undefined> {
   // Don't install handler if the extension is already installed.
   if (vscode.extensions.getExtension(recommended.extensionId)) {
-    return;
+    return undefined;
   }
 
+  await suggestOnMatch(recommended, vscode.window.activeTextEditor);
+
   const subscription: vscode.Disposable[] = [];
-  context.subscriptions.push(
-    vscode.window.onDidChangeActiveTextEditor(
-      async editor => {
-        if (!editor) {
-          return;
-        }
-        if (editor.document.languageId === recommended.languageId) {
-          if (await suggest(recommended)) {
-            subscription[0].dispose();
-          }
-        }
-      },
-      undefined,
-      subscription
-    )
+
+  return vscode.window.onDidChangeActiveTextEditor(
+    async editor => {
+      if (await suggestOnMatch(recommended, editor)) {
+        subscription[0].dispose();
+      }
+    },
+    undefined,
+    subscription
   );
+}
+
+async function suggestOnMatch(
+  recommended: Recommendation,
+  editor?: vscode.TextEditor
+): Promise<boolean> {
+  if (!editor) {
+    return false;
+  }
+  if (editor.document.languageId !== recommended.languageId) {
+    return false;
+  }
+  return await suggest(recommended);
 }
 
 const YES = 'Yes';
