@@ -8,7 +8,7 @@ import {cleanState, exactMatch, installFakeExec} from '../testing';
 import {installVscodeDouble} from './doubles';
 import {fakeGetConfiguration} from './fakes/workspace_configuration';
 
-const {CodeSearch} = codesearch.TEST_ONLY;
+const {openCurrentFile, searchSelection} = codesearch.TEST_ONLY;
 
 describe('CodeSearch: searching for selection', () => {
   const {vscodeSpy} = installVscodeDouble();
@@ -30,10 +30,8 @@ describe('CodeSearch: searching for selection', () => {
       .getConfiguration('cros-ide')
       .update('codeSearch', 'public');
 
-    const codeSearch = new CodeSearch();
-
     // TODO(ttylenda): Call the VSCode command instead calling the TS method.
-    codeSearch.searchSelection(textEditor);
+    searchSelection(textEditor);
 
     const expectedUri = vscode.Uri.parse(
       'https://source.chromium.org/search?q=people'
@@ -47,9 +45,7 @@ describe('CodeSearch: searching for selection', () => {
       .getConfiguration('cros-ide')
       .update('codeSearch', 'internal');
 
-    const codeSearch = new CodeSearch();
-
-    codeSearch.searchSelection(textEditor);
+    searchSelection(textEditor);
 
     const expectedUri = vscode.Uri.parse(
       'https://source.corp.google.com/search?q=people'
@@ -63,8 +59,6 @@ describe('CodeSearch: opening current file', () => {
   const {fakeExec} = installFakeExec();
 
   const t = cleanState(() => ({
-    codeSearch: new CodeSearch(),
-
     // We need an editor with file path, so we cannot use a real object
     // like in the tests which open selection.
     fakeTextEditor: {
@@ -104,7 +98,7 @@ describe('CodeSearch: opening current file', () => {
       })
     );
 
-    await t.codeSearch.openCurrentFile(t.fakeTextEditor);
+    await openCurrentFile(t.fakeTextEditor);
 
     const expectedUri = vscode.Uri.parse(CS_LINK);
     expect(vscodeSpy.env.openExternal).toHaveBeenCalledWith(expectedUri);
@@ -118,7 +112,7 @@ describe('CodeSearch: opening current file', () => {
       })
     );
 
-    await t.codeSearch.openCurrentFile(t.fakeTextEditor);
+    await openCurrentFile(t.fakeTextEditor);
 
     expect(vscodeSpy.window.showErrorMessage).toHaveBeenCalledWith(
       'Could not run generate_cs_path: Error: not found'
@@ -133,7 +127,7 @@ describe('CodeSearch: opening current file', () => {
       })
     );
 
-    await t.codeSearch.openCurrentFile(t.fakeTextEditor);
+    await openCurrentFile(t.fakeTextEditor);
 
     expect(vscodeSpy.window.showErrorMessage).toHaveBeenCalledWith(
       'generate_cs_path returned an error: error msg'
