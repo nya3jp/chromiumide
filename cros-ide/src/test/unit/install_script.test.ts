@@ -4,15 +4,21 @@
 
 import * as assert from 'assert';
 import * as fs from 'fs';
-import * as commonUtil from '../../common/common_util';
 import * as install from '../../tools/install';
-import {exactMatch, FakeExec, lazyHandler, prefixMatch} from '../testing';
+import {
+  exactMatch,
+  installFakeExec,
+  lazyHandler,
+  prefixMatch,
+} from '../testing';
 
 describe('Install script', () => {
+  const {fakeExec} = installFakeExec();
+
   it('installs default (latest) version', async () => {
     let tempFile = '';
     let installed = false;
-    const fake = new FakeExec()
+    fakeExec
       .on(
         'gsutil',
         exactMatch(['ls', 'gs://chromeos-velocity/ide/cros-ide'], async () => {
@@ -45,21 +51,16 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
         )
       );
 
-    const revert = commonUtil.setExecForTesting(fake.exec.bind(fake));
-    try {
-      await install.install('code');
-      assert.deepStrictEqual(installed, true);
-      const name = tempFile.split('/').pop();
-      assert.deepStrictEqual(name, 'cros-ide-0.0.2.vsix');
-    } finally {
-      revert();
-    }
+    await install.install('code');
+    assert.deepStrictEqual(installed, true);
+    const name = tempFile.split('/').pop();
+    assert.deepStrictEqual(name, 'cros-ide-0.0.2.vsix');
   });
 
   it('installs specified version', async () => {
     let tempFile = '';
     let installed = false;
-    const fake = new FakeExec()
+    fakeExec
       .on(
         'gsutil',
         exactMatch(['ls', 'gs://chromeos-velocity/ide/cros-ide'], async () => {
@@ -88,23 +89,20 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
         )
       );
 
-    const revert = commonUtil.setExecForTesting(fake.exec.bind(fake));
-    try {
-      await install.install('code', {major: 0, minor: 0, patch: 1});
-      assert.deepStrictEqual(installed, true);
-      const name = tempFile.split('/').pop();
-      assert.deepStrictEqual(name, 'cros-ide-0.0.1.vsix');
+    await install.install('code', {major: 0, minor: 0, patch: 1});
+    assert.deepStrictEqual(installed, true);
+    const name = tempFile.split('/').pop();
+    assert.deepStrictEqual(name, 'cros-ide-0.0.1.vsix');
 
-      await assert.rejects(
-        install.install('code', {major: 0, minor: 0, patch: 99})
-      );
-    } finally {
-      revert();
-    }
+    await assert.rejects(
+      install.install('code', {major: 0, minor: 0, patch: 99})
+    );
   });
 });
 
 describe('Build and publish', () => {
+  const {fakeExec} = installFakeExec();
+
   interface TestCase {
     name: string;
     isDirty?: boolean;
@@ -170,7 +168,7 @@ index 11eef9ccd..0ee259d51 100644
       let built = false;
       let uploaded = false;
 
-      const fake = new FakeExec()
+      fakeExec
         .on(
           'git',
           exactMatch(['status', '--short'], async () => {
@@ -257,21 +255,16 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
           )
         );
 
-      const revert = commonUtil.setExecForTesting(fake.exec.bind(fake));
-      try {
-        const result = install.buildAndUpload();
-        if (testCase.wantReject) {
-          await assert.rejects(result);
-        } else {
-          await result;
-        }
-        assert.strictEqual(built, !!testCase.wantBuilt);
-        assert.strictEqual(uploaded, !!testCase.wantUploaded);
-        if (built) {
-          assert.strictEqual(fs.existsSync(tempDir), false);
-        }
-      } finally {
-        revert();
+      const result = install.buildAndUpload();
+      if (testCase.wantReject) {
+        await assert.rejects(result);
+      } else {
+        await result;
+      }
+      assert.strictEqual(built, !!testCase.wantBuilt);
+      assert.strictEqual(uploaded, !!testCase.wantUploaded);
+      if (built) {
+        assert.strictEqual(fs.existsSync(tempDir), false);
       }
     });
   });
@@ -280,7 +273,7 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
     let tempDir = '';
     let built = false;
     let installed = false;
-    const fake = new FakeExec()
+    fakeExec
       .on(
         'npx',
         prefixMatch(['vsce@1.103.1', 'package', '-o'], async args => {
@@ -307,14 +300,9 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
         )
       );
 
-    const revert = commonUtil.setExecForTesting(fake.exec.bind(fake));
-    try {
-      await install.installDev('code');
-      assert.strictEqual(built, true);
-      assert.strictEqual(installed, true);
-    } finally {
-      revert();
-    }
+    await install.installDev('code');
+    assert.strictEqual(built, true);
+    assert.strictEqual(installed, true);
   });
 });
 

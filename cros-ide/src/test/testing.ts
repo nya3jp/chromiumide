@@ -4,7 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import {ExecResult} from '../common/common_util';
+import {ExecResult, setExecForTesting} from '../common/common_util';
 
 /**
  * Returns execution result or undefined if args is not handled.
@@ -120,4 +120,27 @@ export function cleanState<NewState extends {}>(
     Object.assign(state, await init());
   });
   return state;
+}
+
+/**
+ * Installs fake exec for testing. This function should be called in describe.
+ *
+ * Calling this function replaces commonUtil.exec with a fake, and returns a
+ * handler to it. It internally uses cleanState to create fresh instances per
+ * test.
+ *
+ * TODO(oka): Consider replacing FakeExec with a standard Jasmine spy object.
+ */
+export function installFakeExec(): {fakeExec: FakeExec} {
+  const fakeExec = new FakeExec();
+
+  const state = cleanState(() => {
+    Object.assign(fakeExec, new FakeExec()); // clear handlers
+    return {undo: setExecForTesting(fakeExec.exec.bind(fakeExec))};
+  });
+  afterEach(() => {
+    state.undo();
+  });
+
+  return {fakeExec};
 }
