@@ -29,6 +29,7 @@ class CodeSearch {
   constructor(
     // WorkspaceConfiguration objects do not change when users change settings
     // so we need to obtain them every time the user opens a CS link.
+    // TODO(ttylenda): We don't need this stuff any more, delete this parameter.
     private readonly getConfigRoot: () => vscode.WorkspaceConfiguration = ideUtil.getConfigRoot
   ) {}
 

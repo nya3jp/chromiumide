@@ -7,33 +7,9 @@ import * as commonUtil from '../../common/common_util';
 import * as codesearch from '../../features/codesearch';
 import {cleanState, exactMatch, FakeExec} from '../testing';
 import {installVscodeDouble} from './doubles';
+import {fakeGetConfiguration} from './fakes/workspace_configuration';
 
 const {CodeSearch} = codesearch.TEST_ONLY;
-
-/**
- * Fake implementation of `vscode.WorkspaceConfiguration`.
- *
- * We cannot use the real implementation, because it would make test read and write developers'
- * VSCode configuration.
- *
- * Instead of implementing the entire class, we only just implement `get` and use `as` keyword
- * to ignore type checking.
- */
-class FakeWorkspaceConfiguration {
-  constructor(private readonly value: string) {}
-
-  asVscodeType(): vscode.WorkspaceConfiguration {
-    // We need to go through unknown. Otherwise, TypeScript will not let us type cast.
-    return this as unknown as vscode.WorkspaceConfiguration;
-  }
-
-  get(section: string): string {
-    if (section !== 'codeSearch') {
-      throw new Error(`unexpected section: ${section}`);
-    }
-    return this.value;
-  }
-}
 
 describe('CodeSearch: searching for selection', () => {
   const {vscodeSpy} = installVscodeDouble();
@@ -50,9 +26,12 @@ describe('CodeSearch: searching for selection', () => {
   });
 
   it('in public CS', async () => {
-    // TODO(ttylenda): Figure our how to stub WorkspaceConfiguration better.
-    const config = new FakeWorkspaceConfiguration('public').asVscodeType();
-    const codeSearch = new CodeSearch(() => config);
+    vscodeSpy.workspace.getConfiguration.and.callFake(fakeGetConfiguration());
+    vscode.workspace
+      .getConfiguration('cros-ide')
+      .update('codeSearch', 'public');
+
+    const codeSearch = new CodeSearch();
 
     // TODO(ttylenda): Call the VSCode command instead calling the TS method.
     codeSearch.searchSelection(textEditor);
@@ -64,9 +43,12 @@ describe('CodeSearch: searching for selection', () => {
   });
 
   it('in internal CS', () => {
-    const config = new FakeWorkspaceConfiguration('internal').asVscodeType();
+    vscodeSpy.workspace.getConfiguration.and.callFake(fakeGetConfiguration());
+    vscode.workspace
+      .getConfiguration('cros-ide')
+      .update('codeSearch', 'internal');
 
-    const codeSearch = new CodeSearch(() => config);
+    const codeSearch = new CodeSearch();
 
     codeSearch.searchSelection(textEditor);
 
@@ -81,9 +63,7 @@ describe('CodeSearch: opening current file', () => {
   const {vscodeSpy} = installVscodeDouble();
 
   const t = cleanState(() => ({
-    codeSearch: new CodeSearch(() =>
-      new FakeWorkspaceConfiguration('public').asVscodeType()
-    ),
+    codeSearch: new CodeSearch(),
 
     // We need an editor with file path, so we cannot use a real object
     // like in the tests which open selection.
@@ -104,6 +84,13 @@ describe('CodeSearch: opening current file', () => {
       '--show "--public" --line=41 ' +
       '"/home/sundar/chromiumos/src/platform2/cros-disks/archive_mounter.cc"',
   }));
+
+  beforeEach(() => {
+    vscodeSpy.workspace.getConfiguration.and.callFake(fakeGetConfiguration());
+    vscode.workspace
+      .getConfiguration('cros-ide')
+      .update('codeSearch', 'public');
+  });
 
   it('opens browser window', async () => {
     const CS_LINK =
