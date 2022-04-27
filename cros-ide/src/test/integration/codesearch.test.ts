@@ -58,7 +58,7 @@ describe('CodeSearch: opening current file', () => {
   const {vscodeSpy} = installVscodeDouble();
   const {fakeExec} = installFakeExec();
 
-  const t = cleanState(() => ({
+  const state = cleanState(() => ({
     // We need an editor with file path, so we cannot use a real object
     // like in the tests which open selection.
     fakeTextEditor: {
@@ -93,12 +93,12 @@ describe('CodeSearch: opening current file', () => {
 
     fakeExec.on(
       'sh',
-      exactMatch(['-c', t.generateCsLinkInvocation], async () => {
+      exactMatch(['-c', state.generateCsLinkInvocation], async () => {
         return CS_LINK;
       })
     );
 
-    await openCurrentFile(t.fakeTextEditor);
+    await openCurrentFile(state.fakeTextEditor);
 
     const expectedUri = vscode.Uri.parse(CS_LINK);
     expect(vscodeSpy.env.openExternal).toHaveBeenCalledWith(expectedUri);
@@ -107,12 +107,12 @@ describe('CodeSearch: opening current file', () => {
   it('shows error popup when generate_cs_link cannot be found', async () => {
     fakeExec.on(
       'sh',
-      exactMatch(['-c', t.generateCsLinkInvocation], async () => {
+      exactMatch(['-c', state.generateCsLinkInvocation], async () => {
         return Error('not found');
       })
     );
 
-    await openCurrentFile(t.fakeTextEditor);
+    await openCurrentFile(state.fakeTextEditor);
 
     expect(vscodeSpy.window.showErrorMessage).toHaveBeenCalledWith(
       'Could not run generate_cs_path: Error: not found'
@@ -122,12 +122,12 @@ describe('CodeSearch: opening current file', () => {
   it('shows error popup when generate_cs_link fails', async () => {
     fakeExec.on(
       'sh',
-      exactMatch(['-c', t.generateCsLinkInvocation], async () => {
+      exactMatch(['-c', state.generateCsLinkInvocation], async () => {
         return {stdout: '', stderr: 'error msg', exitStatus: 1};
       })
     );
 
-    await openCurrentFile(t.fakeTextEditor);
+    await openCurrentFile(state.fakeTextEditor);
 
     expect(vscodeSpy.window.showErrorMessage).toHaveBeenCalledWith(
       'generate_cs_path returned an error: error msg'
