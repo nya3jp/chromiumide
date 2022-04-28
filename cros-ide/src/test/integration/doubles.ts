@@ -45,6 +45,10 @@ function newVscodeSpy() {
       'vscode.workspace',
       ['getConfiguration']
     ),
+    extensions: jasmine.createSpyObj<typeof vscode.extensions>(
+      'vscode.extensions',
+      ['getExtension']
+    ),
   };
 }
 
@@ -84,6 +88,7 @@ export function installVscodeDouble(): {
   beforeEach(() => {
     real.commands = vscodeSpy.commands;
     real.env = vscodeSpy.env;
+    real.extensions = vscodeSpy.extensions;
     real.window = buildNamespace(vscodeSpy.window, vscodeEmitters.window);
     real.workspace = buildNamespace(
       vscodeSpy.workspace,

@@ -13,7 +13,7 @@ import {
   CompdbServiceImpl,
 } from './compdb_service';
 import {LegacyCompdbService} from './compdb_service_legacy';
-import {SHOW_LOG_COMMAND} from './constants';
+import {CLANGD_EXTENSION, SHOW_LOG_COMMAND} from './constants';
 import {Atom, Packages} from './packages';
 
 export function activate(
@@ -98,7 +98,9 @@ export class CompilationDatabase implements vscode.Disposable {
     document: vscode.TextDocument,
     skipIfAlreadyGenerated?: boolean
   ) {
-    // TODO(oka): If clangd extension is not installed, we should return here.
+    if (!vscode.extensions.getExtension(CLANGD_EXTENSION)) {
+      return;
+    }
     if (!this.compdbService.isEnabled()) {
       return;
     }

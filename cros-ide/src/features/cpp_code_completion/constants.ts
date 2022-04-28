@@ -11,3 +11,5 @@ export const SHOW_LOG_COMMAND: vscode.Command = {
   command: 'cros-ide.showCppLog',
   title: '',
 };
+
+export const CLANGD_EXTENSION = 'llvm-vs-code-extensions.vscode-clangd';

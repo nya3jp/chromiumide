@@ -4,6 +4,7 @@
 
 import 'jasmine';
 import * as vscode from 'vscode';
+import {CLANGD_EXTENSION} from '../../../features/cpp_code_completion/constants';
 import {CompilationDatabase} from '../../../features/cpp_code_completion/cpp_code_completion';
 import {Packages} from '../../../features/cpp_code_completion/packages';
 import * as bgTaskStatus from '../../../ui/bg_task_status';
@@ -47,6 +48,9 @@ describe('C++ code completion', () => {
     vscode.workspace
       .getConfiguration('cros-ide')
       .update('board', 'amd64-generic');
+    vscodeSpy.extensions.getExtension
+      .withArgs(CLANGD_EXTENSION)
+      .and.returnValue({} as vscode.Extension<void>);
 
     const done = newEventWaiter(state.compilationDatabase);
 
@@ -78,6 +82,9 @@ describe('C++ code completion', () => {
     vscode.workspace
       .getConfiguration('cros-ide')
       .update('board', 'amd64-generic');
+    vscodeSpy.extensions.getExtension
+      .withArgs(CLANGD_EXTENSION)
+      .and.returnValue({} as vscode.Extension<void>);
 
     const done = newEventWaiter(state.compilationDatabase);
 
@@ -104,6 +111,9 @@ describe('C++ code completion', () => {
     vscode.workspace
       .getConfiguration('cros-ide')
       .update('board', 'amd64-generic');
+    vscodeSpy.extensions.getExtension
+      .withArgs(CLANGD_EXTENSION)
+      .and.returnValue({} as vscode.Extension<void>);
 
     const done = newEventWaiter(state.compilationDatabase);
 
@@ -123,6 +133,9 @@ describe('C++ code completion', () => {
     vscode.workspace
       .getConfiguration('cros-ide')
       .update('board', 'amd64-generic');
+    vscodeSpy.extensions.getExtension
+      .withArgs(CLANGD_EXTENSION)
+      .and.returnValue({} as vscode.Extension<void>);
 
     let done = newEventWaiter(state.compilationDatabase);
 
@@ -168,6 +181,26 @@ describe('C++ code completion', () => {
 
     // The service is called because compdb has not been generated for codelab.
     expect(state.spiedCompdbService.requests.length).toBe(2);
+  });
+
+  it('does not run if clangd extension is not installed', async () => {
+    vscodeSpy.workspace.getConfiguration.and.callFake(fakeGetConfiguration());
+    vscode.workspace
+      .getConfiguration('cros-ide')
+      .update('board', 'amd64-generic');
+
+    const done = newEventWaiter(state.compilationDatabase);
+
+    vscodeEmitters.window.onDidChangeActiveTextEditor.fire({
+      document: {
+        fileName: '/mnt/host/source/src/platform2/cros-disks/foo.cc',
+        languageId: 'cpp',
+      },
+    } as vscode.TextEditor);
+
+    await done;
+
+    expect(state.spiedCompdbService.requests).toEqual([]);
   });
 
   // TODO(oka): Test error handling.
