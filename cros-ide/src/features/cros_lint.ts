@@ -135,8 +135,6 @@ async function updateCrosLintDiagnostics(
         value: diagnostics.length,
       });
     }
-  } else {
-    collection.clear();
   }
 }
 
