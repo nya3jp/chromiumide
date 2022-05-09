@@ -2,13 +2,33 @@
   "name": "upstart",
   "scopeName": "source.upstart",
   "patterns": [
-    { "include": "#comment" }
+    { "include": "#comment" },
+    { "include": "#exec" },
+    { "include": "#script" }
   ],
   "repository": {
     "comment": {
       "name": "comment.line.upstart",
       "begin": "#",
       "end": "$"
+    },
+    "script": {
+      "begin": "\\bscript\\b",
+      "end": "\\bend script\\b",
+      "name": "storage.type.script.upstart",
+      "contentName": "meta.embedded.block.shellscript",
+      "patterns": [
+        { "include": "source.shell" }
+      ]
+    },
+    "exec": {
+      "begin": "\\bexec\\b",
+      "end": "(?<!\\\\)\\n",
+      "name": "storage.type.exec.upstart",
+      "contentName": "meta.embedded.block.shellscript",
+      "patterns": [
+        { "include": "source.shell" }
+      ]
     }
   }
 }

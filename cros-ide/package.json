@@ -317,7 +317,10 @@
       {
         "language": "upstart",
         "scopeName": "source.upstart",
-        "path": "./languages/upstart.tmLanguage.json"
+        "path": "./languages/upstart.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.shellscript": "shellscript"
+        }
       }
     ]
   },
