@@ -60,6 +60,6 @@ export function activate(context: vscode.ExtensionContext) {
   metrics.send({
     category: 'extension',
     action: 'activate',
-    value: context.extension.packageJSON.version,
+    label: context.extension.packageJSON.version,
   });
 }
