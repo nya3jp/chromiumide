@@ -61,7 +61,6 @@ async function openCurrentFile(textEditor: vscode.TextEditor) {
   metrics.send({
     category: 'codesearch',
     action: 'open current file',
-    label: `${fullpath}:${line}`,
   });
 }
 
