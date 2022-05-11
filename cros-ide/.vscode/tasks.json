@@ -4,35 +4,30 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "npm build",
+      "detail": "Build the extension in a development configuration",
       "type": "npm",
-      "script": "compile",
-      "problemMatcher": [
-        "$ts-webpack",
-        "$tslint-webpack"
-      ],
-      "presentation": {
-        "reveal": "never",
-      },
+      "script": "build",
+      "problemMatcher": ["$ts-webpack", "$tslint-webpack"],
       "group": {
         "kind": "build",
         "isDefault": true
       }
     },
     {
+      "label": "npm build-all",
+      "detail": "Build the extension and tests in a development configuration",
       "type": "npm",
-      "script": "compile-tests",
-      "presentation": {
-        "reveal": "never",
-      },
+      "script": "build-all",
       "group": "build"
     },
     {
-      "label": "tasks: compile-tests",
-      "dependsOn": [
-        "npm: compile",
-        "npm: compile-tests"
-      ],
-      "problemMatcher": []
+      "label": "npm fix",
+      "detail": "Fix lint issues automatically",
+      "type": "npm",
+      "script": "fix",
+      "problemMatcher": [],
+      "group": "none"
     }
   ]
 }

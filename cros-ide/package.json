@@ -325,17 +325,17 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run check-license && npm run package",
-    "compile": "webpack",
-    "package": "webpack --mode production --devtool hidden-source-map",
-    "compile-tests": "tsc -p . --outDir out",
-    "lint": "gts lint && npm run check-license",
+    "build": "rm -rf dist && webpack",
+    "build-release": "rm -rf dist && webpack --mode production --devtool hidden-source-map",
+    "build-tests": "rm -rf out && tsc -p . --outDir out",
+    "build-all": "npm run build && npm run build-tests",
+    "test": "npm run build-all && xvfb-run -a node ./out/test/runTest.js",
+    "lint": "npm run lint-code && npm run lint-license",
+    "lint-code": "gts lint",
+    "lint-license": "jsgl --local .",
     "fix": "gts fix",
-    "test": "rm -rf out && npm run compile-tests && npm run compile && npm run lint && xvfb-run -a node ./out/test/runTest.js",
-    "test-nolint": "rm -rf out && npm run compile-tests && npm run compile && xvfb-run -a node ./out/test/runTest.js",
-    "unit-test": "npm run compile-tests && node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit",
-    "publish": "./install.sh --upload",
-    "check-license": "jsgl --local ."
+    "preupload": "npm run lint && npm run test",
+    "vscode:prepublish": "npm run preupload && npm run build-release"
   },
   "dependencies": {
     "glob": "^7.1.7",
