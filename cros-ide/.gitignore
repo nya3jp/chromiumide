@@ -1,6 +1,4 @@
-node_modules/*
-!node_modules/README.md
-*.js.map
-dist/*
-out/*
-.vscode-test/*
+/node_modules
+/dist
+/out
+/.vscode-test

@@ -3,7 +3,7 @@ docs
 node_modules
 src
 out
-package-json.lock
+package-lock.json
 tsconfig.json
 webpack.config.js
 
