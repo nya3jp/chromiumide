@@ -270,9 +270,17 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
 
   it('installs dev version', async () => {
     let tempDir = '';
+    let bumped = false;
     let built = false;
     let installed = false;
     fakeExec
+      .on(
+        'npm',
+        exactMatch(['version', 'prerelease', '--preid=dev'], async () => {
+          bumped = true;
+          return '';
+        })
+      )
       .on(
         'npx',
         prefixMatch(['vsce@1.103.1', 'package', '-o'], async args => {
@@ -280,7 +288,7 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
           built = true;
           // As old as the latest version in GS.
           await fs.promises.writeFile(
-            `${tempDir}cros-ide-0.0.2.vsix`,
+            `${tempDir}cros-ide-0.0.2-dev.0.vsix`,
             '<fake>'
           );
           return '';
@@ -290,7 +298,11 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
         'code',
         lazyHandler(() =>
           exactMatch(
-            ['--force', '--install-extension', `${tempDir}cros-ide-0.0.2.vsix`],
+            [
+              '--force',
+              '--install-extension',
+              `${tempDir}cros-ide-0.0.2-dev.0.vsix`,
+            ],
             async () => {
               installed = true;
               return '';
@@ -300,6 +312,7 @@ gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.2.vsix@253d24b6b54fa72d21f622b8
       );
 
     await install.installDev('code');
+    assert.strictEqual(bumped, true);
     assert.strictEqual(built, true);
     assert.strictEqual(installed, true);
   });

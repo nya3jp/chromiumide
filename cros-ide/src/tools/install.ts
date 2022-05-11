@@ -127,6 +127,10 @@ function versionFromFilename(name: string): semver.SemVer {
   return new semver.SemVer(match[1]);
 }
 
+async function bumpDevVersion(): Promise<void> {
+  await execute('npm', ['version', 'prerelease', '--preid=dev']);
+}
+
 async function build(tempDir: string, hash?: string): Promise<Archive> {
   await execute('npx', ['vsce@1.103.1', 'package', '-o', `${tempDir}/`]);
   const localName: string = (await fs.promises.readdir(tempDir))[0];
@@ -151,6 +155,7 @@ export async function buildAndUpload() {
 
 export async function installDev(exe: string) {
   await commonUtil.withTempDir(async td => {
+    await bumpDevVersion();
     const built = await build(td);
     const src = path.join(td, built.name);
     await execute(exe, ['--force', '--install-extension', src], true);
