@@ -10,7 +10,7 @@
   "repository": "https://chromium.googlesource.com/chromiumos/chromite/+/HEAD/ide_tooling",
   "license": "Apache-2.0",
   "engines": {
-    "vscode": "^1.60.0",
+    "vscode": "^1.63.0",
     "node": ">=14.0.0"
   },
   "categories": [
