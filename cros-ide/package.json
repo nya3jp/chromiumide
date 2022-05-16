@@ -335,7 +335,7 @@
     "lint-license": "jsgl --local .",
     "fix": "gts fix",
     "preupload": "npm run lint && npm run test",
-    "vscode:prepublish": "npm run preupload && npm run build-release"
+    "vscode:prepublish": "npm run build-release"
   },
   "dependencies": {
     "glob": "^7.1.7",
