@@ -11,7 +11,8 @@
     { "include": "#kill-reload-signal" },
     { "include": "#kill-timeout" },
     { "include": "#documentation" },
-    { "include": "#emits"}
+    { "include": "#emits" },
+    { "include": "#event-definition" }
   ],
   "repository": {
     "comment": {
@@ -116,6 +117,27 @@
           "comment": "No special treatment for wildcards (*,?), becuase there is no usage in platform2.",
           "match": "\\S+",
           "name": "string.unquoted.event.upstart"
+        }
+      ]
+    },
+    "event-definition": {
+      "begin": "^(start|stop) on",
+      "end": "$",
+      "beginCaptures": {
+        "0": { "name": "keyword.other.event-definition.upstart" }
+      },
+      "patterns":[
+        {
+          "match": "\\b(started|starting|stopped|stopping)\\b",
+          "name": "keyword.operator.modifier.upstart"
+        },
+        {
+          "match": "\\b(and|or)\\b",
+          "name": "keyword.operator.logical.upstart"
+        },
+        {
+          "match": "(\\w|-)+",
+          "name": "entity.name.function.event.upstart"
         }
       ]
     }
