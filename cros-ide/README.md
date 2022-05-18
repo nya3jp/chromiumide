@@ -10,10 +10,10 @@ internal developers. No timely support will be provided to other parties.
 
 Initial release has been tested for `platform2` development and offers the following features:
 
-* Autocompletion, x-ref searching, and symbol definition for C++.
-* Linting (C++, Python, Shell, GN).
-* Boards and packages view, Code Search integration, short links support (crbug, etc.), and so on.
+- Autocompletion, x-ref searching, and symbol definition for C++.
+- Linting (C++, Python, Shell, GN).
+- Boards and packages view, Code Search integration, short links support (crbug, etc.), and so on.
 
 See [QuickStart Guide] for setup instructions.
 
-[QuickStart Guide]: https://chromium.googlesource.com/chromiumos/chromite/+/HEAD/ide_tooling/docs/quickstart.md
+[quickstart guide]: https://chromium.googlesource.com/chromiumos/chromite/+/HEAD/ide_tooling/docs/quickstart.md

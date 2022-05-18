@@ -5,34 +5,34 @@
 1. Follow the [QuickStart Guide], skip installing the extension. Open the `cros-ide` directory as
    your working directory.
 2. Run `npm ci` in the `cros-ide` directory (inside chroot).
-3. *Outside chroot* (open a different terminal), run `npm test` in the `cros-ide` directory to
-   confirm tests pass. `node --version` should return v14.* for the test to pass. To install the
+3. _Outside chroot_ (open a different terminal), run `npm test` in the `cros-ide` directory to
+   confirm tests pass. `node --version` should return v14.\* for the test to pass. To install the
    proper version, you may use [nvm].
 
-[QuickStart Guide]: https://chromium.googlesource.com/chromiumos/chromite/+/HEAD/ide_tooling/docs/quickstart.md
+[quickstart guide]: https://chromium.googlesource.com/chromiumos/chromite/+/HEAD/ide_tooling/docs/quickstart.md
 [nvm]: https://github.com/nvm-sh/nvm
 
 ## Testing
 
 There are several ways of testing.
 
-* Testing from GUI
-  * Make sure your VSCode is connected to chroot, and opening `cros-ide` as a
+- Testing from GUI
+  - Make sure your VSCode is connected to chroot, and opening `cros-ide` as a
     workspace.
-  * (See [Debugging the tests] for visual guide)
+  - (See [Debugging the tests] for visual guide)
     Click the "Run and Debug" icon in the [Activity Bar], select "Run Extension"
     menu, and click the "Start Debugging" button or press F5. It should launch a new window
     where the extension built from the source code is installed. Then you can
     perform whatever manual tests on it. By default, other extensions are disabled. To keep other
     extensions running, choose "Run Extension (keep other extensions running)".
-  * Similarly, you can select "Extension Tests" instead of "Run Extensions" to run all the tests.
+  - Similarly, you can select "Extension Tests" instead of "Run Extensions" to run all the tests.
     The output will be shown in the Debug Console in the IDE used to develop the extension
-* Testing from command line
-  * `npm run unit-test` runs unit tests.
-  * `npm run test` runs all the tests. It must be run outside chroot.
+- Testing from command line
+  - `npm run unit-test` runs unit tests.
+  - `npm run test` runs all the tests. It must be run outside chroot.
 
-[Activity Bar]: https://code.visualstudio.com/api/references/extension-guidelines#view-containers
-[Debugging the tests]: https://code.visualstudio.com/api/working-with-extensions/testing-extension#debugging-the-tests
+[activity bar]: https://code.visualstudio.com/api/references/extension-guidelines#view-containers
+[debugging the tests]: https://code.visualstudio.com/api/working-with-extensions/testing-extension#debugging-the-tests
 
 ## Publishing the extension
 
@@ -48,6 +48,7 @@ Here is the steps to release a new version of a package file, to be installed by
 [chromeos-velocity]: https://pantheon.corp.google.com/storage/browser?project=google.com:chromeos-velocity
 
 ## Hiding features under development
+
 Incomplete features can be hidden. We do this by introducting configurations settings,
 which are false by default, and using them to guard `activate` function and UI elements
 with `when` clauses. See http://crrev.com/c/3499666 for an example.
@@ -76,36 +77,36 @@ Note that we have slight deviations from [Google TypeScript style guide]:
   TS style guide is replacing written formatting rules with recommendation to
   rely on code formatters ([cl/433269475]).
 
-[Google TypeScript style guide]: http://go/ts-style
-[ESLint]: https://eslint.org/
-[Prettier]: https://prettier.io/
-[ESLint extension]: https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint
-[Prettier extension]: https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode
-[GTS]: https://github.com/google/gts
+[google typescript style guide]: http://go/ts-style
+[eslint]: https://eslint.org/
+[prettier]: https://prettier.io/
+[eslint extension]: https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint
+[prettier extension]: https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode
+[gts]: https://github.com/google/gts
 [b/173108529]: http://b/173108529
 [cl/433269475]: http://cl/433269475
 
 ## FAQs
 
-* How to check that my VSCode is connected to chroot?
-  * In the lower left corner, it should show `SSH: cros` if you followed
+- How to check that my VSCode is connected to chroot?
+  - In the lower left corner, it should show `SSH: cros` if you followed
     [QuickStart Guide].
-* How to build and install the extension from local source code?
-  * Run `./install.sh --dev` in the terminal of the VSCode connected to chroot.
+- How to build and install the extension from local source code?
+  - Run `./install.sh --dev` in the terminal of the VSCode connected to chroot.
     It builds from the source code and installs it to the current vscode.
-* Why repo upload is slow?
-  * It runs `npm test`. It's a tentative alternative for a CQ which is under
+- Why repo upload is slow?
+  - It runs `npm test`. It's a tentative alternative for a CQ which is under
     construction.
-* My repo hook script complains that there is no npx?
-  * Run `sudo apt-get install npm` (outside of chroot).
-* How to fix formatting errors?
-  * Run `npm run lint -- --fix`.
+- My repo hook script complains that there is no npx?
+  - Run `sudo apt-get install npm` (outside of chroot).
+- How to fix formatting errors?
+  - Run `npm run lint -- --fix`.
 
------------------------------------------------------------------------------------------------------------
+---
 
 # Sticky Notes
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-* [Project Documentation (Google Internal)](http://go/cros-ide)
+- [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+- [Project Documentation (Google Internal)](http://go/cros-ide)
 
------------------------------------------------------------------------------------------------------------
+---

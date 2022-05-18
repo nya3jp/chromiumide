@@ -9,7 +9,7 @@ All you need is a Chrome OS chroot, which most developers already have.
 If you don't have it, please follow the [Chromium OS Developer Guide] and set up
 your development environment, so you can [enter the chroot via cros_sdk].
 
-[Chromium OS Developer Guide]: https://chromium.googlesource.com/chromiumos/docs/+/HEAD/developer_guide.md
+[chromium os developer guide]: https://chromium.googlesource.com/chromiumos/docs/+/HEAD/developer_guide.md
 [enter the chroot via cros_sdk]: https://chromium.googlesource.com/chromiumos/docs/+/HEAD/developer_guide.md#Enter-the-chroot
 
 ## 1. Install Visual Studio Code
@@ -17,39 +17,45 @@ your development environment, so you can [enter the chroot via cros_sdk].
 First, you need to install Visual Studio Code (VSCode) on your client machine.
 
 ### gLinux
+
 ```
 sudo apt install code
 ```
+
 Learn more at [go/vscode/install#glinux]
 
 [go/vscode/install#glinux]: http://go/vscode/install#glinux
 
 ### gMac
+
 Install [VSCode from the Software Center] or [go/mule]
 (`sudo mule install visual-studio-code`).
 
-[VSCode from the Software Center]: https://device-portal.corp.google.com/#/software-center/list//appid%3AMAC_OS-visual-studio-code/MAC_OS
+[vscode from the software center]: https://device-portal.corp.google.com/#/software-center/list//appid%3AMAC_OS-visual-studio-code/MAC_OS
 [go/mule]: http://go/mule
 
 ### Chrome OS
 
 CrOS IDE supports only platform-specific VSCode, which is not available for
 Chrome OS. There are two workarounds:
+
 - Check out [go/cros-ide-on-chromebooks] to learn more about
   [Code Server], which is a Web IDE accessible in the browser.
 - Use remote desktop.
 
 [go/cros-ide-on-chromebooks]: http://go/cros-ide-on-chromebooks
-[Code Server]: https://github.com/coder/code-server
+[code server]: https://github.com/coder/code-server
 
 ## 2. Install cros-sdk-proxy
 
 Follow [cros-sdk-proxy documentation](../cros-sdk-proxy/README.md).
 
 Verify the installation by running the following command on your client machine:
+
 ```
 ssh cros
 ```
+
 It should connect to the chroot, just like `cros_sdk` does.
 
 ## 3. Connect to chroot via VSCode
@@ -62,7 +68,7 @@ Open your working directory under `/home/$USER/chromiumos/`.
 
 ![Open cros](https://storage.googleapis.com/chromeos-velocity/ide/img/open-cros.gif)
 
-[Remote development]: https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack
+[remote development]: https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack
 
 ## 4. Install the extension
 
@@ -74,14 +80,14 @@ Open terminal in the VSCode connected to `cros`, and run
 
 ### Additional installation options
 
-* In case you are using code-server or VSCode Insiders, specify the VSCode executable with
+- In case you are using code-server or VSCode Insiders, specify the VSCode executable with
   `--exe` flag. For example
 
 ```
 ~/chromiumos/chromite/ide_tooling/cros-ide/install.sh --exe ~/.local/bin/code-server
 ```
 
-* You can install an old version of extension (say 0.0.1), with `--force 0.0.1` flag.
+- You can install an old version of extension (say 0.0.1), with `--force 0.0.1` flag.
 
 ## 5. Reload the IDE
 
@@ -104,14 +110,14 @@ Go to Implementation, and so on.
 
 ![Example of Code Completion](https://storage.googleapis.com/chromeos-velocity/ide/img/code-completion.gif)
 
-[Go to Definition]: https://code.visualstudio.com/docs/editor/editingevolved#_go-to-definition
+[go to definition]: https://code.visualstudio.com/docs/editor/editingevolved#_go-to-definition
 
 ### Linter Integration
 
 CrOS IDE exposes lint errors found by `cros lint` and similar tools in C++,
 Python, shell, and GN files. We run linters every time a file is saved,
 and mark errors with squiggly lines in the editor and show them in
-the *Problems* box and on mouse hover. This feature bring to your attention
+the _Problems_ box and on mouse hover. This feature bring to your attention
 errors which block `repo upload`.
 
 ![Lint Errors in the IDE](https://storage.googleapis.com/chromeos-velocity/ide/img/lint-virtual.png)
@@ -120,7 +126,7 @@ errors which block `repo upload`.
 
 CrOS IDE shows which packages you are working on and lets you run
 `cros_workon start/stop` directly from the UI. Access it by clicking on
-*CrOS Development* [activity bar]. Use +/– buttons to start and stop working
+_CrOS Development_ [activity bar]. Use +/– buttons to start and stop working
 on packages.
 
 ![Boards and Packages in the IDE](https://storage.googleapis.com/chromeos-velocity/ide/img/boards-and-packages.gif)
@@ -139,7 +145,7 @@ to use (public, internal, or Gitiles).
 
 # Known issues
 
-* C++ code completion runs  `USE=compilation_database emerge-$BOARD $PKG`
+- C++ code completion runs `USE=compilation_database emerge-$BOARD $PKG`
   in the background and overrides existing files in `/build/$BOARD/`. For
   example, if you generate coverage with `USE=coverage cros_run_unit_tests ...`,
   CrOS IDE will override the coverage data.
