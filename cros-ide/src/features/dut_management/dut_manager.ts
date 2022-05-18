@@ -137,9 +137,13 @@ export async function activateDutManager(context: vscode.ExtensionContext) {
       }
 
       const configRoot = ideUtil.getConfigRoot();
-      const hosts = configRoot.get<string[]>('hosts') || [];
+      const hosts = configRoot.get<string[]>('dutManager.hosts') || [];
       hosts.push(host);
-      configRoot.update('hosts', hosts, vscode.ConfigurationTarget.Global);
+      configRoot.update(
+        'dutManager.hosts',
+        hosts,
+        vscode.ConfigurationTarget.Global
+      );
 
       metrics.send({category: 'dut', action: 'add host'});
     }),
@@ -159,10 +163,10 @@ export async function activateDutManager(context: vscode.ExtensionContext) {
         // from "my devices"
         if (!(await fleetDevicesProvider.removeTreeItem(host))) {
           const configRoot = ideUtil.getConfigRoot();
-          const oldHosts = configRoot.get<string[]>('hosts') || [];
+          const oldHosts = configRoot.get<string[]>('dutManager.hosts') || [];
           const newHosts = oldHosts.filter(h => h !== host);
           configRoot.update(
-            'hosts',
+            'dutManager.hosts',
             newHosts,
             vscode.ConfigurationTarget.Global
           );

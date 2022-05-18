@@ -257,7 +257,7 @@
           "description": "Faster compilation database generation for C++ xrefs (incomplete)",
           "default": false
         },
-        "cros-ide.hosts": {
+        "cros-ide.dutManager.hosts": {
           "type": "array",
           "scope": "machine-overridable",
           "description": "List of devices under testing",

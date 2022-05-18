@@ -64,6 +64,6 @@ export class LocalDevicesProvider implements vscode.TreeDataProvider<string> {
   }
 
   private getHosts(): string[] {
-    return ideUtil.getConfigRoot().get<string[]>('hosts') || [];
+    return ideUtil.getConfigRoot().get<string[]>('dutManager.hosts') || [];
   }
 }
