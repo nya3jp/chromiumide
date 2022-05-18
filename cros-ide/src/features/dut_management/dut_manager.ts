@@ -7,10 +7,36 @@
  */
 import * as fs from 'fs';
 import * as vscode from 'vscode';
+import * as commands from './commands_provider';
+import * as provider from './device_tree_data_provider';
+import * as repository from './device_repository';
 import * as dutUtil from './dut_util';
 
 export async function activateDutManager(context: vscode.ExtensionContext) {
   rsaKeyFixPermission(context);
+
+  const staticDeviceRepository = new repository.StaticDeviceRepository();
+  const leasedDeviceRepository = new repository.LeasedDeviceRepository();
+  const commandsProvider = new commands.CommandsProvider(
+    context,
+    staticDeviceRepository,
+    leasedDeviceRepository
+  );
+  const deviceTreeDataProvider = new provider.DeviceTreeDataProvider(
+    staticDeviceRepository,
+    leasedDeviceRepository
+  );
+
+  context.subscriptions.push(
+    staticDeviceRepository,
+    leasedDeviceRepository,
+    commandsProvider,
+    deviceTreeDataProvider
+  );
+
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider('devices', deviceTreeDataProvider)
+  );
 }
 
 /**

@@ -20,9 +20,14 @@
     "Testing"
   ],
   "activationEvents": [
+    "onCommand:cros-ide.dutManager.addHost",
+    "onCommand:cros-ide.dutManager.deleteHost",
+    "onCommand:cros-ide.dutManager.connectToHostForScreen",
+    "onCommand:cros-ide.dutManager.connectToHostForShell",
     "onCommand:cros-ide.codeSearchOpenCurrentFile",
     "onCommand:cros-ide.codeSearchSearchForSelection",
     "onCommand:cros-ide.fileIdeBug",
+    "onView:devices",
     "onView:boards-packages",
     "onLanguage:cpp",
     "onLanguage:gn",
@@ -34,6 +39,30 @@
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
+      {
+        "command": "cros-ide.dutManager.connectToHostForScreen",
+        "title": "CrOS: Connect to Host (VNC)",
+        "icon": "$(window)",
+        "enablement": "config.cros-ide.underDevelopment.dutManager"
+      },
+      {
+        "command": "cros-ide.dutManager.connectToHostForShell",
+        "title": "CrOS: Connect to Host (Shell)",
+        "icon": "$(terminal)",
+        "enablement": "config.cros-ide.underDevelopment.dutManager"
+      },
+      {
+        "command": "cros-ide.dutManager.addHost",
+        "title": "CrOS: Add New Host",
+        "icon": "$(add)",
+        "enablement": "config.cros-ide.underDevelopment.dutManager"
+      },
+      {
+        "command": "cros-ide.dutManager.deleteHost",
+        "title": "CrOS: Delete Host",
+        "icon": "$(remove)",
+        "enablement": "config.cros-ide.underDevelopment.dutManager"
+      },
       {
         "command": "cros-ide.refreshBoardsPackages",
         "title": "CrOS: Refresh Boards and Packages",
@@ -82,6 +111,11 @@
     "views": {
       "cros-view": [
         {
+          "id": "devices",
+          "name": "Devices",
+          "when": "config.cros-ide.underDevelopment.dutManager"
+        },
+        {
           "id": "boards-packages",
           "name": "Boards and Packages"
         },
@@ -108,6 +142,26 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "cros-ide.dutManager.addHost",
+          "when": "view == devices && viewItem == category-static",
+          "group": "inline"
+        },
+        {
+          "command": "cros-ide.dutManager.connectToHostForScreen",
+          "when": "view == devices && viewItem == device-static",
+          "group": "inline@1"
+        },
+        {
+          "command": "cros-ide.dutManager.connectToHostForShell",
+          "when": "view == devices && viewItem == device-static",
+          "group": "inline@2"
+        },
+        {
+          "command": "cros-ide.dutManager.deleteHost",
+          "when": "view == devices && viewItem == device-static",
+          "group": "inline@3"
+        },
         {
           "command": "cros-ide.crosWorkonStart",
           "when": "view == boards-packages && viewItem == board",
