@@ -48,9 +48,12 @@ describe('C++ code completion', () => {
     vscode.workspace
       .getConfiguration('cros-ide')
       .update('board', 'amd64-generic');
+    const clangd = jasmine.createSpyObj<vscode.Extension<unknown>>('clangd', [
+      'activate',
+    ]);
     vscodeSpy.extensions.getExtension
       .withArgs(CLANGD_EXTENSION)
-      .and.returnValue({} as vscode.Extension<void>);
+      .and.returnValue(clangd);
 
     const done = newEventWaiter(state.compilationDatabase);
 
@@ -63,6 +66,7 @@ describe('C++ code completion', () => {
 
     await done;
 
+    expect(clangd.activate).toHaveBeenCalledOnceWith();
     expect(state.spiedCompdbService.requests).toEqual([
       {
         board: 'amd64-generic',
@@ -82,9 +86,12 @@ describe('C++ code completion', () => {
     vscode.workspace
       .getConfiguration('cros-ide')
       .update('board', 'amd64-generic');
+    const clangd = jasmine.createSpyObj<vscode.Extension<unknown>>('clangd', [
+      'activate',
+    ]);
     vscodeSpy.extensions.getExtension
       .withArgs(CLANGD_EXTENSION)
-      .and.returnValue({} as vscode.Extension<void>);
+      .and.returnValue(clangd);
 
     const done = newEventWaiter(state.compilationDatabase);
 
@@ -95,6 +102,7 @@ describe('C++ code completion', () => {
 
     await done;
 
+    expect(clangd.activate).toHaveBeenCalledOnceWith();
     expect(state.spiedCompdbService.requests).toEqual([
       {
         board: 'amd64-generic',
@@ -111,9 +119,12 @@ describe('C++ code completion', () => {
     vscode.workspace
       .getConfiguration('cros-ide')
       .update('board', 'amd64-generic');
+    const clangd = jasmine.createSpyObj<vscode.Extension<unknown>>('clangd', [
+      'activate',
+    ]);
     vscodeSpy.extensions.getExtension
       .withArgs(CLANGD_EXTENSION)
-      .and.returnValue({} as vscode.Extension<void>);
+      .and.returnValue(clangd);
 
     const done = newEventWaiter(state.compilationDatabase);
 
@@ -124,6 +135,8 @@ describe('C++ code completion', () => {
 
     await done;
 
+    expect(clangd.activate).not.toHaveBeenCalled();
+
     // The service should not have been called.
     expect(state.spiedCompdbService.requests).toEqual([]);
   });
@@ -133,9 +146,12 @@ describe('C++ code completion', () => {
     vscode.workspace
       .getConfiguration('cros-ide')
       .update('board', 'amd64-generic');
+    const clangd = jasmine.createSpyObj<vscode.Extension<unknown>>('clangd', [
+      'activate',
+    ]);
     vscodeSpy.extensions.getExtension
       .withArgs(CLANGD_EXTENSION)
-      .and.returnValue({} as vscode.Extension<void>);
+      .and.returnValue(clangd);
 
     let done = newEventWaiter(state.compilationDatabase);
 
@@ -178,6 +194,8 @@ describe('C++ code completion', () => {
     } as vscode.TextEditor);
 
     await done;
+
+    expect(clangd.activate).toHaveBeenCalledOnceWith();
 
     // The service is called because compdb has not been generated for codelab.
     expect(state.spiedCompdbService.requests.length).toBe(2);

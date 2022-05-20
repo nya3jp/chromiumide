@@ -50,6 +50,11 @@ export class CompilationDatabase implements vscode.Disposable {
   // Store errors to avoid showing the same error many times.
   private readonly seenError: Set<CompdbErrorKind> = new Set();
 
+  // Indicates CompilationDatabase activated clangd
+  // (it might have been already activated independently, in which case we will
+  // activate it again - not ideal, but not a problem either).
+  private clangdActivated = false;
+
   // Callbacks called after an event has been handled.
   readonly onEventHandledForTesting = new Array<() => void>();
 
@@ -93,12 +98,28 @@ export class CompilationDatabase implements vscode.Disposable {
     }
   }
 
+  private async ensureClangdIsActivated() {
+    if (this.clangdActivated) {
+      return true;
+    }
+
+    const clangd = vscode.extensions.getExtension(CLANGD_EXTENSION);
+    if (!clangd) {
+      return false;
+    }
+
+    // Make sure the extension is activated, because we want to call 'clangd.restart'.
+    await clangd.activate();
+    this.clangdActivated = true;
+    return true;
+  }
+
   // Generate compilation database for clangd.
   private async generate(
     document: vscode.TextDocument,
     skipIfAlreadyGenerated?: boolean
   ) {
-    if (!vscode.extensions.getExtension(CLANGD_EXTENSION)) {
+    if (!(await this.ensureClangdIsActivated())) {
       return;
     }
     if (!this.compdbService.isEnabled()) {
