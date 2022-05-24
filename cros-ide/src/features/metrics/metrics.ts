@@ -127,7 +127,7 @@ export class Analytics {
     const data: Record<string, string | number> = {
       v: protocolVersion,
       tid: this.trackingId,
-      uid: this.userId,
+      cid: this.userId,
       t: hitType,
       ec: event.category,
       ea: event.action,
