@@ -168,34 +168,16 @@ export class CompilationDatabase implements vscode.Disposable {
         await this.compdbService.generate(board, packageInfo);
         await vscode.commands.executeCommand('clangd.restart');
       } catch (e) {
-        let message = (e as Error).message;
-        let button: Button | undefined = undefined;
         if (e instanceof CompdbError) {
-          const items = uiItemsForError(board, e);
-          message = items.message;
-          button = items.button;
-
-          // TODO(oka): Add a button to show the log in addition to the button we have here.
-          // It would simply run 'cros-ide.showCppLog' command.
           if (!this.seenError.has(e.details.kind)) {
+            // TODO(oka): Run this line only when user explicitly disabled the error message.
             this.seenError.add(e.details.kind);
-            if (button) {
-              // `await` cannot be used, because it blocks forever if the
-              // message is dismissed by timeout.
-              vscode.window
-                .showErrorMessage(message, button?.name)
-                .then(value => {
-                  if (value === button!.name) {
-                    button!.action();
-                  }
-                });
-            } else {
-              vscode.window.showErrorMessage(message);
-            }
+
+            this.showErrorMessageWithShowLogOption(board, e);
           }
         }
 
-        this.log.appendLine(message);
+        this.log.appendLine((e as Error).message);
         console.error(e);
         this.statusManager.setTask(STATUS_BAR_TASK_ID, {
           status: bgTaskStatus.TaskStatus.ERROR,
@@ -208,6 +190,23 @@ export class CompilationDatabase implements vscode.Disposable {
         status: bgTaskStatus.TaskStatus.OK,
         command: SHOW_LOG_COMMAND,
       });
+    });
+  }
+
+  showErrorMessageWithShowLogOption(board: string, e: CompdbError) {
+    const SHOW_LOG = 'Show Log';
+
+    const {message, button} = uiItemsForError(board, e);
+    const buttons: string[] = (button ? [button.name] : []).concat(SHOW_LOG);
+
+    // `await` cannot be used, because it blocks forever if the
+    // message is dismissed by timeout.
+    vscode.window.showErrorMessage(message, ...buttons).then(value => {
+      if (button && value === button.name) {
+        button.action();
+      } else if (value === SHOW_LOG) {
+        this.log.show();
+      }
     });
   }
 }
