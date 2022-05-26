@@ -100,7 +100,11 @@ export class CommandsProvider implements vscode.Disposable {
     }
 
     // Create a new session and store it to this.sessions.
-    const newSession = new vnc.VncSession(hostname, this.context, this.output);
+    const newSession = await vnc.VncSession.create(
+      hostname,
+      this.context,
+      this.output
+    );
     newSession.onDidDispose(() => {
       this.sessions.delete(hostname);
     });

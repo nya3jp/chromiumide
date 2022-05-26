@@ -23,7 +23,7 @@ function waitConnectEvent(session: vnc.VncSession): Promise<void> {
   });
 }
 
-xdescribe('VNC session', () => {
+describe('VNC session', () => {
   const state = testing.cleanState(() => {
     const subscriptions: vscode.Disposable[] = [];
     const output = vscode.window.createOutputChannel(
@@ -51,7 +51,7 @@ xdescribe('VNC session', () => {
     await sshServer.listen();
 
     // Prepare a VNC session.
-    const session = new vnc.VncSession(
+    const session = await vnc.VncSession.create(
       `localhost:${sshServer.listenPort}`,
       api.context,
       state.output
@@ -81,7 +81,7 @@ xdescribe('VNC session', () => {
     await sshServer.listen();
 
     // Prepare a VNC session.
-    const session = new vnc.VncSession(
+    const session = await vnc.VncSession.create(
       `localhost:${sshServer.listenPort}`,
       api.context,
       state.output,

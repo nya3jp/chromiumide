@@ -28,6 +28,10 @@ export class FakeSshServer {
       hostKeys: [FAKE_SSH_HOST_KEY],
     });
     this.server.on('connection', client => {
+      client.on('error', () => {
+        // Ignore socket errors.
+      });
+
       client.on('authentication', ctx => {
         ctx.accept();
       });

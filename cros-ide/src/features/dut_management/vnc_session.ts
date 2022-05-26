@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as net from 'net';
 import * as path from 'path';
@@ -62,14 +61,23 @@ export class VncSession {
     this.onDidReceiveMessageEmitter,
   ];
 
-  constructor(
+  static async create(
+    host: string,
+    context: vscode.ExtensionContext,
+    output: vscode.OutputChannel,
+    proxyProtocol?: ProxyProtocol
+  ): Promise<VncSession> {
+    const forwardPort = await findUnusedPort();
+    return new VncSession(host, context, output, proxyProtocol, forwardPort);
+  }
+
+  private constructor(
     host: string,
     private readonly context: vscode.ExtensionContext,
     output: vscode.OutputChannel,
-    proxyProtocol?: ProxyProtocol
+    proxyProtocol: ProxyProtocol | undefined,
+    forwardPort: number
   ) {
-    const forwardPort = findUnusedPort();
-
     this.panel = VncSession.createWebview(host);
     switch (proxyProtocol ?? detectProxyProtocol()) {
       case ProxyProtocol.WEBSOCKET:
@@ -455,11 +463,16 @@ function replaceAll(s: string, patterns: ReplacePattern[]): string {
   return s;
 }
 
-function findUnusedPort(): number {
-  // Pick a random port without actually checking if it is in use.
-  // TODO: Improve the method. Maybe we can bind a temporary server
-  // socket and return its port.
-  return crypto.randomInt(20000, 60000);
+async function findUnusedPort(): Promise<number> {
+  return new Promise<number>(resolve => {
+    const server = net.createServer();
+    server.listen(0, 'localhost', () => {
+      const port = (server.address() as net.AddressInfo).port;
+      server.close(() => {
+        resolve(port);
+      });
+    });
+  });
 }
 
 // Type-safe wrapper of vscode.Webview.postMessage.
