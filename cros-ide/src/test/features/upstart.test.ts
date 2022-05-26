@@ -31,6 +31,18 @@ env NO_VALUE_EQ=
 env BTMGMT_JAIL='/sbin/minijail0 -u bluetooth -g bluetooth -G -c 3500 -- /usr/bin/btmgmt'
 env BT_ADDR_RE='^\\s*addr (([0-9A-F]){2}:){5}([0-9A-F]){2}\\s'
 env drvfile=/var/lib/preload-network-drivers
+
+script
+  echo
+end script
+
+post-stop exec one --liner
+
+exec multi\\
+  line\\
+  command
+
+#more stuff
 `;
 
 describe('Upstart support', () => {
@@ -101,6 +113,34 @@ describe('Upstart support', () => {
         vscode.SymbolKind.Variable,
         new vscode.Range(20, 0, 20, 44),
         new vscode.Range(20, 4, 20, 11)
+      ),
+      new vscode.DocumentSymbol(
+        'script',
+        'pre-start',
+        vscode.SymbolKind.Function,
+        new vscode.Range(12, 0, 14, 10),
+        new vscode.Range(12, 0, 12, 16)
+      ),
+      new vscode.DocumentSymbol(
+        'script',
+        '',
+        vscode.SymbolKind.Function,
+        new vscode.Range(22, 0, 24, 10),
+        new vscode.Range(22, 0, 22, 6)
+      ),
+      new vscode.DocumentSymbol(
+        'exec',
+        'post-stop',
+        vscode.SymbolKind.Function,
+        new vscode.Range(26, 0, 26, 26),
+        new vscode.Range(26, 0, 26, 14)
+      ),
+      new vscode.DocumentSymbol(
+        'exec',
+        '',
+        vscode.SymbolKind.Function,
+        new vscode.Range(28, 0, 30, 9),
+        new vscode.Range(28, 0, 28, 4)
       ),
     ]);
   });
