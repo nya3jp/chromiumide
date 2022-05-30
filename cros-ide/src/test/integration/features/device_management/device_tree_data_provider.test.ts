@@ -6,7 +6,7 @@ import 'jasmine';
 import * as vscode from 'vscode';
 import * as repository from '../../../../features/device_management/device_repository';
 import * as provider from '../../../../features/device_management/device_tree_data_provider';
-import * as testing from '../../testing';
+import * as testing from '../../../testing';
 import * as repositoryUtil from './device_repository_util';
 
 interface RenderedTreeNode {

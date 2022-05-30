@@ -7,7 +7,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import {WrapFs} from '../../common/cros';
 import * as ideUtil from '../../ide_util';
-import * as testing from './testing';
+import * as testing from '../testing';
 import {installVscodeDouble} from './doubles';
 import {fakeGetConfiguration} from './fakes/workspace_configuration';
 

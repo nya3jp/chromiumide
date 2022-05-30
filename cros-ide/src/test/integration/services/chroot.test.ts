@@ -7,7 +7,7 @@ import {ExecResult, Source} from '../../../common/common_util';
 import {WrapFs} from '../../../common/cros';
 import {ChrootService, InvalidPasswordError} from '../../../services/chroot';
 import {installVscodeDouble} from '../doubles';
-import {exactMatch, installFakeExec, tempDir} from '../testing';
+import {exactMatch, installFakeExec, tempDir} from '../../testing';
 
 describe('chroot service', () => {
   const temp = tempDir();

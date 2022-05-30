@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import 'jasmine';
 import * as path from 'path';
 import * as sshConfig from '../../../../features/device_management/ssh_config';
-import * as testing from '../../testing';
+import * as testing from '../../../testing';
 
 const TEST_CONFIG_FILE = `
 # Comments are ignored

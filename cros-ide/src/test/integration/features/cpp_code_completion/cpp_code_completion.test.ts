@@ -11,7 +11,7 @@ import {CompilationDatabase} from '../../../../features/cpp_code_completion/cpp_
 import {Packages} from '../../../../features/cpp_code_completion/packages';
 import {ChrootService} from '../../../../services/chroot';
 import * as bgTaskStatus from '../../../../ui/bg_task_status';
-import {buildFakeChroot, cleanState, tempDir} from '../../testing';
+import {buildFakeChroot, cleanState, tempDir} from '../../../testing';
 import {installVscodeDouble} from '../../doubles';
 import {FakeOutputChannel} from '../../fakes/output_channel';
 import {fakeGetConfiguration} from '../../fakes/workspace_configuration';

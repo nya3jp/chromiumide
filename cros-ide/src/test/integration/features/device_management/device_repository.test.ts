@@ -4,7 +4,7 @@
 
 import 'jasmine';
 import * as repository from '../../../../features/device_management/device_repository';
-import * as testing from '../../testing';
+import * as testing from '../../../testing';
 import * as repositoryUtil from './device_repository_util';
 
 describe('Owned device repository', () => {

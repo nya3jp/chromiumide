@@ -12,7 +12,7 @@ import {
   CompdbServiceImpl,
 } from '../../../../features/cpp_code_completion/compdb_service';
 import * as chroot from '../../../../services/chroot';
-import * as testing from '../../testing';
+import * as testing from '../../../testing';
 
 describe('Compdb service', () => {
   const tempdir = testing.tempDir();

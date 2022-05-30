@@ -8,11 +8,11 @@ import * as codesearch from '../../../features/codesearch';
 import {
   buildFakeChroot,
   cleanState,
-  closeDocument,
   exactMatch,
   installFakeExec,
   tempDir,
-} from '../testing';
+} from '../../testing';
+import {closeDocument} from '../extension_testing';
 import {installVscodeDouble} from '../doubles';
 import {fakeGetConfiguration} from '../fakes/workspace_configuration';
 

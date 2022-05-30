@@ -5,7 +5,7 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as commonUtil from '../../../common/common_util';
-import {flushMicrotasks, tempDir} from '../testing';
+import {flushMicrotasks, tempDir} from '../../testing';
 
 class BlockingPromise<T> {
   readonly promise: Promise<T | undefined>;

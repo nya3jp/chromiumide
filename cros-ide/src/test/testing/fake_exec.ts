@@ -2,17 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
-import * as vscode from 'vscode';
 import {
-  Chroot,
   ExecOptions,
   ExecResult,
   setExecForTesting,
 } from '../../common/common_util';
-import * as extension from '../../extension';
+import {cleanState} from './clean_state';
 
 type Logger = (s: string) => void;
 
@@ -101,46 +96,6 @@ export class FakeExec {
   }
 }
 
-export async function putFiles(dir: string, files: {[name: string]: string}) {
-  for (const [name, content] of Object.entries(files)) {
-    const filePath = path.join(dir, name);
-    await fs.promises.mkdir(path.dirname(filePath), {recursive: true});
-    await fs.promises.writeFile(path.join(dir, name), content);
-  }
-}
-
-type StateInitializer<T> = (() => Promise<T>) | (() => T);
-
-/**
- * See go/cleanstate for details.
- *
- * Usage:
- *
- * describe('Foo', () => {
- *   const state = cleanState(() => {foo: new Foo()});
- *
- *   it('does bar', () => {
- *     expect(state.foo.bar()).toBeTrue();
- *   });
- * })
- *
- * Beware that class methods are not assigned to the returned object.
- * Writing `cleanState(() => new Foo())` in the above code doesn't work.
- */
-export function cleanState<NewState extends {}>(
-  init: StateInitializer<NewState>
-): NewState {
-  const state = {} as NewState;
-  beforeEach(async () => {
-    // Clear state before every test case.
-    for (const prop of Object.getOwnPropertyNames(state)) {
-      delete (state as {[k: string]: unknown})[prop];
-    }
-    Object.assign(state, await init());
-  });
-  return state;
-}
-
 /**
  * Installs fake exec for testing. This function should be called in describe.
  *
@@ -162,62 +117,4 @@ export function installFakeExec(): {fakeExec: FakeExec} {
   });
 
   return {fakeExec};
-}
-
-/**
- * Returns a state with the path to a temporary directory, installing an
- * afterEach hook to remove the directory.
- */
-export function tempDir(): {path: string} {
-  const state = cleanState(async () => {
-    return {
-      path: await fs.promises.mkdtemp(os.tmpdir() + '/'),
-    };
-  });
-  afterEach(() => fs.promises.rm(state.path, {recursive: true}));
-  return state;
-}
-
-/**
- * Ensure all currently pending microtasks and all microtasks transitively
- * queued by them have finished.
- *
- * This function can be useful for waiting for an async event handler to finish
- * after an event is fired, for example.
- */
-export async function flushMicrotasks(): Promise<void> {
-  return new Promise(resolve => {
-    setImmediate(resolve);
-  });
-}
-
-/**
- * Builds fake chroot environment under tempDir, and returns the path to the
- * fake chroot (`${tempDir}/chroot`).
- */
-export async function buildFakeChroot(tempDir: string): Promise<Chroot> {
-  await putFiles(tempDir, {'chroot/etc/cros_chroot_version': '42'});
-  return path.join(tempDir, 'chroot') as Chroot;
-}
-
-/**
- * ExtensionApiForTesting is similar to ExtensionApi, but some fields are
- * guaranteed to be available.
- */
-interface ExtensionApiForTesting extends extension.ExtensionApi {
-  context: vscode.ExtensionContext;
-}
-
-/**
- * Activates the extension and returns its public API.
- */
-export async function activateExtension(): Promise<ExtensionApiForTesting> {
-  const extension =
-    vscode.extensions.getExtension<ExtensionApiForTesting>('google.cros-ide')!;
-  return await extension.activate();
-}
-
-export async function closeDocument(document: vscode.TextDocument) {
-  await vscode.window.showTextDocument(document);
-  await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 }

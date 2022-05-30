@@ -6,7 +6,8 @@ import 'jasmine';
 import * as vscode from 'vscode';
 import * as vnc from '../../../../features/device_management/vnc_session';
 import * as webviewShared from '../../../../features/device_management/webview_shared';
-import * as testing from '../../testing';
+import * as testing from '../../../testing';
+import * as extensionTesting from '../../extension_testing';
 import {FakeSshServer} from './fake_ssh_server';
 import {FakeVncServer} from './fake_vnc_server';
 
@@ -38,7 +39,7 @@ describe('VNC session', () => {
   });
 
   it('can connect to a server', async () => {
-    const api = await testing.activateExtension();
+    const api = await extensionTesting.activateExtension();
 
     // Start a fake VNC server.
     const vncServer = new FakeVncServer();
@@ -68,7 +69,7 @@ describe('VNC session', () => {
   });
 
   it('can connect to a server with message passing protocol', async () => {
-    const api = await testing.activateExtension();
+    const api = await extensionTesting.activateExtension();
 
     // Start a fake VNC server.
     const vncServer = new FakeVncServer();

@@ -6,7 +6,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as shortLinkProvider from '../../../features/short_link_provider';
 import {FakeCancellationToken} from '../fakes/fake_cancellation_token';
-import * as testing from '../testing';
+import * as extensionTesting from '../extension_testing';
 
 // Create vscode.TextDocument from text and run ShortLinkProvider on it.
 async function getLinks(text: string) {
@@ -16,7 +16,7 @@ async function getLinks(text: string) {
     document,
     new FakeCancellationToken()
   );
-  await testing.closeDocument(document);
+  await extensionTesting.closeDocument(document);
   return res;
 }
 

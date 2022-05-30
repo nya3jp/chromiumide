@@ -15,7 +15,7 @@ import {
   installFakeExec,
   putFiles,
   tempDir,
-} from '../testing';
+} from '../../testing';
 
 const {Board, Package, BoardPackageProvider, BoardsPackages} = TEST_ONLY;
 

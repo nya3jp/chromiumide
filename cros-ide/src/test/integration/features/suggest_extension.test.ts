@@ -4,7 +4,7 @@
 
 import * as vscode from 'vscode';
 import {activateSingle} from '../../../features/suggest_extension';
-import {flushMicrotasks} from '../testing';
+import {flushMicrotasks} from '../../testing';
 import {installVscodeDouble} from '../doubles';
 
 describe('Suggest extension module', () => {

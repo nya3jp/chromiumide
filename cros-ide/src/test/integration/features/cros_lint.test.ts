@@ -5,7 +5,7 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as crosLint from '../../../features/cros_lint';
-import * as testing from '../testing';
+import * as extensionTesting from '../extension_testing';
 
 const cppFileName = 'cros-disks/aaa.h';
 
@@ -97,7 +97,7 @@ describe('Lint Integration', () => {
     const uri = vscode.Uri.from({scheme: scheme, path: cppFileName});
     const textDocument = await vscode.workspace.openTextDocument(uri);
     const actual = crosLint.parseCrosLintCpp(cppLintOutput, '', textDocument);
-    await testing.closeDocument(textDocument);
+    await extensionTesting.closeDocument(textDocument);
     assert.strictEqual(actual.length, 2);
     const expected = [
       new vscode.Diagnostic(
@@ -128,7 +128,7 @@ describe('Lint Integration', () => {
       '',
       textDocument
     );
-    await testing.closeDocument(textDocument);
+    await extensionTesting.closeDocument(textDocument);
     assert.strictEqual(actual.length, 3);
     const expected = [
       new vscode.Diagnostic(
@@ -167,7 +167,7 @@ describe('Lint Integration', () => {
       '',
       textDocument
     );
-    await testing.closeDocument(textDocument);
+    await extensionTesting.closeDocument(textDocument);
     assert.strictEqual(actual.length, 1);
     const expected = [
       new vscode.Diagnostic(
@@ -187,7 +187,7 @@ describe('Lint Integration', () => {
     const textDocument = await vscode.workspace.openTextDocument(uri);
     const actual = crosLint.parseCrosLintGn('', gnLintOutput, textDocument);
     assert.strictEqual(actual.length, 2);
-    await testing.closeDocument(textDocument);
+    await extensionTesting.closeDocument(textDocument);
     const expected = [
       new vscode.Diagnostic(
         new vscode.Range(
@@ -217,7 +217,7 @@ describe('Lint Integration', () => {
       '',
       textDocument
     );
-    await testing.closeDocument(textDocument);
+    await extensionTesting.closeDocument(textDocument);
     assert.strictEqual(actual.length, 3);
     const expected = [
       new vscode.Diagnostic(
