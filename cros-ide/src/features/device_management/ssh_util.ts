@@ -29,26 +29,22 @@ export function buildSshCommand(
   extraOptions: string[] = [],
   cmd?: string
 ): string[] {
-  let port = '22';
   const [hostname, portname] = host.split(':');
-  if (portname !== undefined) {
-    host = hostname;
-    port = portname;
-  }
 
   const args = ['ssh', '-i', getTestingRsaPath(extensionUri)];
   args.push(
     '-o',
     'StrictHostKeyChecking=no',
     '-o',
-    'UserKnownHostsFile=/dev/null',
-    '-p',
-    port
+    'UserKnownHostsFile=/dev/null'
   );
+  if (portname) {
+    args.push('-p', portname);
+  }
   if (extraOptions) {
     args.push(...extraOptions);
   }
-  args.push(`root@${host}`);
+  args.push(`root@${hostname}`);
   if (cmd) {
     args.push(cmd);
   }
