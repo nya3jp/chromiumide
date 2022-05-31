@@ -21,7 +21,9 @@
     { "include": "#nice" },
     { "include": "#oom-score" },
     { "include": "#umask" },
-    { "include": "#instance" }
+    { "include": "#instance" },
+    { "include": "#import" },
+    { "include": "#tmpfiles" }
   ],
   "repository": {
     "comment": {
@@ -231,6 +233,28 @@
         "1": { "name": "keyword.other.instance.upstart" },
         "2": { "name": "variable.other.instance.upstart" }
       }
+    },
+    "import": {
+      "match": "^(import) (\\w+)$",
+      "name": "meta.import.upstart",
+      "captures": {
+        "1": { "name": "keyword.other.import.upstart" },
+        "2": { "name": "variable.upstart" }
+      }
+    },
+    "tmpfiles": {
+      "begin": "^tmpfiles",
+      "end": "$",
+      "beginCaptures" : {
+        "0" : { "name": "keyword.other.tmpfiles.upstart" }
+      },
+      "name": "meta.tmpfiles.upstart",
+      "patterns": [
+        {
+          "match": "/\\S+",
+          "name": "string.unquoted.tmpfiles.upstart"
+        }
+      ]
     }
   }
 }
