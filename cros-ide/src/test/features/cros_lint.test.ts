@@ -28,6 +28,8 @@ Total errors found: 2
 
 const pythonFileName = 'cros-disks/aaa.py';
 
+const pythonAbsoluteFileName = '/absolute/path/to/cros-disks/aaa.py';
+
 const pythonFileContents = `#!/usr/bin/env python3
 
 class Foo:
@@ -82,6 +84,7 @@ const documentProvider = new TestDocumentProvider(
   new Map<string, string>([
     [cppFileName, cppFileContents],
     [pythonFileName, pythonFileContents],
+    [pythonAbsoluteFileName, pythonFileContents],
     [shellFileName, shellFileContents],
     [gnFileName, gnFileContents],
   ])
@@ -200,6 +203,45 @@ describe('Lint Integration', () => {
           new vscode.Position(2, Number.MAX_VALUE)
         ),
         'GnLintOrderingWithinTarget: wrong parameter order in executable(my_exec): put parameters in the following order: output_name/visibility/testonly, sources, other parameters, public_deps and deps',
+        vscode.DiagnosticSeverity.Warning
+      ),
+    ];
+    assert.deepStrictEqual(expected, actual);
+  });
+
+  it('handles absolute document paths when parsing Python errors', async () => {
+    const uri = vscode.Uri.from({scheme: scheme, path: pythonAbsoluteFileName});
+    const textDocument = await vscode.workspace.openTextDocument(uri);
+    const actual = crosLint.parseCrosLintPython(
+      pythonLintOutput,
+      '',
+      textDocument
+    );
+    await testing.closeDocument(textDocument);
+    assert.strictEqual(actual.length, 3);
+    const expected = [
+      new vscode.Diagnostic(
+        new vscode.Range(
+          new vscode.Position(0, 0),
+          new vscode.Position(0, Number.MAX_VALUE)
+        ),
+        'C9001: Modules should have docstrings (even a one liner) (module-missing-docstring)',
+        vscode.DiagnosticSeverity.Warning
+      ),
+      new vscode.Diagnostic(
+        new vscode.Range(
+          new vscode.Position(2, 0),
+          new vscode.Position(2, Number.MAX_VALUE)
+        ),
+        'C9002: Classes should have docstrings (even a one liner) (class-missing-docstring)',
+        vscode.DiagnosticSeverity.Warning
+      ),
+      new vscode.Diagnostic(
+        new vscode.Range(
+          new vscode.Position(7, 4),
+          new vscode.Position(7, Number.MAX_VALUE)
+        ),
+        "W0612: Unused variable 'abc' (unused-variable)",
         vscode.DiagnosticSeverity.Warning
       ),
     ];

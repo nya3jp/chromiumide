@@ -166,6 +166,10 @@ async function updateCrosLintDiagnostics(
   }
 }
 
+function sameFile(documentFsPath: string, crosLintPath: string): boolean {
+  return path.basename(documentFsPath) === path.basename(crosLintPath);
+}
+
 export function parseCrosLintCpp(
   stdout: string,
   stderr: string,
@@ -187,7 +191,7 @@ export function parseCrosLintCpp(
       line = 1;
     }
     const message = match[3];
-    if (file === document.uri.fsPath) {
+    if (sameFile(document.uri.fsPath, file)) {
       diagnostics.push(createDiagnostic(message, line));
     }
   }
@@ -213,7 +217,9 @@ export function parseCrosLintGn(
     const line = Number(match[2]);
     const startCol = Number(match[3]);
     const message = match[4];
-    if (file === document.uri.fsPath) {
+    // Keep the same logic for matching file names,
+    // although here it effectively no-op (always BUILD.gn)
+    if (sameFile(document.uri.fsPath, file)) {
       diagnostics.push(createDiagnostic(message, line, startCol));
     }
   }
@@ -235,7 +241,7 @@ export function parseCrosLintPython(
     // Column number from the python linter is 0-based.
     const startCol = Number(match[3]) + 1;
     const message = match[4];
-    if (file === document.uri.fsPath) {
+    if (sameFile(document.uri.fsPath, file)) {
       diagnostics.push(createDiagnostic(message, line, startCol));
     }
   }
@@ -256,7 +262,7 @@ export function parseCrosLintShell(
     const line = Number(match[2]);
     const startCol = Number(match[3]);
     const message = match[4];
-    if (file === document.uri.fsPath) {
+    if (sameFile(document.uri.fsPath, file)) {
       diagnostics.push(createDiagnostic(message, line, startCol));
     }
   }
