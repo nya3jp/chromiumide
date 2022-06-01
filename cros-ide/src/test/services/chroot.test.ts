@@ -26,7 +26,9 @@ describe('chroot service', () => {
       'echo',
       exactMatch(['1'], async () => '1\n')
     );
-    const res = (await cros.exec('echo', ['1'])) as ExecResult;
+    const res = (await cros.exec('echo', ['1'], undefined, {
+      sudoReason: '',
+    })) as ExecResult;
     expect(res.stdout).toBe('1\n');
   });
 
@@ -50,7 +52,9 @@ describe('chroot service', () => {
           async () => '1\n'
         )
       );
-    const res = (await cros.exec('echo', ['1'])) as ExecResult;
+    const res = (await cros.exec('echo', ['1'], undefined, {
+      sudoReason: '',
+    })) as ExecResult;
     expect(res.stdout).toBe('1\n');
   });
 
@@ -80,7 +84,9 @@ describe('chroot service', () => {
 
     vscodeSpy.window.showInputBox.and.returnValue(Promise.resolve('password'));
 
-    const res = (await cros.exec('echo', ['1'])) as ExecResult;
+    const res = (await cros.exec('echo', ['1'], undefined, {
+      sudoReason: '',
+    })) as ExecResult;
     expect(res.stdout).toBe('1\n');
   });
 
@@ -110,7 +116,9 @@ describe('chroot service', () => {
 
     vscodeSpy.window.showInputBox.and.returnValue(Promise.resolve('password'));
 
-    expect(await cros.exec('false', [])).toEqual(new Error('failed'));
+    expect(await cros.exec('false', [], undefined, {sudoReason: ''})).toEqual(
+      new Error('failed')
+    );
   });
 
   it('exec returns specific error when no password was given', async () => {
@@ -128,7 +136,7 @@ describe('chroot service', () => {
 
     vscodeSpy.window.showInputBox.and.returnValue(Promise.resolve(''));
 
-    expect(await cros.exec('false', [])).toEqual(
+    expect(await cros.exec('false', [], undefined, {sudoReason: ''})).toEqual(
       new InvalidPasswordError('no password was provided')
     );
   });
@@ -165,7 +173,7 @@ describe('chroot service', () => {
       Promise.resolve('wrong password')
     );
 
-    expect(await cros.exec('false', [])).toEqual(
+    expect(await cros.exec('false', [], undefined, {sudoReason: ''})).toEqual(
       new InvalidPasswordError('invalid password')
     );
   });

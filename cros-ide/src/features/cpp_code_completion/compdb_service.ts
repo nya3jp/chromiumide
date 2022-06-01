@@ -232,7 +232,7 @@ class Ebuild {
         'compile',
       ],
       this.log,
-      {logStdout: true}
+      {logStdout: true, sudoReason: 'Generating C++ cross reference'}
     );
     if (res instanceof Error) {
       throw res;

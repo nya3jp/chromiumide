@@ -18,6 +18,14 @@ export function activate(context: vscode.ExtensionContext): ChrootService {
   return service;
 }
 
+export interface SudoExecOptions extends commonUtil.ExecOptions {
+  /**
+   * String that tells the user why password is required.
+   * Example: 'Generating C++ cross reference'
+   */
+  sudoReason: string;
+}
+
 /**
  * Provides tools to operate chroot.
  */
@@ -56,7 +64,12 @@ export class ChrootService {
    * Executes command in chroot. Returns InvalidPasswordError in case the user
    * enters invalid password.
    */
-  readonly exec: typeof commonUtil.exec = async (name, args, log, opt) => {
+  async exec(
+    name: string,
+    args: string[],
+    log: commonUtil.Log | undefined,
+    opt: SudoExecOptions
+  ) {
     if (this.isInsideChroot()) {
       return commonUtil.exec(name, args, log, opt);
     }
@@ -68,8 +81,8 @@ export class ChrootService {
     }
     const crosSdk = path.join(source.root, 'chromite/bin/cros_sdk');
     const crosSdkArgs = ['--', name, ...args];
-    return sudo([crosSdk, crosSdkArgs, log, opt]);
-  };
+    return sudo(crosSdk, crosSdkArgs, log, opt);
+  }
 
   onUpdate() {
     const chroot = this.findChroot();
@@ -109,9 +122,12 @@ const SUDO = 'sudo';
  *
  * opt.pipeStdin must be undefined.
  */
-async function sudo([name, args, log, opt]: Parameters<
-  typeof commonUtil.exec
->): ReturnType<typeof commonUtil.exec> {
+async function sudo(
+  name: string,
+  args: string[],
+  log: commonUtil.Log | undefined,
+  opt: SudoExecOptions
+): ReturnType<typeof commonUtil.exec> {
   if (opt?.pipeStdin) {
     throw new Error(
       "BUG: pipeStdin is not supported for this function; it's used to pass password to sudo"
@@ -130,6 +146,7 @@ async function sudo([name, args, log, opt]: Parameters<
   const password = await vscode.window.showInputBox({
     password: true,
     title: 'password to run ' + path.basename(name),
+    prompt: opt.sudoReason,
   });
 
   if (!password) {
