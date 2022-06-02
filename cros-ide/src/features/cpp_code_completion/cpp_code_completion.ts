@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as fs from 'fs';
 import * as vscode from 'vscode';
 import * as commonUtil from '../../common/common_util';
 import * as ideUtil from '../../ide_util';
@@ -13,8 +14,9 @@ import {
   CompdbService,
   CompdbServiceImpl,
 } from './compdb_service';
+import * as compdbService from './compdb_service';
 import {CLANGD_EXTENSION, SHOW_LOG_COMMAND} from './constants';
-import {Atom, Packages} from './packages';
+import {Atom, PackageInfo, Packages} from './packages';
 
 export function activate(
   context: vscode.ExtensionContext,
@@ -66,7 +68,7 @@ export class CompilationDatabase implements vscode.Disposable {
     this.disposables.push(
       vscode.window.onDidChangeActiveTextEditor(async editor => {
         if (editor?.document.languageId === 'cpp') {
-          await this.generate(
+          await this.maybeGenerate(
             editor.document,
             /* skipIfAlreadyGenerated = */ true
           );
@@ -79,7 +81,7 @@ export class CompilationDatabase implements vscode.Disposable {
     this.disposables.push(
       vscode.workspace.onDidSaveTextDocument(async document => {
         if (document.fileName.match(/\.gni?$/)) {
-          await this.generate(document);
+          await this.maybeGenerate(document, false);
         }
         this.onEventHandledForTesting.forEach(f => f());
       })
@@ -87,7 +89,7 @@ export class CompilationDatabase implements vscode.Disposable {
 
     const document = vscode.window.activeTextEditor?.document;
     if (document) {
-      this.generate(document);
+      this.maybeGenerate(document, false);
     }
   }
 
@@ -95,6 +97,29 @@ export class CompilationDatabase implements vscode.Disposable {
     for (const d of this.disposables) {
       d.dispose();
     }
+  }
+
+  // Generate compilation database for clangd if needed.
+  private async maybeGenerate(
+    document: vscode.TextDocument,
+    skipIfAlreadyGenerated: boolean
+  ) {
+    if (!(await this.ensureClangdIsActivated())) {
+      return;
+    }
+    const packageInfo = await this.packages.fromFilepath(document.fileName);
+    if (!packageInfo) {
+      return;
+    }
+    if (!this.shouldGenerate(packageInfo, skipIfAlreadyGenerated)) {
+      return;
+    }
+    const board = await this.board();
+    if (!board) {
+      return;
+    }
+
+    await this.generate(board, packageInfo);
   }
 
   private async ensureClangdIsActivated() {
@@ -113,36 +138,41 @@ export class CompilationDatabase implements vscode.Disposable {
     return true;
   }
 
-  // Generate compilation database for clangd.
-  private async generate(
-    document: vscode.TextDocument,
-    skipIfAlreadyGenerated?: boolean
-  ) {
-    if (!(await this.ensureClangdIsActivated())) {
-      return;
+  private shouldGenerate(
+    packageInfo: PackageInfo,
+    skipIfAlreadyGenerated: boolean
+  ): boolean {
+    if (!skipIfAlreadyGenerated || !this.generated.has(packageInfo.atom)) {
+      return true;
     }
-    const packageInfo = await this.packages.fromFilepath(document.fileName);
-    if (!packageInfo) {
-      return;
+    const source = this.chrootService.source();
+    if (
+      source &&
+      !fs.existsSync(compdbService.destination(source.root, packageInfo))
+    ) {
+      return true;
     }
-    if (skipIfAlreadyGenerated && this.generated.has(packageInfo.atom)) {
-      return;
-    }
+    return false;
+  }
+
+  private async board(): Promise<string | undefined> {
     const chroot = this.chrootService.chroot();
     if (chroot === undefined) {
-      return;
+      return undefined;
     }
-
     const board = await ideUtil.getOrSelectTargetBoard(chroot);
     if (board instanceof ideUtil.NoBoardError) {
       await vscode.window.showErrorMessage(
         `Generate compilation database: ${board.message}`
       );
-      return;
+      return undefined;
     } else if (board === null) {
-      return;
+      return undefined;
     }
+    return board;
+  }
 
+  private async generate(board: string, packageInfo: PackageInfo) {
     // Below, we create compilation database based on the project and the board.
     // Generating the database is time consuming involving execution of external
     // processes, so we ensure it to run only one at a time using the manager.
@@ -177,7 +207,7 @@ export class CompilationDatabase implements vscode.Disposable {
     });
   }
 
-  showErrorMessageWithShowLogOption(board: string, e: CompdbError) {
+  private showErrorMessageWithShowLogOption(board: string, e: CompdbError) {
     const SHOW_LOG = 'Show Log';
     const IGNORE = 'Ignore';
 

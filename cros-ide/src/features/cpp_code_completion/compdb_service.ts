@@ -93,14 +93,10 @@ export class CompdbServiceImpl implements CompdbService {
         kind: CompdbErrorKind.NotGenerated,
       });
     }
-    const destination = path.join(
-      sourceFs.root,
-      sourceDir,
-      'compile_commands.json'
-    );
+    const dest = destination(sourceFs.root, {sourceDir, atom});
     let tempFile;
     for (;;) {
-      tempFile = path.join(path.dirname(destination), '.' + uuid.v4());
+      tempFile = path.join(path.dirname(dest), '.' + uuid.v4());
       if (!fs.existsSync(tempFile)) {
         break;
       }
@@ -108,18 +104,28 @@ export class CompdbServiceImpl implements CompdbService {
     try {
       this.output.appendLine(`Copying ${artifact} to ${tempFile}`);
       await chrootFs.copyFile(artifact, tempFile);
-      this.output.appendLine(`Renaming ${tempFile} to ${destination}`);
-      await fs.promises.rename(tempFile, destination);
+      this.output.appendLine(`Renaming ${tempFile} to ${dest}`);
+      await fs.promises.rename(tempFile, dest);
     } catch (e) {
       throw new CompdbError({
         kind: CompdbErrorKind.CopyFailed,
-        destination: destination,
+        destination: dest,
         reason: e as Error,
       });
     } finally {
       await fs.promises.rm(tempFile, {force: true});
     }
   }
+}
+
+/**
+ * Returns the destination on which the compilation database should be generated.
+ */
+export function destination(
+  source: commonUtil.Source,
+  {sourceDir}: PackageInfo
+): string {
+  return path.join(source, sourceDir, 'compile_commands.json');
 }
 
 type Board = string; // 'host' or board name

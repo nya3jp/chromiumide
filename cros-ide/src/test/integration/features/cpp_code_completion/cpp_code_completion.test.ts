@@ -3,8 +3,10 @@
 // found in the LICENSE file.
 
 import 'jasmine';
+import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import * as commonUtil from '../../../../common/common_util';
 import {WrapFs} from '../../../../common/cros';
 import {CLANGD_EXTENSION} from '../../../../features/cpp_code_completion/constants';
 import {CompilationDatabase} from '../../../../features/cpp_code_completion/cpp_code_completion';
@@ -15,7 +17,7 @@ import {buildFakeChroot, cleanState, tempDir} from '../../../testing';
 import {installVscodeDouble} from '../../doubles';
 import {FakeOutputChannel} from '../../fakes/output_channel';
 import {fakeGetConfiguration} from '../../fakes/workspace_configuration';
-import {SpiedCompdbService} from './spied_compdb_service';
+import {SpiedFakeCompdbService} from './spied_fake_compdb_service';
 
 function newEventWaiter(
   compilationDatabase: CompilationDatabase
@@ -34,19 +36,20 @@ describe('C++ code completion', () => {
   const state = cleanState(async () => {
     const osDir = temp.path;
     const chroot = await buildFakeChroot(osDir);
+    const source = commonUtil.sourceDir(chroot);
 
-    const spiedCompdbService = new SpiedCompdbService();
+    const spiedFakeCompdbService = new SpiedFakeCompdbService(source);
     // CompilationDatabase registers event handlers in the constructor.
     const compilationDatabase = new CompilationDatabase(
       new bgTaskStatus.TEST_ONLY.StatusManagerImpl(),
       new Packages(),
       new FakeOutputChannel(),
-      spiedCompdbService,
-      new ChrootService(new WrapFs(chroot), undefined)
+      spiedFakeCompdbService,
+      new ChrootService(new WrapFs(chroot), new WrapFs(source))
     );
     return {
-      osDir,
-      spiedCompdbService,
+      source,
+      spiedFakeCompdbService,
       compilationDatabase,
     };
   });
@@ -70,7 +73,7 @@ describe('C++ code completion', () => {
 
     vscodeEmitters.window.onDidChangeActiveTextEditor.fire({
       document: {
-        fileName: path.join(state.osDir, 'src/platform2/cros-disks/foo.cc'),
+        fileName: path.join(state.source, 'src/platform2/cros-disks/foo.cc'),
         languageId: 'cpp',
       },
     } as vscode.TextEditor);
@@ -78,7 +81,7 @@ describe('C++ code completion', () => {
     await done;
 
     expect(clangd.activate).toHaveBeenCalledOnceWith();
-    expect(state.spiedCompdbService.requests).toEqual([
+    expect(state.spiedFakeCompdbService.requests).toEqual([
       {
         board: 'amd64-generic',
         packageInfo: {
@@ -107,14 +110,14 @@ describe('C++ code completion', () => {
     const done = newEventWaiter(state.compilationDatabase);
 
     vscodeEmitters.workspace.onDidSaveTextDocument.fire({
-      fileName: path.join(state.osDir, 'src/platform2/cros-disks/BUILD.gn'),
+      fileName: path.join(state.source, 'src/platform2/cros-disks/BUILD.gn'),
       languageId: 'gn',
     } as vscode.TextDocument);
 
     await done;
 
     expect(clangd.activate).toHaveBeenCalledOnceWith();
-    expect(state.spiedCompdbService.requests).toEqual([
+    expect(state.spiedFakeCompdbService.requests).toEqual([
       {
         board: 'amd64-generic',
         packageInfo: {
@@ -140,7 +143,7 @@ describe('C++ code completion', () => {
     const done = newEventWaiter(state.compilationDatabase);
 
     vscodeEmitters.workspace.onDidSaveTextDocument.fire({
-      fileName: path.join(state.osDir, 'src/platform2/cros-disks/foo.cc'),
+      fileName: path.join(state.source, 'src/platform2/cros-disks/foo.cc'),
       languageId: 'cpp',
     } as vscode.TextDocument);
 
@@ -149,7 +152,7 @@ describe('C++ code completion', () => {
     expect(clangd.activate).not.toHaveBeenCalled();
 
     // The service should not have been called.
-    expect(state.spiedCompdbService.requests).toEqual([]);
+    expect(state.spiedFakeCompdbService.requests).toEqual([]);
   });
 
   it('does not run for C++ file if it has already run for the same package', async () => {
@@ -169,7 +172,7 @@ describe('C++ code completion', () => {
     // A C++ file in the cros-disks project is opened.
     vscodeEmitters.window.onDidChangeActiveTextEditor.fire({
       document: {
-        fileName: path.join(state.osDir, 'src/platform2/cros-disks/foo.cc'),
+        fileName: path.join(state.source, 'src/platform2/cros-disks/foo.cc'),
         languageId: 'cpp',
       },
     } as vscode.TextEditor);
@@ -177,14 +180,14 @@ describe('C++ code completion', () => {
     await done;
 
     // The service is called and generates compdb.
-    expect(state.spiedCompdbService.requests.length).toBe(1);
+    expect(state.spiedFakeCompdbService.requests.length).toBe(1);
 
     done = newEventWaiter(state.compilationDatabase);
 
     // Another C++ file in the cros-disks project is opened.
     vscodeEmitters.window.onDidChangeActiveTextEditor.fire({
       document: {
-        fileName: path.join(state.osDir, 'src/platform2/cros-disks/bar.cc'),
+        fileName: path.join(state.source, 'src/platform2/cros-disks/bar.cc'),
         languageId: 'cpp',
       },
     } as vscode.TextEditor);
@@ -192,14 +195,14 @@ describe('C++ code completion', () => {
     await done;
 
     // The service is not called because compdb has been already generated.
-    expect(state.spiedCompdbService.requests.length).toBe(1);
+    expect(state.spiedFakeCompdbService.requests.length).toBe(1);
 
     done = newEventWaiter(state.compilationDatabase);
 
     // A C++ file in the codelab project is opened.
     vscodeEmitters.window.onDidChangeActiveTextEditor.fire({
       document: {
-        fileName: path.join(state.osDir, 'src/platform2/codelab/baz.cc'),
+        fileName: path.join(state.source, 'src/platform2/codelab/baz.cc'),
         languageId: 'cpp',
       },
     } as vscode.TextEditor);
@@ -209,7 +212,55 @@ describe('C++ code completion', () => {
     expect(clangd.activate).toHaveBeenCalledOnceWith();
 
     // The service is called because compdb has not been generated for codelab.
-    expect(state.spiedCompdbService.requests.length).toBe(2);
+    expect(state.spiedFakeCompdbService.requests.length).toBe(2);
+  });
+
+  it('runs for C++ file if compilation database has been removed', async () => {
+    vscodeSpy.workspace.getConfiguration.and.callFake(fakeGetConfiguration());
+    vscode.workspace
+      .getConfiguration('cros-ide')
+      .update('board', 'amd64-generic');
+    const clangd = jasmine.createSpyObj<vscode.Extension<unknown>>('clangd', [
+      'activate',
+    ]);
+    vscodeSpy.extensions.getExtension
+      .withArgs(CLANGD_EXTENSION)
+      .and.returnValue(clangd);
+
+    let done = newEventWaiter(state.compilationDatabase);
+
+    // A C++ file in the cros-disks project is opened.
+    vscodeEmitters.window.onDidChangeActiveTextEditor.fire({
+      document: {
+        fileName: path.join(state.source, 'src/platform2/cros-disks/foo.cc'),
+        languageId: 'cpp',
+      },
+    } as vscode.TextEditor);
+
+    await done;
+
+    // The service is called and generates compdb.
+    expect(state.spiedFakeCompdbService.requests.length).toBe(1);
+
+    // Remove the generated file.
+    await fs.promises.rm(
+      path.join(state.source, 'src/platform2/cros-disks/compile_commands.json')
+    );
+
+    done = newEventWaiter(state.compilationDatabase);
+
+    // Another C++ file in the cros-disks project is opened.
+    vscodeEmitters.window.onDidChangeActiveTextEditor.fire({
+      document: {
+        fileName: path.join(state.source, 'src/platform2/cros-disks/bar.cc'),
+        languageId: 'cpp',
+      },
+    } as vscode.TextEditor);
+
+    await done;
+
+    // The service called because compdb has been removed.
+    expect(state.spiedFakeCompdbService.requests.length).toBe(2);
   });
 
   it('does not run if clangd extension is not installed', async () => {
@@ -229,7 +280,7 @@ describe('C++ code completion', () => {
 
     await done;
 
-    expect(state.spiedCompdbService.requests).toEqual([]);
+    expect(state.spiedFakeCompdbService.requests).toEqual([]);
   });
 
   // TODO(oka): Test error handling.
