@@ -79,7 +79,7 @@ export async function activate(
   targetBoard.activate(context, chrootService);
   feedback.activate(context);
   upstart.activate(context);
-  deviceManagement.activate(context, statusManager);
+  deviceManagement.activate(context, statusManager, chrootService);
 
   if (ideUtil.getConfigRoot().get<boolean>('underDevelopment.testCoverage')) {
     new coverage.Coverage(chrootService).activate(context);

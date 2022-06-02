@@ -4,12 +4,22 @@
 
 import * as vscode from 'vscode';
 import * as shutil from '../../common/shutil';
+import * as chroot from '../../services/chroot';
 import * as metrics from '../metrics/metrics';
+import * as deviceClient from './device_client';
 import * as repository from './device_repository';
 import * as provider from './device_tree_data_provider';
+import * as prebuiltUtil from './prebuilt_util';
 import * as sshConfig from './ssh_config';
 import * as sshUtil from './ssh_util';
 import * as vnc from './vnc_session';
+
+// Path to the private credentials needed to access prebuilts, relative to
+// the CrOS source checkout.
+// This path is hard-coded in enter_chroot.sh, but we need it to run
+// `cros flash` outside chroot.
+const BOTO_PATH =
+  'src/private-overlays/chromeos-overlay/googlestorage_account.boto';
 
 /**
  * Registers and handles VSCode commands for device management features.
@@ -20,6 +30,7 @@ export class CommandsProvider implements vscode.Disposable {
 
   constructor(
     private readonly context: vscode.ExtensionContext,
+    private readonly chrootService: chroot.ChrootService,
     private readonly output: vscode.OutputChannel,
     private readonly ownedDeviceRepository: repository.OwnedDeviceRepository,
     private readonly leasedDeviceRepository: repository.LeasedDeviceRepository
@@ -40,6 +51,10 @@ export class CommandsProvider implements vscode.Disposable {
       vscode.commands.registerCommand(
         'cros-ide.deviceManagement.connectToDeviceForShell',
         (item?: provider.DeviceItem) => this.connectToDeviceForShell(item)
+      ),
+      vscode.commands.registerCommand(
+        'cros-ide.deviceManagement.flashPrebuiltImage',
+        (item?: provider.DeviceItem) => this.flashPrebuiltImage(item)
       ),
       vscode.commands.registerCommand(
         'cros-ide.deviceManagement.openLogs',
@@ -143,6 +158,86 @@ export class CommandsProvider implements vscode.Disposable {
         shutil.escapeArray(
           sshUtil.buildSshCommand(hostname, this.context.extensionUri)
         )
+    );
+    terminal.show();
+  }
+
+  async flashPrebuiltImage(item?: provider.DeviceItem): Promise<void> {
+    metrics.send({
+      category: 'device',
+      action: 'flash prebuilt image',
+    });
+
+    const source = this.chrootService.source();
+    if (source === undefined) {
+      void vscode.window.showErrorMessage(
+        'Workspace does not contain CrOS source checkout.'
+      );
+      return;
+    }
+
+    const hostname = await promptKnownHostnameIfNeeded(
+      'Device to Flash',
+      item,
+      this.ownedDeviceRepository
+    );
+    if (!hostname) {
+      return;
+    }
+
+    const client = new deviceClient.DeviceClient(
+      hostname,
+      this.context.extensionUri,
+      this.output
+    );
+
+    const defaultBoard = await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: 'Flash Prebuilt Image: Auto-detecting board name',
+      },
+      async () => {
+        const lsbRelease = await client.readLsbRelease();
+        return lsbRelease.board;
+      }
+    );
+
+    const board = await vscode.window.showInputBox({
+      title: 'Board Name to Flash',
+      value: defaultBoard,
+    });
+    if (!board) {
+      return;
+    }
+
+    const versions = await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: 'Flash Prebuilt Image: Checking available versions',
+      },
+      async () => {
+        return await prebuiltUtil.listPrebuiltVersions(
+          board,
+          this.chrootService,
+          this.output
+        );
+      }
+    );
+
+    const version = await vscode.window.showQuickPick(versions, {
+      title: 'Version',
+    });
+    if (!version) {
+      return;
+    }
+
+    const terminal = vscode.window.createTerminal({
+      name: `cros flash: ${hostname}`,
+      iconPath: new vscode.ThemeIcon('cloud-download'),
+      cwd: source.root,
+    });
+    terminal.sendText(
+      `env BOTO_CONFIG=${source}/${BOTO_PATH} cros flash ssh://${hostname} xbuddy://remote/${board}-release/${version}/test`
     );
     terminal.show();
   }

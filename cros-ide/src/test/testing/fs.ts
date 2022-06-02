@@ -5,6 +5,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import * as vscode from 'vscode';
 import {Chroot} from '../../common/common_util';
 import {cleanState} from './clean_state';
 
@@ -37,4 +38,13 @@ export function tempDir(): {path: string} {
 export async function buildFakeChroot(tempDir: string): Promise<Chroot> {
   await putFiles(tempDir, {'chroot/etc/cros_chroot_version': '42'});
   return path.join(tempDir, 'chroot') as Chroot;
+}
+
+/**
+ * Returns the path to the extension root.
+ * This function can be called from unit tests.
+ */
+export function getExtensionUri(): vscode.Uri {
+  const dir = path.normalize(path.join(__dirname, '..', '..', '..'));
+  return vscode.Uri.file(dir);
 }

@@ -10,5 +10,5 @@ export {
   lazyHandler,
   prefixMatch,
 } from './fake_exec';
-export {buildFakeChroot, putFiles, tempDir} from './fs';
+export {buildFakeChroot, getExtensionUri, putFiles, tempDir} from './fs';
 export {flushMicrotasks} from './tasks';

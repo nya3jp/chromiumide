@@ -25,6 +25,7 @@
     "onCommand:cros-ide.deviceManagement.deleteDevice",
     "onCommand:cros-ide.deviceManagement.connectToDeviceForScreen",
     "onCommand:cros-ide.deviceManagement.connectToDeviceForShell",
+    "onCommand:cros-ide.deviceManagement.flashPrebuiltImage",
     "onCommand:cros-ide.refreshBoardsPackages",
     "onCommand:cros-ide.codeSearchOpenCurrentFile",
     "onCommand:cros-ide.codeSearchCopyCurrentFile",
@@ -71,6 +72,13 @@
         "category": "CrOS",
         "title": "Delete Device",
         "icon": "$(remove)"
+      },
+      {
+        "command": "cros-ide.deviceManagement.flashPrebuiltImage",
+        "category": "CrOS",
+        "title": "Flash Image to Device",
+        "icon": "$(cloud-download)",
+        "enablement": "config.cros-ide.underDevelopment.deviceManagement"
       },
       {
         "command": "cros-ide.refreshBoardsPackages",
@@ -191,18 +199,23 @@
         },
         {
           "command": "cros-ide.deviceManagement.connectToDeviceForScreen",
-          "when": "view == devices && viewItem == device-owned",
+          "when": "view == devices && viewItem =~ /^device-/",
           "group": "inline@1"
         },
         {
           "command": "cros-ide.deviceManagement.connectToDeviceForShell",
-          "when": "view == devices && viewItem == device-owned",
+          "when": "view == devices && viewItem =~ /^device-/",
           "group": "inline@2"
+        },
+        {
+          "command": "cros-ide.deviceManagement.flashPrebuiltImage",
+          "when": "view == devices && viewItem =~ /^device-/ && config.cros-ide.underDevelopment.deviceManagement",
+          "group": "inline@3"
         },
         {
           "command": "cros-ide.deviceManagement.deleteDevice",
           "when": "view == devices && viewItem == device-owned",
-          "group": "inline@3"
+          "group": "inline@9"
         },
         {
           "command": "cros-ide.crosWorkonStart",

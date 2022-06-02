@@ -8,6 +8,7 @@
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import * as bgTaskStatus from '../../ui/bg_task_status';
+import * as chroot from '../../services/chroot';
 import * as commands from './commands_provider';
 import * as repository from './device_repository';
 import * as provider from './device_tree_data_provider';
@@ -15,7 +16,8 @@ import * as sshUtil from './ssh_util';
 
 export async function activate(
   context: vscode.ExtensionContext,
-  statusManager: bgTaskStatus.StatusManager
+  statusManager: bgTaskStatus.StatusManager,
+  chrootService: chroot.ChrootService
 ) {
   rsaKeyFixPermission(context.extensionUri);
 
@@ -26,6 +28,7 @@ export async function activate(
   const leasedDeviceRepository = new repository.LeasedDeviceRepository();
   const commandsProvider = new commands.CommandsProvider(
     context,
+    chrootService,
     output,
     ownedDeviceRepository,
     leasedDeviceRepository
