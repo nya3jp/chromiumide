@@ -129,6 +129,12 @@ async function updateCrosLintDiagnostics(
   if (document && document.uri.scheme === 'file') {
     const lintConfig = lintConfigs.get(document.languageId);
     if (!lintConfig) {
+      // Sent metrics just to track languages.
+      metrics.send({
+        category: 'cros lint',
+        action: 'no linter config',
+        label: document.languageId,
+      });
       return;
     }
     const realpath = await fs.promises.realpath(document.uri.fsPath);
