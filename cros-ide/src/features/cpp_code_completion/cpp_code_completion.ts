@@ -21,18 +21,17 @@ export function activate(
   statusManager: bgTaskStatus.StatusManager,
   chrootService: ChrootService
 ) {
-  const log = vscode.window.createOutputChannel('CrOS IDE: C++ Support');
-  vscode.commands.registerCommand(SHOW_LOG_COMMAND.command, () => log.show());
-
-  const compdbService = new CompdbServiceImpl(
-    log.append.bind(log),
-    chrootService
+  const output = vscode.window.createOutputChannel('CrOS IDE: C++ Support');
+  vscode.commands.registerCommand(SHOW_LOG_COMMAND.command, () =>
+    output.show()
   );
+
+  const compdbService = new CompdbServiceImpl(output, chrootService);
   context.subscriptions.push(
     new CompilationDatabase(
       statusManager,
       new Packages(),
-      log,
+      output,
       compdbService,
       chrootService
     )

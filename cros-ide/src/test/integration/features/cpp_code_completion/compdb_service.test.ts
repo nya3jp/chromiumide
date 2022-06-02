@@ -13,6 +13,7 @@ import {
 } from '../../../../features/cpp_code_completion/compdb_service';
 import * as chroot from '../../../../services/chroot';
 import * as testing from '../../../testing';
+import {FakeOutputChannel} from '../../fakes/output_channel';
 
 describe('Compdb service', () => {
   const tempdir = testing.tempDir();
@@ -20,7 +21,8 @@ describe('Compdb service', () => {
   const state = testing.cleanState(async () => {
     const chroot = await testing.buildFakeChroot(tempdir.path);
     const source = commonUtil.sourceDir(chroot);
-    return {chroot, source};
+    const output = new FakeOutputChannel();
+    return {chroot, source, output};
   });
 
   it('generates compilation database', async () => {
@@ -55,8 +57,13 @@ describe('Compdb service', () => {
       recursive: true,
     });
 
-    const compdbService = new CompdbServiceImpl(_x => {},
-    new chroot.ChrootService(new cros.WrapFs(state.chroot), new cros.WrapFs(state.source)));
+    const compdbService = new CompdbServiceImpl(
+      state.output,
+      new chroot.ChrootService(
+        new cros.WrapFs(state.chroot),
+        new cros.WrapFs(state.source)
+      )
+    );
     await compdbService.generate('amd64-generic', {
       sourceDir: 'src/platform2/codelab',
       atom: 'chromeos-base/codelab',
@@ -108,8 +115,13 @@ describe('Compdb service', () => {
       path.join(state.source, 'src/platform2/codelab/compile_commands.json')
     );
 
-    const compdbService = new CompdbServiceImpl(_x => {},
-    new chroot.ChrootService(new cros.WrapFs(state.chroot), new cros.WrapFs(state.source)));
+    const compdbService = new CompdbServiceImpl(
+      state.output,
+      new chroot.ChrootService(
+        new cros.WrapFs(state.chroot),
+        new cros.WrapFs(state.source)
+      )
+    );
     await compdbService.generate('amd64-generic', {
       sourceDir: 'src/platform2/codelab',
       atom: 'chromeos-base/codelab',
@@ -150,8 +162,13 @@ describe('Compdb service', () => {
       recursive: true,
     });
 
-    const compdbService = new CompdbServiceImpl(_x => {},
-    new chroot.ChrootService(new cros.WrapFs(state.chroot), new cros.WrapFs(state.source)));
+    const compdbService = new CompdbServiceImpl(
+      state.output,
+      new chroot.ChrootService(
+        new cros.WrapFs(state.chroot),
+        new cros.WrapFs(state.source)
+      )
+    );
 
     await expectAsync(
       compdbService.generate('amd64-generic', {

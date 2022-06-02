@@ -4,6 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as vscode from 'vscode';
 import * as uuid from 'uuid';
 import * as commonUtil from '../../common/common_util';
 import {WrapFs} from '../../common/cros';
@@ -60,7 +61,7 @@ export enum CompdbErrorKind {
 
 export class CompdbServiceImpl implements CompdbService {
   constructor(
-    private readonly log: commonUtil.Log,
+    private readonly output: vscode.OutputChannel,
     private readonly chrootService: ChrootService
   ) {}
 
@@ -73,7 +74,7 @@ export class CompdbServiceImpl implements CompdbService {
     const sourceFs = this.chrootService.source();
     const chrootFs = this.chrootService.chroot();
     if (!sourceFs || !chrootFs) {
-      this.log(
+      this.output.appendLine(
         `Failed to generate compdb; source exists = ${!!sourceFs}, chroot exists = ${!!chrootFs}`
       );
       return;
@@ -82,7 +83,7 @@ export class CompdbServiceImpl implements CompdbService {
     const ebuild = new Ebuild(
       board,
       atom,
-      this.log,
+      this.output,
       chrootFs,
       this.chrootService
     );
@@ -105,9 +106,9 @@ export class CompdbServiceImpl implements CompdbService {
       }
     }
     try {
-      this.log(`Copying ${artifact} to ${tempFile}`);
+      this.output.appendLine(`Copying ${artifact} to ${tempFile}`);
       await chrootFs.copyFile(artifact, tempFile);
-      this.log(`Renaming ${tempFile} to ${destination}`);
+      this.output.appendLine(`Renaming ${tempFile} to ${destination}`);
       await fs.promises.rename(tempFile, destination);
     } catch (e) {
       throw new CompdbError({
@@ -132,7 +133,7 @@ class Ebuild {
   constructor(
     private readonly board: Board,
     private readonly atom: Atom,
-    private readonly log: commonUtil.Log,
+    private readonly output: vscode.OutputChannel,
     private readonly chrootFs: WrapFs<commonUtil.Chroot>,
     private readonly chrootService: ChrootService
   ) {}
@@ -207,11 +208,11 @@ class Ebuild {
       let cache = '';
       try {
         cache = path.join(dir, '.configured');
-        this.log(`Removing cache file ${cache}\n`);
+        this.output.appendLine(`Removing cache file ${cache}`);
         await this.chrootFs.rm(cache, {force: true});
 
         cache = path.join(dir, '.compiled');
-        this.log(`Removing cache file ${cache}\n`);
+        this.output.appendLine(`Removing cache file ${cache}`);
         await this.chrootFs.rm(cache, {force: true});
       } catch (e) {
         throw new CompdbError({
@@ -231,7 +232,7 @@ class Ebuild {
         this.ebuild9999(),
         'compile',
       ],
-      this.log,
+      this.output.appendLine,
       {logStdout: true, sudoReason: 'Generating C++ cross reference'}
     );
     if (res instanceof Error) {
