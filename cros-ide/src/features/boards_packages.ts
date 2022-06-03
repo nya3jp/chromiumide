@@ -246,7 +246,7 @@ class Board extends ChrootItem {
   contextValue = 'board';
 }
 
-class Package extends ChrootItem {
+export class Package extends ChrootItem {
   constructor(readonly board: Board, readonly name: string) {
     super(name, vscode.TreeItemCollapsibleState.None);
   }
@@ -257,7 +257,6 @@ class Package extends ChrootItem {
 
 export const TEST_ONLY = {
   Board,
-  Package,
   BoardPackageProvider,
   BoardsPackages,
 };

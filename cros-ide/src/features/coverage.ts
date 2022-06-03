@@ -7,12 +7,31 @@ import * as util from 'util';
 import * as vscode from 'vscode';
 import * as glob from 'glob';
 import {ChrootService} from '../services/chroot';
+import {Package} from './boards_packages';
 
 // TODO(ttylenda): refactor as a class to avoid passing around the chrootService
 export function activate(
   _context: vscode.ExtensionContext,
   chrootService: ChrootService
 ) {
+  vscode.commands.registerCommand(
+    'cros-ide.coverage.generate',
+    (pkg: Package) => {
+      vscode.window.showInformationMessage(
+        `Not implemented (USE=coverage cros_run_unit_tests --board=${pkg.board.name} --packages=${pkg.name}).`
+      );
+    }
+  );
+
+  vscode.commands.registerCommand(
+    'cros-ide.coverage.showReport',
+    (pkg: Package) => {
+      vscode.window.showInformationMessage(
+        `TODO: show coverage report for ${pkg.name} (${pkg.board.name})`
+      );
+    }
+  );
+
   // Highlight colors were copied from Code Search.
   const coveredDecoration = vscode.window.createTextEditorDecorationType({
     light: {backgroundColor: '#e5ffe5'},

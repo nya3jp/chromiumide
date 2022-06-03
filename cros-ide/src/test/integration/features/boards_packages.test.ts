@@ -6,7 +6,7 @@ import 'jasmine';
 import * as vscode from 'vscode';
 import {Source} from '../../../common/common_util';
 import {WrapFs} from '../../../common/cros';
-import {TEST_ONLY} from '../../../features/boards_packages';
+import {Package, TEST_ONLY} from '../../../features/boards_packages';
 import {ChrootService} from '../../../services/chroot';
 import {
   buildFakeChroot,
@@ -18,7 +18,7 @@ import {
 import {installVscodeDouble} from '../doubles';
 import {fakeGetConfiguration} from '../fakes/workspace_configuration';
 
-const {Board, Package, BoardPackageProvider, BoardsPackages} = TEST_ONLY;
+const {Board, BoardPackageProvider, BoardsPackages} = TEST_ONLY;
 
 describe('Boards and Packages view', () => {
   const {vscodeSpy} = installVscodeDouble();
