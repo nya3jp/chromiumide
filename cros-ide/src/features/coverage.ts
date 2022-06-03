@@ -3,12 +3,16 @@
 // found in the LICENSE file.
 
 import * as fs from 'fs';
-import * as path from 'path';
 import * as util from 'util';
 import * as vscode from 'vscode';
 import * as glob from 'glob';
+import {ChrootService} from '../services/chroot';
 
-export function activate(_context: vscode.ExtensionContext) {
+// TODO(ttylenda): refactor as a class to avoid passing around the chrootService
+export function activate(
+  _context: vscode.ExtensionContext,
+  chrootService: ChrootService
+) {
   // Highlight colors were copied from Code Search.
   const coveredDecoration = vscode.window.createTextEditorDecorationType({
     light: {backgroundColor: '#e5ffe5'},
@@ -29,7 +33,7 @@ export function activate(_context: vscode.ExtensionContext) {
     }
 
     const {covered: coveredRanges, uncovered: uncoveredRanges} =
-      await readDocumentCoverage(activeEditor.document.fileName);
+      await readDocumentCoverage(activeEditor.document.fileName, chrootService);
 
     if (coveredRanges) {
       activeEditor.setDecorations(coveredDecoration, coveredRanges);
@@ -59,14 +63,14 @@ export interface Coverage {
  */
 export async function readDocumentCoverage(
   documentFileName: string,
-  rootForTesting = '/'
+  chrootService: ChrootService
 ): Promise<Coverage> {
   const {pkg, relativePath} = parseFileName(documentFileName);
   if (!pkg || !relativePath) {
     return {};
   }
 
-  const coverageJson = await readPkgCoverage(pkg, rootForTesting);
+  const coverageJson = await readPkgCoverage(pkg, chrootService);
   if (!coverageJson) {
     return {};
   }
@@ -136,17 +140,22 @@ function parseFileName(documentFileName: string): {
 }
 
 // TODO(ttylenda): Decide if we need a specific board or can we use whatever is available in chroot.
-const coverageDir = 'build/amd64-generic/build/coverage_data/';
+const coverageDir = '/build/amd64-generic/build/coverage_data/';
 
 /** Read coverage.json of a package. */
 async function readPkgCoverage(
   pkg: string,
-  rootForTesting = '/'
+  chrootService: ChrootService
 ): Promise<CoverageJson | undefined> {
-  const globPattern = `${path.join(
-    rootForTesting,
-    coverageDir
-  )}*/${pkg}*/*/coverage.json`;
+  const chroot = chrootService.chroot();
+  if (!chroot) {
+    return undefined;
+  }
+
+  const globPattern = chroot.realpath(
+    `${coverageDir}*/${pkg}*/*/coverage.json`
+  );
+
   let matches: string[];
   try {
     matches = await util.promisify(glob)(globPattern);

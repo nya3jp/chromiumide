@@ -82,7 +82,7 @@ export async function activate(
   deviceManagement.activate(context);
 
   if (ideUtil.getConfigRoot().get<boolean>('underDevelopment.testCoverage')) {
-    coverage.activate(context);
+    coverage.activate(context, chrootService);
   }
 
   if (ideUtil.getConfigRoot().get<boolean>('underDevelopment.crosFormat')) {
