@@ -4,6 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as vscode from 'vscode';
 import * as commonUtil from '../../../../common/common_util';
 import * as cros from '../../../../common/cros';
 import {
@@ -13,7 +14,6 @@ import {
 } from '../../../../features/cpp_code_completion/compdb_service';
 import * as chroot from '../../../../services/chroot';
 import * as testing from '../../../testing';
-import {FakeOutputChannel} from '../../fakes/output_channel';
 
 describe('Compdb service', () => {
   const tempdir = testing.tempDir();
@@ -21,7 +21,7 @@ describe('Compdb service', () => {
   const state = testing.cleanState(async () => {
     const chroot = await testing.buildFakeChroot(tempdir.path);
     const source = commonUtil.sourceDir(chroot);
-    const output = new FakeOutputChannel();
+    const output = vscode.window.createOutputChannel('fake');
     return {chroot, source, output};
   });
 
