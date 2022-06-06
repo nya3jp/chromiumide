@@ -243,6 +243,11 @@
           "description": "Code Search instance to open files in",
           "default": "public"
         },
+        "cros-ide.codeSearchHash": {
+          "type": "boolean",
+          "description": "Link to the hash of the current revision instead of TOT",
+          "default": false
+        },
         "cros-ide.underDevelopment.crosFormat": {
           "type": "boolean",
           "description": "Format files with 'cros format' (under development)",

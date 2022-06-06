@@ -72,6 +72,8 @@ async function getCurrentFile(
   // Which CodeSearch to use, options are public, internal, or gitiles.
   const csInstance = ideUtil.getConfigRoot().get<string>(codeSearch);
 
+  const csHash = ideUtil.getConfigRoot().get<boolean>('codeSearchHash');
+
   const line = textEditor.selection.active.line + 1;
 
   const config = getCodeSearchToolConfig(fullpath);
@@ -81,16 +83,18 @@ async function getCurrentFile(
   }
   const {executable, cwd} = config;
 
-  const res = await commonUtil.exec(
-    executable,
-    ['--show', `--${csInstance}`, `--line=${line}`, fullpath],
-    {
-      logger: ideUtil.getUiLogger(),
-      logStdout: true,
-      ignoreNonZeroExit: true,
-      cwd: cwd,
-    }
-  );
+  const opts = [];
+  if (csHash) {
+    opts.push('--upstream-sha');
+  }
+  opts.concat(['--show', `--${csInstance}`, `--line=${line}`, fullpath]);
+
+  const res = await commonUtil.exec(executable, opts, {
+    logger: ideUtil.getUiLogger(),
+    logStdout: true,
+    ignoreNonZeroExit: true,
+    cwd: cwd,
+  });
 
   if (res instanceof Error) {
     vscode.window.showErrorMessage('Could not run generate_cs_path: ' + res);
