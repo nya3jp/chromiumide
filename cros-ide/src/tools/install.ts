@@ -50,9 +50,12 @@ async function execute(
  *
  * @throws Error if specified version is not found.
  */
-export async function findArchive(version?: semver.SemVer): Promise<Archive> {
+export async function findArchive(
+  version?: semver.SemVer,
+  gsutil = GSUTIL
+): Promise<Archive> {
   // The result of `gsutil ls` is lexicographically sorted.
-  const stdout = await execute(GSUTIL, ['ls', GS_PREFIX]);
+  const stdout = await execute(gsutil, ['ls', GS_PREFIX]);
   const archives = stdout
     .trim()
     .split('\n')

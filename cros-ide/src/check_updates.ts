@@ -15,7 +15,9 @@ export async function run(_context: vscode.ExtensionContext) {
   }
   const installed = new semver.SemVer(extenstion.packageJSON.version);
 
-  const latest = (await install.findArchive()).version;
+  const latest = (
+    await install.findArchive(/* version = */ undefined, 'gsutil')
+  ).version;
 
   if (installed.compare(latest) < 0) {
     showInstallPrompt(installed.toString(), latest.toString());
