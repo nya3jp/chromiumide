@@ -7,6 +7,7 @@ import {Chroot} from '../../../common/common_util';
 import {WrapFs} from '../../../common/cros';
 import {Coverage} from '../../../features/coverage';
 import {ChrootService} from '../../../services/chroot';
+import * as bgTaskStatus from '../../../ui/bg_task_status';
 import * as testing from '../../testing';
 
 const coverageJsonContents =
@@ -37,7 +38,10 @@ describe('Test coverage', () => {
       /* isInsideChroot = */ () => false
     );
     return {
-      coverage: new Coverage(chrootService),
+      coverage: new Coverage(
+        chrootService,
+        new bgTaskStatus.TEST_ONLY.StatusManagerImpl()
+      ),
     };
   });
 

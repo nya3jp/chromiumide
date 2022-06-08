@@ -7,6 +7,7 @@ import * as util from 'util';
 import * as vscode from 'vscode';
 import * as glob from 'glob';
 import {ChrootService} from '../services/chroot';
+import * as bgTaskStatus from '../ui/bg_task_status';
 import {Package} from './boards_packages';
 
 // Highlight colors were copied from Code Search.
@@ -21,24 +22,36 @@ const uncoveredDecoration = vscode.window.createTextEditorDecorationType({
   isWholeLine: true,
 });
 
+const COVERAGE_TASK_ID = 'Code Coverage';
+
+const SHOW_LOG_COMMAND: vscode.Command = {
+  command: 'cros-ide.coverage.showLog',
+  title: 'Show Code Coverage Log',
+};
+
 export class Coverage {
   private activeEditor?: vscode.TextEditor;
+  private output: vscode.OutputChannel;
 
-  constructor(private readonly chrootService: ChrootService) {}
+  constructor(
+    private readonly chrootService: ChrootService,
+    private readonly statusManager: bgTaskStatus.StatusManager
+  ) {
+    this.output = vscode.window.createOutputChannel('CrOS IDE: Code Coverage');
+  }
 
   activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
       vscode.commands.registerCommand(
         'cros-ide.coverage.generate',
-        (pkg: Package) => {
-          vscode.window.showInformationMessage(
-            `Not implemented (USE=coverage cros_run_unit_tests --board=${pkg.board.name} --packages=${pkg.name}).`
-          );
-        }
+        (pkg: Package) => this.generateCoverage(pkg)
       ),
       vscode.commands.registerCommand(
         'cros-ide.coverage.showReport',
         (pkg: Package) => this.showReport(pkg)
+      ),
+      vscode.commands.registerCommand(SHOW_LOG_COMMAND.command, () =>
+        this.output.show()
       )
     );
 
@@ -61,6 +74,34 @@ export class Coverage {
     }
     // TODO(ttylenda): This will not work on code-server running over SSH tunnel.
     await vscode.env.openExternal(vscode.Uri.file(index));
+  }
+
+  private async generateCoverage(pkg: Package) {
+    this.statusManager.setTask(COVERAGE_TASK_ID, {
+      status: bgTaskStatus.TaskStatus.RUNNING,
+      command: SHOW_LOG_COMMAND,
+    });
+    const res = await this.chrootService.exec(
+      'env',
+      [
+        'USE=coverage',
+        'cros_run_unit_tests',
+        `--board=${pkg.board.name}`,
+        `--packages=${pkg.name}`,
+      ],
+      {
+        logger: this.output,
+        logStdout: true,
+        sudoReason: 'Generating test coverage',
+      }
+    );
+    const statusOk = !(res instanceof Error) && res.exitStatus === 0;
+    this.statusManager.setTask(COVERAGE_TASK_ID, {
+      status: statusOk
+        ? bgTaskStatus.TaskStatus.OK
+        : bgTaskStatus.TaskStatus.ERROR,
+      command: SHOW_LOG_COMMAND,
+    });
   }
 
   private async updateDecorations() {
