@@ -87,7 +87,7 @@ async function getCurrentFile(
   if (csHash) {
     opts.push('--upstream-sha');
   }
-  opts.concat(['--show', `--${csInstance}`, `--line=${line}`, fullpath]);
+  opts.push('--show', `--${csInstance}`, `--line=${line}`, fullpath);
 
   const res = await commonUtil.exec(executable, opts, {
     logger: ideUtil.getUiLogger(),
