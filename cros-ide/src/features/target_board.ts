@@ -49,8 +49,9 @@ export function activate(
     ((_: string | null) => {})(board);
     if (board) {
       metrics.send({
-        category: 'target board',
-        action: 'select',
+        category: 'interactive',
+        group: 'misc',
+        action: 'select target board',
         label: board,
       });
     }

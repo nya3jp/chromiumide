@@ -95,9 +95,9 @@ export async function activate(
   }
 
   metrics.send({
-    category: 'extension',
+    category: 'background',
+    group: 'misc',
     action: 'activate',
-    label: context.extension.packageJSON.version,
   });
 
   return {

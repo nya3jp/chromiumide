@@ -6,7 +6,6 @@ import * as fs from 'fs';
 import * as https from 'https';
 import * as os from 'os';
 import * as path from 'path';
-import * as vscode from 'vscode';
 import * as uuid from 'uuid';
 import * as commonUtil from '../../common/common_util';
 
@@ -125,17 +124,6 @@ export async function resetUserId(
   const uid = await userId();
   await writeUserId(configPathFull, uid, createTime);
   return uid;
-}
-
-export function getUserAgent(): string {
-  const type = os.type();
-  const platform = os.platform();
-  const release = os.release();
-
-  const version = vscode.version;
-  const appName = vscode.env.appName;
-
-  return [type, platform, release, version, appName].join('-');
 }
 
 // Return path to CrOS checkout.

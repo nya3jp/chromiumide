@@ -131,8 +131,9 @@ async function updateCrosLintDiagnostics(
     if (!lintConfig) {
       // Sent metrics just to track languages.
       metrics.send({
-        category: 'cros lint',
-        action: 'no linter config',
+        category: 'background',
+        group: 'lint',
+        action: 'skip',
         label: document.languageId,
       });
       return;
@@ -165,8 +166,9 @@ async function updateCrosLintDiagnostics(
       command: SHOW_LOG_COMMAND,
     });
     metrics.send({
-      category: 'cros lint',
-      action: 'update diagnostics',
+      category: 'background',
+      group: 'lint',
+      action: 'update',
       label: document.languageId,
       value: diagnostics.length,
     });

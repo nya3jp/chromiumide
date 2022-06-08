@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import * as https from 'https';
+import * as os from 'os';
 import * as queryString from 'querystring';
 import * as vscode from 'vscode';
 import * as ideUtil from '../../ide_util';
@@ -31,9 +32,11 @@ const informationMessageDetail =
 
 // This variable is set by activate() to make the extension mode available globally.
 let extensionMode: vscode.ExtensionMode | undefined = undefined;
+let extensionVersion: string | undefined = undefined;
 
 export function activate(context: vscode.ExtensionContext) {
   extensionMode = context.extensionMode;
+  extensionVersion = context.extension.packageJSON.version;
 
   // Do not show the consent dialog if the extension is running for integration tests.
   // Modal dialogs make tests fail.
@@ -74,10 +77,8 @@ export function activate(context: vscode.ExtensionContext) {
   });
 }
 
-const protocolVersion = '1';
 const trackingIdTesting = 'UA-221509619-1';
 const trackingIdReal = 'UA-221509619-2';
-const hitType = 'event';
 
 const optionsGA = {
   hostname: 'www.google-analytics.com',
@@ -88,22 +89,49 @@ const optionsGA = {
   },
 };
 
-interface Event {
-  category: string;
+// Exhaustive list of feature groups.
+type FeatureGroup = 'codesearch' | 'device' | 'lint' | 'package' | 'misc';
+
+// Fields common to InteractiveEvent and BackgroundEvent.
+interface EventBase {
+  // Describes the feature group this event belongs to.
+  group: FeatureGroup;
+  // Describes an operation the extension has just run.
+  // You can optional add a prefix with a colon to group actions in the same feature set.
+  // Examples:
+  //   "select target board"
+  //   "device: connect to device via VNC"
   action: string;
+  // Label is an optional string that describes the operation.
   label?: string;
+  // Value is an optional number that describes the operation.
   value?: number;
 }
 
-export class Analytics {
-  private readonly userAgent: string;
+// Describes an event triggered by an explicit user action, such as VSCode command invocation.
+interface InteractiveEvent extends EventBase {
+  category: 'interactive';
+}
 
+// Describes an event triggered implicitly in the background, such as lint computation.
+interface BackgroundEvent extends EventBase {
+  category: 'background';
+}
+
+// Describes an error event.
+interface ErrorEvent {
+  category: 'error';
+  group: FeatureGroup;
+  description: string;
+}
+
+type Event = InteractiveEvent | BackgroundEvent | ErrorEvent;
+
+export class Analytics {
   private constructor(
     private readonly trackingId: string,
     private readonly userId: string
-  ) {
-    this.userAgent = metricsUtils.getUserAgent();
-  }
+  ) {}
 
   // Constructor cannot be async.
   static async create(): Promise<Analytics> {
@@ -121,21 +149,44 @@ export class Analytics {
    * Creates query from event for Google Analytics measurement protocol, see
    * https://developers.google.com/analytics/devguides/collection/protocol/v1/devguide
    *
-   * Prepend the currently active file path to event label.
+   * See go/cros-ide-metrics for the memo on what values are assigned to GA parameters.
    */
-  private eventToQuery(event: Event, gitRepo: string | undefined) {
+  private eventToQuery(event: Event, gitRepo: string | undefined): string {
     const data: Record<string, string | number> = {
-      v: protocolVersion,
+      v: '1',
       tid: this.trackingId,
       cid: this.userId,
-      t: hitType,
-      ec: event.category,
-      ea: event.action,
-      el: (gitRepo ?? 'NA') + ': ' + (event.label ?? ''),
-      ua: this.userAgent,
+      // Document: Git repository info.
+      dh: 'cros',
+      dp: '/' + (gitRepo ?? 'unknown'),
+      dt: gitRepo ?? 'unknown',
+      // User agent: OS + VSCode version.
+      ua: `${os.type()}-${vscode.env.appName}-${vscode.version}`,
+      // Custom dimensions.
+      cd1: os.type(),
+      cd2: vscode.env.appName,
+      cd3: vscode.version,
+      cd4: extensionVersion ?? 'unknown',
+      cd5: event.group,
     };
-    if (event.value) {
-      data.ev = event.value;
+
+    if (event.category === 'error') {
+      Object.assign(data, {
+        t: 'exception',
+        exd: `${event.group}: ${event.description}`,
+      });
+    } else {
+      Object.assign(data, {
+        t: 'event',
+        ec: event.category,
+        ea: `${event.group}: ${event.action}`,
+      });
+      if (event.label !== undefined) {
+        data.el = event.label;
+      }
+      if (event.value !== undefined) {
+        data.ev = event.value;
+      }
     }
 
     return queryString.stringify(data);

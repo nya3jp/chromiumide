@@ -70,7 +70,11 @@ export class CommandsProvider implements vscode.Disposable {
   }
 
   async addDevice(): Promise<void> {
-    metrics.send({category: 'device', action: 'add device'});
+    metrics.send({
+      category: 'interactive',
+      group: 'device',
+      action: 'add device',
+    });
 
     const hostname = await promptNewHostname(
       'Add New Device',
@@ -84,7 +88,11 @@ export class CommandsProvider implements vscode.Disposable {
   }
 
   async deleteDevice(item?: provider.DeviceItem): Promise<void> {
-    metrics.send({category: 'device', action: 'delete device'});
+    metrics.send({
+      category: 'interactive',
+      group: 'device',
+      action: 'delete device',
+    });
 
     const hostname = await promptKnownHostnameIfNeeded(
       'Delete Device',
@@ -100,9 +108,9 @@ export class CommandsProvider implements vscode.Disposable {
 
   async connectToDeviceForScreen(item?: provider.DeviceItem): Promise<void> {
     metrics.send({
-      category: 'device',
-      action: 'connect to device',
-      label: 'screen',
+      category: 'interactive',
+      group: 'device',
+      action: 'connect to device with VNC',
     });
 
     const hostname = await promptKnownHostnameIfNeeded(
@@ -137,9 +145,9 @@ export class CommandsProvider implements vscode.Disposable {
 
   async connectToDeviceForShell(item?: provider.DeviceItem): Promise<void> {
     metrics.send({
-      category: 'device',
-      action: 'connect to device',
-      label: 'shell',
+      category: 'interactive',
+      group: 'device',
+      action: 'connect to device with SSH',
     });
 
     const hostname = await promptKnownHostnameIfNeeded(
@@ -164,7 +172,8 @@ export class CommandsProvider implements vscode.Disposable {
 
   async flashPrebuiltImage(item?: provider.DeviceItem): Promise<void> {
     metrics.send({
-      category: 'device',
+      category: 'interactive',
+      group: 'device',
       action: 'flash prebuilt image',
     });
 

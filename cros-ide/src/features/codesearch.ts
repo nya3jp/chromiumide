@@ -47,7 +47,8 @@ async function openCurrentFile(textEditor: vscode.TextEditor) {
   if (result) {
     vscode.env.openExternal(vscode.Uri.parse(result));
     metrics.send({
-      category: 'codesearch',
+      category: 'interactive',
+      group: 'codesearch',
       action: 'open current file',
     });
   }
@@ -58,7 +59,8 @@ async function copyCurrentFile(textEditor: vscode.TextEditor) {
   if (result) {
     vscode.env.clipboard.writeText(result);
     metrics.send({
-      category: 'codesearch',
+      category: 'interactive',
+      group: 'codesearch',
       action: 'copy current file',
     });
   }
@@ -107,9 +109,9 @@ async function getCurrentFile(
       `generate_cs_path returned an error: ${stderr}`
     );
     metrics.send({
-      category: 'codesearch',
-      action: 'generate CodeSearch path',
-      label: `Failed: ${stderr}`,
+      category: 'error',
+      group: 'codesearch',
+      description: 'generate_cs_path failed',
     });
     return;
   }
@@ -137,7 +139,8 @@ function searchSelection(textEditor: vscode.TextEditor) {
   });
   vscode.env.openExternal(uri);
   metrics.send({
-    category: 'codesearch',
+    category: 'interactive',
+    group: 'codesearch',
     action: 'search selection',
     label: selectedText,
   });
