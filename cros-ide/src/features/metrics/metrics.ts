@@ -7,6 +7,7 @@ import * as os from 'os';
 import * as queryString from 'querystring';
 import * as vscode from 'vscode';
 import * as ideUtil from '../../ide_util';
+import * as metricsConfig from './metrics_config';
 import * as metricsUtils from './metrics_util';
 
 const informationMessageTitle =
@@ -72,8 +73,8 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
-  vscode.commands.registerCommand('cros-ide.resetUserID', () => {
-    metricsUtils.resetUserId();
+  vscode.commands.registerCommand('cros-ide.resetUserID', async () => {
+    await metricsConfig.generateValidUserId();
   });
 }
 
@@ -130,12 +131,12 @@ type Event = InteractiveEvent | BackgroundEvent | ErrorEvent;
 export class Analytics {
   private constructor(
     private readonly trackingId: string,
-    private readonly userId: string
+    private readonly userId: string | null
   ) {}
 
   // Constructor cannot be async.
   static async create(): Promise<Analytics> {
-    const uid = await metricsUtils.readOrCreateUserId();
+    const uid = await metricsConfig.getOrGenerateValidUserId();
     // Send metrics to testing-purpose Google Analytics property to avoid polluting
     // user data when debugging the extension for development.
     const tid =
@@ -152,6 +153,12 @@ export class Analytics {
    * See go/cros-ide-metrics for the memo on what values are assigned to GA parameters.
    */
   private eventToQuery(event: Event, gitRepo: string | undefined): string {
+    if (!this.userId) {
+      throw new Error(
+        'BUG: Cannot build a query for an external user; check shouldSend() first'
+      );
+    }
+
     const data: Record<string, string | number> = {
       v: '1',
       tid: this.trackingId,
@@ -202,9 +209,7 @@ export class Analytics {
       (extensionMode === vscode.ExtensionMode.Production ||
         extensionMode === vscode.ExtensionMode.Development) &&
       // User ID should be available.
-      this.userId !== '' &&
-      // User should be a Googler.
-      this.userId !== metricsUtils.externalUserIdStub() &&
+      !!this.userId &&
       // User should have accepted to collect metrics.
       ideUtil.getConfigRoot().get<boolean>('metrics.collectMetrics', false)
     );
