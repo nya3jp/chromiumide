@@ -100,6 +100,10 @@ Window".
 Run the install script again as written in [Install the
 extension](#3_install-the-extension) and [reload the IDE](#4_reload-the-ide).
 
+## Filing bugs
+
+If you find issues or have feature requests, feel free to file bugs at http://go/cros-ide-new-bug.
+
 # Features
 
 ### Code Completion and Navigation
