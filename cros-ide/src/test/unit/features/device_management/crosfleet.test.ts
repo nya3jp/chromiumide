@@ -59,4 +59,23 @@ describe('Crosfleet runner', () => {
     expect(await state.runner.checkLogin()).toEqual(false);
     await expectAsync(state.runner.listLeases()).toBeRejected();
   });
+
+  it('requests a new lease', async () => {
+    expect(await state.runner.listLeases()).toEqual([]);
+
+    await state.runner.requestLease({
+      durationInMinutes: 60,
+      board: 'board1',
+      model: 'model1',
+      hostname: 'host1',
+    });
+
+    expect(await state.runner.listLeases()).toEqual([
+      {
+        hostname: 'host1',
+        board: 'board1',
+        model: 'model1',
+      },
+    ]);
+  });
 });

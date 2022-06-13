@@ -34,6 +34,12 @@ export class FakeCrosfleet {
       path.join(cipdRepository.installDir, 'crosfleet'),
       testing.exactMatch(['dut', 'leases', '-json'], () => this.handleLeases())
     );
+    fakeExec.on(
+      path.join(cipdRepository.installDir, 'crosfleet'),
+      testing.prefixMatch(['dut', 'lease'], restArgs =>
+        this.handleLease(restArgs)
+      )
+    );
   }
 
   private async handleWhoami(): Promise<
@@ -79,6 +85,56 @@ export class FakeCrosfleet {
       }),
     };
     return {exitStatus: 0, stdout: JSON.stringify(output), stderr: ''};
+  }
+
+  private async handleLease(
+    restArgs: string[]
+  ): Promise<commonUtil.ExecResult | commonUtil.AbnormalExitError> {
+    if (!this.loggedIn) {
+      return new commonUtil.AbnormalExitError(
+        'crosfleet',
+        ['dut', 'lease'].concat(restArgs),
+        1
+      );
+    }
+
+    // These are the only supported arguments.
+    const validArgs = [
+      '-duration',
+      '60',
+      '-board',
+      'board1',
+      '-model',
+      'model1',
+      '-host',
+      'host1',
+    ];
+    const ok = () => {
+      if (restArgs.length !== validArgs.length) {
+        return false;
+      }
+      for (let i = 0; i < restArgs.length; i++) {
+        if (restArgs[i] !== validArgs[i]) {
+          return false;
+        }
+      }
+      return true;
+    };
+    if (!ok) {
+      return new commonUtil.AbnormalExitError(
+        'crosfleet',
+        ['dut', 'lease'].concat(restArgs),
+        1
+      );
+    }
+
+    this.leases.push({
+      hostname: 'host1',
+      board: 'board1',
+      model: 'model1',
+    });
+
+    return {exitStatus: 0, stdout: '', stderr: ''};
   }
 }
 

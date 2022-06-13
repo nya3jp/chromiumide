@@ -15,6 +15,7 @@ import {crosfleetLogin} from './crosfleet_login';
 import {addDevice} from './device_add';
 import {deleteDevice} from './device_delete';
 import {flashPrebuiltImage} from './flash_prebuilt_image';
+import {addLease} from './lease_add';
 import {refreshLeases} from './lease_refresh';
 
 /**
@@ -67,6 +68,9 @@ export function registerCommands(
     vscode.commands.registerCommand(
       'cros-ide.deviceManagement.refreshLeases',
       () => refreshLeases(context)
+    ),
+    vscode.commands.registerCommand('cros-ide.deviceManagement.addLease', () =>
+      addLease(context)
     ),
     vscode.commands.registerCommand(
       'cros-ide.deviceManagement.openLogs',

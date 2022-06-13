@@ -17,6 +17,22 @@ export interface LeaseInfo {
 }
 
 /**
+ * Contains various options to lease a new device.
+ */
+export interface LeaseOptions {
+  // Optional CancellationToken to cancel the leasing operation.
+  readonly token?: vscode.CancellationToken;
+
+  // Duration of a lease in minutes.
+  readonly durationInMinutes: number;
+
+  // Criteria to filter devices.
+  readonly board?: string;
+  readonly model?: string;
+  readonly hostname?: string;
+}
+
+/**
  * Wraps the crosfleet CLI.
  */
 export class CrosfleetRunner {
@@ -58,9 +74,15 @@ export class CrosfleetRunner {
   /**
    * Executes the crosfleet CLI with given arguments.
    */
-  private async exec(args: string[]): ReturnType<typeof commonUtil.exec> {
+  private async exec(
+    args: string[],
+    token?: vscode.CancellationToken
+  ): ReturnType<typeof commonUtil.exec> {
     const executablePath = await this.ensureExecutable();
-    return await commonUtil.exec(executablePath, args, {logger: this.output});
+    return await commonUtil.exec(executablePath, args, {
+      logger: this.output,
+      cancellationToken: token,
+    });
   }
 
   /**
@@ -100,6 +122,34 @@ export class CrosfleetRunner {
       throw result;
     }
     return parseLeases(result.stdout);
+  }
+
+  /**
+   * Requests to lease a new device.
+   */
+  async requestLease(options: LeaseOptions): Promise<void> {
+    const args = [
+      'dut',
+      'lease',
+      '-minutes',
+      String(options.durationInMinutes),
+    ];
+    if (options.board) {
+      args.push('-board', options.board);
+    }
+    if (options.model) {
+      args.push('-model', options.model);
+    }
+    if (options.hostname) {
+      args.push('-host', options.hostname);
+    }
+
+    const result = await this.exec(args, options.token);
+    if (result instanceof Error) {
+      throw result;
+    }
+
+    this.onDidChangeEmitter.fire();
   }
 }
 
