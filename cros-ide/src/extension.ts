@@ -23,6 +23,7 @@ import * as shortLinkProvider from './features/short_link_provider';
 import * as suggestExtension from './features/suggest_extension';
 import * as targetBoard from './features/target_board';
 import * as upstart from './features/upstart';
+import * as gn from './features/gn';
 import * as ideUtil from './ide_util';
 import * as chroot from './services/chroot';
 import * as bgTaskStatus from './ui/bg_task_status';
@@ -79,6 +80,7 @@ export async function activate(
   targetBoard.activate(context, chrootService);
   feedback.activate(context);
   upstart.activate(context);
+  gn.activate(context);
   deviceManagement.activate(context, statusManager, chrootService);
 
   if (ideUtil.getConfigRoot().get<boolean>('underDevelopment.testCoverage')) {
