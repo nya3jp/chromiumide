@@ -33,6 +33,7 @@ First, you need to install Visual Studio Code (VSCode) on your client machine.
 
 Check if it's already installed by running `code` in terminal
 or look for it in the application menu, otherwise:
+
 ```
 (cd &&
     sudo glinux-add-repo typescript stable &&
@@ -77,7 +78,7 @@ palette), select your remote machine, and open your working directory under `~/c
 
 ## 3. Install the extension
 
-Open terminal in the VSCode (Menu: Terminal &rarr; New Terminal) and run
+From your terminal run
 
 ```
 ~/chromiumos/chromite/ide_tooling/cros-ide/install.sh
@@ -94,16 +95,15 @@ Open terminal in the VSCode (Menu: Terminal &rarr; New Terminal) and run
 
 - You can install an old version of the extension (say 0.0.1), with the `--force 0.0.1` flag.
 
-## 4. Reload the IDE
+## 4. Open or reload VSCode
 
-You need to reload the VSCode to activate the extension. Either simply restart
-the IDE, or open the command palette (Ctrl+Shift+P) and type "Developer: Reload
-Window".
+Open VSCode, or reload it by either simply restarting it or opening the command
+palette (Ctrl+Shift+P) and type "Developer: Reload Window".
 
 ## 5. Open a folder
 
-Finally, you need to open a folder with sources to let CrOS IDE detect the chroot.
-Select *File &rarr; Open Folder...*, choose, for example, `~/chromiumos/src/platform2`,
+Finally, open a folder with sources to let CrOS IDE detect the chroot.
+Select _File &rarr; Open Folder..._, choose, for example, `~/chromiumos/src/platform2`,
 and you are good to go.
 
 ## Using CrOS IDE
@@ -116,7 +116,7 @@ and useful tips.
 ### Updating
 
 Run the install script again as written in [Install the
-extension](#3_install-the-extension) and [reload the IDE](#4_reload-the-ide).
+extension](#3_install-the-extension) and [open or reload VSCode](#4_open-or-reload-vscode).
 
 ### Filing bugs
 
