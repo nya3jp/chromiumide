@@ -322,7 +322,7 @@ async function main() {
     const message = (e as Error).message;
     throw new Error(
       `${message}\n` +
-        'Read quickstart.md and run the script in proper environment'
+        'Read http://go/cros-ide-quickstart and run the script in proper environment'
     );
   }
 }
