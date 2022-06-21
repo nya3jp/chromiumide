@@ -334,4 +334,68 @@ describe('chroot detection', () => {
       path.join(crosCheckout1, 'chroot') as Chroot
     );
   });
+
+  it('keeps the chroot stable if it was found before', async () => {
+    const crosCheckout1 = path.join(temp.path, 'cros-1');
+    await fs.promises.mkdir(crosCheckout1);
+    await buildFakeChroot(crosCheckout1);
+
+    const crosCheckout2 = path.join(temp.path, 'cros-2');
+    await fs.promises.mkdir(crosCheckout2);
+    await buildFakeChroot(crosCheckout2);
+
+    (vscode.workspace as Mutable<typeof vscode.workspace>).workspaceFolders = [
+      {
+        uri: vscode.Uri.file('/some/path/'),
+        name: 'path',
+        index: 1,
+      },
+      {
+        uri: vscode.Uri.file(path.join(crosCheckout1, 'folder-A/')),
+        name: 'folder-A',
+        index: 2,
+      },
+      {
+        uri: vscode.Uri.file(path.join(crosCheckout2, 'folder-B/')),
+        name: 'folder-B',
+        index: 3,
+      },
+    ];
+    const cros = new ChrootService(
+      undefined,
+      undefined,
+      /* isInsideChroot = */ () => false
+    );
+    cros.onUpdate();
+    expect(vscodeSpy.window.showErrorMessage).toHaveBeenCalledTimes(1);
+
+    expect(cros.chroot()?.root).toEqual(
+      path.join(crosCheckout1, 'chroot') as Chroot
+    );
+
+    (vscode.workspace as Mutable<typeof vscode.workspace>).workspaceFolders = [
+      {
+        uri: vscode.Uri.file('/some/path/'),
+        name: 'path',
+        index: 1,
+      },
+      {
+        uri: vscode.Uri.file(path.join(crosCheckout2, 'folder-B/')),
+        name: 'folder-B',
+        index: 2,
+      },
+      {
+        uri: vscode.Uri.file(path.join(crosCheckout1, 'folder-A/')),
+        name: 'folder-A',
+        index: 3,
+      },
+    ];
+
+    cros.onUpdate();
+
+    expect(cros.chroot()?.root).toEqual(
+      path.join(crosCheckout1, 'chroot') as Chroot
+    );
+    expect(vscodeSpy.window.showErrorMessage).toHaveBeenCalledTimes(3);
+  });
 });

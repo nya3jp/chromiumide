@@ -89,8 +89,16 @@ export class ChrootService {
   onUpdate() {
     const candidates = this.findChrootCandidates();
     const currentChroot = this.chroot()?.root;
-    // TODO(b:235773376): If this.chroot is one of the candidates then select it.
     const selected: commonUtil.Chroot | undefined = candidates[0];
+
+    if (candidates.length > 1) {
+      // Do not await to avoid blocking activate().
+      vscode.window.showErrorMessage(
+        'CrOS IDE does not support multiple chroots, ' +
+          `but found: [${candidates.join(', ')}]. Selecting ${selected}. ` +
+          'Open ChromeOS sources from at most one chroot per workspace to fix this problem.'
+      );
+    }
 
     // Make sure we don't change a defined chroot. This scenario happens
     // when adding and removing folders under distinct chroots.
@@ -102,15 +110,6 @@ export class ChrootService {
           'CrOS IDE requires reloading the window to change the chroot.'
       );
       return;
-    }
-
-    if (candidates.length > 1) {
-      // Do not await to avoid blocking activate().
-      vscode.window.showErrorMessage(
-        'CrOS IDE does not support multiple chroots, ' +
-          `but found: [${candidates.join(', ')}]. The first will be used. ` +
-          'Open ChromeOS sources from at most one chroot per workspace to fix this problem.'
-      );
     }
 
     // TODO(b:235773376): Make sure users of this service show a warning if invoked,
