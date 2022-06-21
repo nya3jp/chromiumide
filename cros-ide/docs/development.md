@@ -4,10 +4,10 @@
 
 1. Follow the [QuickStart Guide], skip installing the extension. Open the `cros-ide` directory as
    your working directory.
-2. Run `npm ci` in the `cros-ide` directory (inside chroot).
-3. _Outside chroot_ (open a different terminal), run `npm test` in the `cros-ide` directory to
-   confirm tests pass. `node --version` should return v14.\* for the test to pass. To install the
-   proper version, you may use [nvm].
+2. Run `npm ci` in the `cros-ide` directory.
+3. _Outside chroot_, run `npm test` in the `cros-ide` directory to confirm
+   tests pass. `node --version` should return v14.\* for the test to pass.
+   To install the proper version, you may use [nvm].
 
 [quickstart guide]: https://chromium.googlesource.com/chromiumos/chromite/+/HEAD/ide_tooling/docs/quickstart.md
 [nvm]: https://github.com/nvm-sh/nvm
@@ -26,10 +26,10 @@ There are several ways of testing.
     perform whatever manual tests on it. By default, other extensions are disabled. To keep other
     extensions running, choose "Run Extension (keep other extensions running)".
   - Similarly, you can select "Extension Tests" instead of "Run Extensions" to run all the tests.
-    The output will be shown in the Debug Console in the IDE used to develop the extension
+    The output will be shown in the Debug Console in the IDE used to develop the extension.
 - Testing from command line
   - `npm test` runs all the tests. It must be run outside chroot.
-  - `npm preupload` runs all the tests and linters. It must be run outside chroot.
+  - `npm run preupload` runs all the tests and linters. It must be run outside chroot.
 
 [activity bar]: https://code.visualstudio.com/api/references/extension-guidelines#view-containers
 [debugging the tests]: https://code.visualstudio.com/api/working-with-extensions/testing-extension#debugging-the-tests
@@ -88,15 +88,12 @@ Note that we have slight deviations from [Google TypeScript style guide]:
 
 ## FAQs
 
-- How to check that my VSCode is connected to chroot?
-  - In the lower left corner, it should show `SSH: cros` if you followed
-    [QuickStart Guide].
 - How to build and install the extension from local source code?
   - Run `./install.sh --dev` in the terminal of the VSCode connected to chroot.
     It builds from the source code and installs it to the current vscode.
 - Why repo upload is slow?
-  - It runs `npm preupload`. It's a tentative alternative for a CQ which is under
-    construction.
+  - It runs `npm run preupload`. It's a tentative alternative for a CQ which is
+    under construction.
 - My repo hook script complains that there is no npx?
   - Run `sudo apt-get install npm` (outside of chroot).
 - How to fix formatting errors?
