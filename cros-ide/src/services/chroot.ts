@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as commonUtil from '../common/common_util';
 import {WrapFs} from '../common/cros';
+import * as metrics from '../features/metrics/metrics';
 import * as sudo from './sudo';
 
 /**
@@ -98,6 +99,11 @@ export class ChrootService {
           `but found: [${candidates.join(', ')}]. Selecting ${selected}. ` +
           'Open ChromeOS sources from at most one chroot per workspace to fix this problem.'
       );
+      metrics.send({
+        category: 'background',
+        group: 'misc',
+        action: 'multiple chroot candidates',
+      });
     }
 
     // Make sure we don't change a defined chroot. This scenario happens
@@ -109,6 +115,11 @@ export class ChrootService {
         `Chroot change ${currentChroot} → ${selected} will be ignored. ` +
           'CrOS IDE requires reloading the window to change the chroot.'
       );
+      metrics.send({
+        category: 'background',
+        group: 'misc',
+        action: 'chroot change rejected',
+      });
       return;
     }
 

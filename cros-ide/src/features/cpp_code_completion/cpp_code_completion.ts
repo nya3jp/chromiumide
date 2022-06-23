@@ -6,16 +6,17 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as commonUtil from '../../common/common_util';
+import * as metrics from '../../features/metrics/metrics';
 import * as ideUtil from '../../ide_util';
 import {ChrootService} from '../../services/chroot';
 import * as bgTaskStatus from '../../ui/bg_task_status';
+import * as compdbService from './compdb_service';
 import {
   CompdbError,
   CompdbErrorKind,
   CompdbService,
   CompdbServiceImpl,
 } from './compdb_service';
-import * as compdbService from './compdb_service';
 import {CLANGD_EXTENSION, SHOW_LOG_COMMAND} from './constants';
 import {Atom, PackageInfo, Packages} from './packages';
 
@@ -168,6 +169,14 @@ export class CompilationDatabase implements vscode.Disposable {
       return;
     }
     this.noChrootHandled = true;
+
+    // Send metrics before showing the message, because they don't seem
+    // to be sent if the user does not act on the message.
+    metrics.send({
+      category: 'background',
+      group: 'misc',
+      action: 'cpp xrefs generation without chroot',
+    });
 
     // platform2 user may prefer subdirectories
     const gitFolder = await this.getGitTopLevelDirectory(fileName);
