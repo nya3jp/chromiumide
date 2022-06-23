@@ -226,6 +226,7 @@ class Ebuild {
         'USE=compdb_only',
         this.ebuildExecutable(),
         this.ebuild9999(),
+        'clean',
         'compile',
       ],
       {

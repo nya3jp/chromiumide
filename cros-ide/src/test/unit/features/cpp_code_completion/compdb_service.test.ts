@@ -34,6 +34,7 @@ describe('Compdb service', () => {
           'USE=compdb_only',
           'ebuild-amd64-generic',
           '/mnt/host/source/src/third_party/chromiumos-overlay/chromeos-base/codelab/codelab-9999.ebuild',
+          'clean',
           'compile',
         ],
         async () => {
@@ -80,6 +81,7 @@ describe('Compdb service', () => {
           'USE=compdb_only',
           'ebuild-amd64-generic',
           '/mnt/host/source/src/third_party/chromiumos-overlay/chromeos-base/codelab/codelab-9999.ebuild',
+          'clean',
           'compile',
         ],
         async () => {
