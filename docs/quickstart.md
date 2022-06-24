@@ -106,16 +106,25 @@ Finally, you need to open a folder with sources to let CrOS IDE detect the chroo
 Select *File &rarr; Open Folder...*, choose, for example, `~/chromiumos/src/platform2`,
 and you are good to go.
 
-## Updating
+## Using CrOS IDE
+
+Check out [go/cros-ide-user-guide] to learn more about features, known issues,
+and useful tips.
+
+[go/cros-ide-user-guide]: http://go/cros-ide-user-guide
+
+### Updating
 
 Run the install script again as written in [Install the
 extension](#3_install-the-extension) and [reload the IDE](#4_reload-the-ide).
 
-## Filing bugs
+### Filing bugs
 
-If you find issues or have feature requests, feel free to file bugs at http://go/cros-ide-new-bug.
+If you find issues or have feature requests, feel free to file bugs at [go/cros-ide-new-bug].
 
-# Features
+[go/cros-ide-new-bug]: http://go/cros-ide-new-bug
+
+# Selected Features
 
 ### Code Completion and Navigation
 
