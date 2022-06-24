@@ -57,6 +57,12 @@ export const codeSearch = {
   openWithRevision: new ConfigValue<boolean>('codeSearchHash'),
 };
 
+export const cppCodeCompletion = {
+  useHardcodedMapping: new ConfigValue<boolean>(
+    'cppCodeCompletion.useHardcodedMapping'
+  ),
+};
+
 export const underDevelopment = {
   crosFormat: new ConfigValue<boolean>('underDevelopment.crosFormat'),
   deviceManagement: new ConfigValue<boolean>(

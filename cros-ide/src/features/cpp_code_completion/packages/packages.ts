@@ -5,16 +5,45 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import {findChroot, sourceDir} from '../../../common/common_util';
+import {ChrootService} from '../../../services/chroot';
 import {KNOWN_PACKAGES} from './known_packages';
+import {generate} from './mapping';
 import {SourceDir, PackageInfo} from './types';
 
 // TODO(oka): Make this a singleton if this is used from multiple places.
 export class Packages {
   private mapping = new Map<SourceDir, PackageInfo>();
-  constructor() {
+  private generated = false;
+
+  /**
+   * If autoDetect is true, instead of using a hard-coded mapping, we lazily generate
+   * the mapping from the current repository when it's needed.
+   */
+  constructor(
+    private readonly chrootService: ChrootService,
+    autoDetect?: boolean
+  ) {
+    if (autoDetect) {
+      return;
+    }
     for (const packageInfo of KNOWN_PACKAGES) {
       this.mapping.set(packageInfo.sourceDir, packageInfo);
     }
+    this.generated = true;
+  }
+
+  private async ensureGenerated() {
+    if (this.generated) {
+      return;
+    }
+    const source = this.chrootService.source();
+    if (!source) {
+      return;
+    }
+    for (const packageInfo of await generate(source.root)) {
+      this.mapping.set(packageInfo.sourceDir, packageInfo);
+    }
+    this.generated = true;
   }
 
   /**
@@ -22,6 +51,8 @@ export class Packages {
    * compilation database, or null if no such package is known.
    */
   async fromFilepath(filepath: string): Promise<PackageInfo | null> {
+    await this.ensureGenerated();
+
     let realpath = '';
     try {
       realpath = await fs.promises.realpath(filepath);

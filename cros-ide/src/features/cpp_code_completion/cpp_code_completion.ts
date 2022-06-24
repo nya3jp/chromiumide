@@ -9,6 +9,7 @@ import * as commonUtil from '../../common/common_util';
 import * as metrics from '../../features/metrics/metrics';
 import * as ideUtil from '../../ide_util';
 import {ChrootService} from '../../services/chroot';
+import * as config from '../../services/config';
 import * as bgTaskStatus from '../../ui/bg_task_status';
 import * as compdbService from './compdb_service';
 import {
@@ -31,10 +32,13 @@ export function activate(
   );
 
   const compdbService = new CompdbServiceImpl(output, chrootService);
+
+  const useHardcodedMapping =
+    config.cppCodeCompletion.useHardcodedMapping.get();
   context.subscriptions.push(
     new CompilationDatabase(
       statusManager,
-      new Packages(),
+      new Packages(chrootService, !useHardcodedMapping),
       output,
       compdbService,
       chrootService

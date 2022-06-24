@@ -347,6 +347,11 @@
           "description": "Link to the hash of the current revision instead of TOT",
           "default": false
         },
+        "cros-ide.cppCodeCompletion.useHardcodedMapping": {
+          "type": "boolean",
+          "description": "Disable the new logic to automatically detect a Portage package from the filepath, and use hardcoded mapping instead",
+          "default": false
+        },
         "cros-ide.underDevelopment.crosFormat": {
           "type": "boolean",
           "description": "Format files with 'cros format' (under development)",

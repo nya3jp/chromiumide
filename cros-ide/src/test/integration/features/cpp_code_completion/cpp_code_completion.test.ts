@@ -47,7 +47,7 @@ describe('C++ code completion', () => {
     // CompilationDatabase registers event handlers in the constructor.
     const compilationDatabase = new CompilationDatabase(
       new bgTaskStatus.TEST_ONLY.StatusManagerImpl(),
-      new Packages(),
+      new Packages(new ChrootService(undefined, undefined)),
       new ConsoleOutputChannel(),
       spiedFakeCompdbService,
       new ChrootService(new WrapFs(chroot), new WrapFs(source))
