@@ -73,6 +73,11 @@ describe('Owned device repository', () => {
 });
 
 describe('Leased device repository', () => {
+  // Enable experimental features.
+  beforeEach(async () => {
+    await config.underDevelopment.deviceManagement.update(true);
+  });
+
   const {fakeExec} = testing.installFakeExec();
   const cipdRepository = fakes.installFakeCipd(fakeExec);
   const fakeCrosfleet = fakes.installFakeCrosfleet(fakeExec, cipdRepository);
@@ -93,9 +98,7 @@ describe('Leased device repository', () => {
     state.leasedDeviceRepository.dispose();
   });
 
-  // TODO(b/237357253): Reenable the test.
-  // Likely failing due to experimental feature settings.
-  xit('returns list of devices', async () => {
+  it('returns list of devices', async () => {
     // getDevices initially returns an empty list.
     expect(await state.leasedDeviceRepository.getDevices()).toEqual([]);
 
