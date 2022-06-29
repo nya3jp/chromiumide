@@ -4,9 +4,33 @@
 
 import type * as vscode from 'vscode'; // import types only
 
-export function getConfiguration(
-  _section?: string,
-  _scope?: vscode.ConfigurationScope | null
-): vscode.WorkspaceConfiguration {
-  throw new Error('vscode.workspace.getConfiguration(): not implemented');
+export interface ConfigurationProvider {
+  getConfiguration(section?: string): vscode.WorkspaceConfiguration;
+  onDidChangeConfiguration: vscode.Event<vscode.ConfigurationChangeEvent>;
 }
+
+let theProvider: ConfigurationProvider | undefined = undefined;
+
+export function setConfigurationProviderForTesting(
+  provider: ConfigurationProvider
+): void {
+  theProvider = provider;
+}
+
+export function getConfiguration(
+  section?: string
+): vscode.WorkspaceConfiguration {
+  if (theProvider === undefined) {
+    throw new Error('ConfigurationProvider is unavailable');
+  }
+  return theProvider.getConfiguration(section);
+}
+
+export const onDidChangeConfiguration: vscode.Event<
+  vscode.ConfigurationChangeEvent
+> = (...args) => {
+  if (theProvider === undefined) {
+    throw new Error('ConfigurationProvider is unavailable');
+  }
+  return theProvider.onDidChangeConfiguration(...args);
+};
