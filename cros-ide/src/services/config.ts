@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// This is the only file that can call vscode.workspace.getConfiguration().
+/* eslint-disable no-restricted-syntax */
+
 import * as vscode from 'vscode';
 
 // Prefix to be added to all config sections.

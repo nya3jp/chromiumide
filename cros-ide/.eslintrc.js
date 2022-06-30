@@ -34,6 +34,21 @@ module.exports = {
 
     'import/first': 'error',
     'import/order': 'error',
+
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector:
+          'MemberExpression' +
+          '[object.type="MemberExpression"]' +
+          '[object.object.name="vscode"]' +
+          '[object.property.name="workspace"]' +
+          '[property.name="getConfiguration"]',
+        message:
+          'vscode.workspace.getConfiguration should not be called directly; ' +
+          'use services/configs.ts instead',
+      },
+    ],
   },
   settings: {
     'import/core-modules': ['vscode'],
