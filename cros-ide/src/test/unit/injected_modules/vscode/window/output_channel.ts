@@ -6,5 +6,6 @@ import type * as vscode from 'vscode'; // import types only
 import {VoidOutputChannel} from '../../../../testing/fakes';
 
 export function createOutputChannel(name: string): vscode.OutputChannel {
+  // TODO(b/237621808): Remove the dependency to fakes.
   return new VoidOutputChannel(name);
 }
