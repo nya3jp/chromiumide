@@ -226,9 +226,19 @@
           "group": "inline@1"
         },
         {
+          "command": "cros-ide.deviceManagement.connectToDeviceForScreen",
+          "when": "view == devices && viewItem =~ /^device-/",
+          "group": "1_connect@1"
+        },
+        {
           "command": "cros-ide.deviceManagement.connectToDeviceForShell",
           "when": "view == devices && viewItem =~ /^device-/",
           "group": "inline@2"
+        },
+        {
+          "command": "cros-ide.deviceManagement.connectToDeviceForShell",
+          "when": "view == devices && viewItem =~ /^device-/",
+          "group": "1_connect@2"
         },
         {
           "command": "cros-ide.deviceManagement.flashPrebuiltImage",
@@ -236,9 +246,19 @@
           "group": "inline@3"
         },
         {
+          "command": "cros-ide.deviceManagement.flashPrebuiltImage",
+          "when": "view == devices && viewItem =~ /^device-/ && config.cros-ide.underDevelopment.deviceManagement",
+          "group": "2_operation@1"
+        },
+        {
           "command": "cros-ide.deviceManagement.deleteDevice",
           "when": "view == devices && viewItem == device-owned",
           "group": "inline@9"
+        },
+        {
+          "command": "cros-ide.deviceManagement.deleteDevice",
+          "when": "view == devices && viewItem == device-owned",
+          "group": "9_delete"
         },
         {
           "command": "cros-ide.deviceManagement.addLease",
