@@ -11,6 +11,7 @@ import * as vnc from '../vnc_session';
 import {CommandContext} from './common';
 import {connectToDeviceForShell} from './connect_ssh';
 import {connectToDeviceForScreen} from './connect_vnc';
+import {copyHostname} from './copy_hostname';
 import {crosfleetLogin} from './crosfleet_login';
 import {addDevice} from './device_add';
 import {deleteDevice} from './device_delete';
@@ -71,6 +72,10 @@ export function registerCommands(
     ),
     vscode.commands.registerCommand('cros-ide.deviceManagement.addLease', () =>
       addLease(context)
+    ),
+    vscode.commands.registerCommand(
+      'cros-ide.deviceManagement.copyHostname',
+      (item: provider.DeviceItem) => copyHostname(context, item)
     ),
     vscode.commands.registerCommand(
       'cros-ide.deviceManagement.openLogs',

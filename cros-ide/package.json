@@ -29,6 +29,7 @@
     "onCommand:cros-ide.deviceManagement.crosfleetLogin",
     "onCommand:cros-ide.deviceManagement.refreshLeases",
     "onCommand:cros-ide.deviceManagement.addLease",
+    "onCommand:cros-ide.deviceManagement.copyHostname",
     "onCommand:cros-ide.refreshBoardsPackages",
     "onCommand:cros-ide.codeSearchOpenCurrentFile",
     "onCommand:cros-ide.codeSearchCopyCurrentFile",
@@ -102,6 +103,11 @@
         "title": "Lease a Device",
         "icon": "$(add)",
         "enablement": "config.cros-ide.underDevelopment.deviceManagement"
+      },
+      {
+        "command": "cros-ide.deviceManagement.copyHostname",
+        "category": "CrOS",
+        "title": "Copy Hostname"
       },
       {
         "command": "cros-ide.refreshBoardsPackages",
@@ -251,6 +257,11 @@
           "group": "2_operation@1"
         },
         {
+          "command": "cros-ide.deviceManagement.copyHostname",
+          "when": "view == devices && viewItem =~ /^device-/",
+          "group": "8_copy"
+        },
+        {
           "command": "cros-ide.deviceManagement.deleteDevice",
           "when": "view == devices && viewItem == device-owned",
           "group": "inline@9"
@@ -292,6 +303,12 @@
         {
           "command": "cros-ide.coverage.showReport",
           "when": "view == boards-packages && viewItem == package && config.cros-ide.underDevelopment.testCoverage"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "cros-ide.deviceManagement.copyHostname",
+          "when": "false"
         }
       ]
     },
