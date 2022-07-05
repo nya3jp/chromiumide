@@ -12,3 +12,6 @@ cros-ide/package-lock.json
 cros-ide/tsconfig.json
 cros-ide/views/tsconfig.json
 cros-ide/.vscode/*.json
+
+# testdata should match real files, including their formatting
+scripts/compdb_no_chroot_testdata/*/*.json
