@@ -66,7 +66,7 @@ export const deviceManagement = {
 };
 
 export const metrics = {
-  collectMetrics: new ConfigValue<boolean>('collectMetrics'),
+  collectMetrics: new ConfigValue<boolean>('metrics.collectMetrics'),
   showMessage: new ConfigValue<boolean>('metrics.showMessage'),
 };
 
