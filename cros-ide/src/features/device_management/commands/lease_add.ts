@@ -75,20 +75,34 @@ export async function addLease(context: CommandContext): Promise<void> {
 
   try {
     // Show a progress notification as this is a long operation.
-    await vscode.window.withProgress(
+    const cancelled = await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
         cancellable: true,
         title: 'Requesting to lease a device...',
       },
       async (_progress, token) => {
-        await context.crosfleetRunner.requestLease({
-          token: token,
-          durationInMinutes: Number(durationStr),
-          [filter.key]: filterValue,
-        });
+        try {
+          await context.crosfleetRunner.requestLease({
+            token: token,
+            durationInMinutes: Number(durationStr),
+            [filter.key]: filterValue,
+          });
+        } catch (err) {
+          if (token.isCancellationRequested) {
+            return true;
+          }
+          throw err;
+        }
+        return false;
       }
     );
+    if (cancelled) {
+      void vscode.window.showWarningMessage(
+        'Cancelled leasing a device, but you might still get a device if a swarming job has already been scheduled.'
+      );
+      return;
+    }
   } catch (e: unknown) {
     void vscode.window.showErrorMessage(`Failed to lease a device: ${e}`);
   }
