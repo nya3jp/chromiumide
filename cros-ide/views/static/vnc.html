@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Set the base URL. -->
-    <base href="%EXTENSION_ROOT_URL%/dist/views/">
+    <base href="%EXTENSION_ROOT_URL_ESCAPED_FOR_ATTR%/dist/views/">
 
     <title>CrOS IDE VNC Client</title>
     <link rel="stylesheet" href="vnc.css">
   </head>
   <body>
-    <div id="main" data-web-socket-proxy-url="%WEB_SOCKET_PROXY_URL%"></div>
+    <div id="main" data-web-socket-proxy-url="%WEB_SOCKET_PROXY_URL_ESCAPED_FOR_ATTR%"></div>
     <script src="vnc.js"></script>
   </body>
 </html>

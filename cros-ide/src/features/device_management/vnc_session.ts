@@ -179,10 +179,15 @@ export class VncSession {
     const html = fs.readFileSync(filePath, {encoding: 'utf-8'});
     return replaceAll(html, [
       {
-        from: /%EXTENSION_ROOT_URL%/g,
-        to: webview.asWebviewUri(context.extensionUri).toString(),
+        from: /%EXTENSION_ROOT_URL_ESCAPED_FOR_ATTR%/g,
+        to: escapeForHtmlAttribute(
+          webview.asWebviewUri(context.extensionUri).toString()
+        ),
       },
-      {from: /%WEB_SOCKET_PROXY_URL%/g, to: proxyUrl},
+      {
+        from: /%WEB_SOCKET_PROXY_URL_ESCAPED_FOR_ATTR%/g,
+        to: escapeForHtmlAttribute(proxyUrl),
+      },
     ]);
   }
 }
@@ -456,6 +461,18 @@ class MessagePassingProxy implements vscode.Disposable {
       }
     }
   }
+}
+
+/**
+ * Escapes a string for embedding in HTML attribute values.
+ */
+function escapeForHtmlAttribute(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/'/g, '&apos;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 interface ReplacePattern {
