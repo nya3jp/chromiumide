@@ -12,11 +12,11 @@ import {setConfigurationProviderForTesting} from '../injected_modules/vscode/wor
 function initFakeConfigs(): void {
   const fakeConfig = new fakes.FakeWorkspaceConfiguration(
     path.join(__dirname, '../../../../package.json'),
-    config.TEST_ONLY.PREFIX
+    config.TEST_ONLY.CROS_IDE_PREFIX
   );
 
   function getConfiguration(section?: string): vscode.WorkspaceConfiguration {
-    if (section !== config.TEST_ONLY.PREFIX) {
+    if (section !== config.TEST_ONLY.CROS_IDE_PREFIX) {
       throw new Error(
         'vscode.workspace.getConfiguration called for foreign configs'
       );

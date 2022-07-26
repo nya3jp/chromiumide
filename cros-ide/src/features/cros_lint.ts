@@ -9,6 +9,7 @@ import * as commonUtil from '../common/common_util';
 import * as metrics from '../features/metrics/metrics';
 import * as bgTaskStatus from '../ui/bg_task_status';
 import * as logs from '../logs';
+import * as config from '../services/config';
 
 export function activate(
   context: vscode.ExtensionContext,
@@ -57,7 +58,8 @@ interface LintConfig {
   /**
    * Returns the cwd to run the executable.
    */
-  cwd?(exe: string): string | undefined;
+  cwd?(exePath: string): string | undefined;
+  env?(exePath: string, path: string): Promise<NodeJS.ProcessEnv | undefined>;
 }
 
 const GNLINT_PATH = 'src/platform2/common-mk/gnlint.py';
@@ -122,24 +124,59 @@ const lintConfigs = new Map<string, LintConfig>([
     'go',
     {
       executable: realpath => {
+        if (!TAST_PATH_RE.test(realpath)) {
+          return crosExeFor(realpath);
+        }
         const chroot = commonUtil.findChroot(realpath);
         if (chroot === undefined) {
           return undefined;
         }
         const source = commonUtil.sourceDir(chroot);
-        return TAST_PATH_RE.test(realpath)
-          ? path.join(source, TAST_LINT_PATH)
-          : undefined;
+        return path.join(source, TAST_LINT_PATH);
       },
-      arguments: (path: string) => [path],
+      arguments: (path: string) =>
+        TAST_PATH_RE.test(path) ? [path] : ['lint', path],
       parse: parseCrosLintGo,
       cwd: (exePath: string) =>
         TAST_PATH_RE.test(exePath)
           ? path.dirname(path.dirname(exePath))
           : undefined,
+      env: (execPath: string) => goLintEnv(execPath),
     },
   ],
 ]);
+
+// TODO(b/241434614): Remove goLintEnv function once cros lint bug is resolved.
+/**
+ * Configures environment variables to be passed to a subprocess for linting.
+ *
+ * Returns a NodeJS.ProcessEnv with the environment variables required for the exe to run.
+ * Returns undefined if the environment is unable to be configured or if the environment does
+ * not need to be modified.
+ */
+export async function goLintEnv(
+  exe: string
+): Promise<NodeJS.ProcessEnv | undefined> {
+  const env = Object.assign({}, process.env);
+  const goCrosLint = exe.endsWith('cros');
+  if (!goCrosLint) {
+    return undefined;
+  }
+  // Find golint executable in the chroot because cros lint
+  // checks /usr/bin, where the chroot golint is located.
+  const chroot = commonUtil.findChroot(exe);
+  if (chroot === undefined) {
+    return undefined;
+  }
+  const goBin = path.join(chroot, '/usr/bin');
+  // Add goBin to the PATH so that cros lint can lint go files
+  // outside the chroot.
+  const newPathVar = `${env.PATH}:${goBin}`;
+  const toolsGopathConfig = config.goExtension.toolsGopath.get();
+  return toolsGopathConfig === null
+    ? {PATH: newPathVar}
+    : {PATH: `${toolsGopathConfig}:${newPathVar}`};
+}
 
 // TODO(ttylenda): Consider making it a class and move statusManager and log to the constructor.
 async function updateCrosLintDiagnostics(
@@ -170,11 +207,13 @@ async function updateCrosLintDiagnostics(
     }
     const args = lintConfig.arguments(realpath);
     const cwd = lintConfig.cwd?.(name);
+    const env = await lintConfig.env?.(name, realpath);
     const res = await commonUtil.exec(name, args, {
       logger: log.channel,
       ignoreNonZeroExit: true,
       logStdout: true,
       cwd: cwd,
+      env: env,
     });
     if (res instanceof Error) {
       log.channel.append(res.message);

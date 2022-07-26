@@ -144,12 +144,12 @@ export function installFakeConfigs(
   beforeEach(() => {
     const fakeConfig = new fakes.FakeWorkspaceConfiguration(
       path.join(__dirname, '../../../package.json'),
-      config.TEST_ONLY.PREFIX
+      config.TEST_ONLY.CROS_IDE_PREFIX
     );
     subscriptions.push(fakeConfig);
 
     vscodeSpy.workspace.getConfiguration
-      .withArgs(config.TEST_ONLY.PREFIX)
+      .withArgs(config.TEST_ONLY.CROS_IDE_PREFIX)
       .and.returnValue(fakeConfig as vscode.WorkspaceConfiguration);
     subscriptions.push(
       fakeConfig.onDidChange(ev =>

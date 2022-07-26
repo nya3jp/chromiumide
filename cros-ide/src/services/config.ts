@@ -7,8 +7,10 @@
 
 import * as vscode from 'vscode';
 
-// Prefix to be added to all config sections.
-const PREFIX = 'cros-ide';
+// Prefixes to be added to all config sections.
+// The Go extension, which the user can have, requires a different prefix.
+const CROS_IDE_PREFIX = 'cros-ide';
+const GO_PREFIX = 'go';
 
 // Wraps vscode API for safer configuration access.
 // It ensures that a config entry is always accessed with consistent options,
@@ -16,16 +18,18 @@ const PREFIX = 'cros-ide';
 class ConfigValue<T> {
   constructor(
     private readonly section: string,
+    private readonly prefix = CROS_IDE_PREFIX,
     private readonly configurationTarget = vscode.ConfigurationTarget.Global
   ) {}
 
   get(): T {
     const value = vscode.workspace
-      .getConfiguration(PREFIX)
+      .getConfiguration(this.prefix)
       .get<T>(this.section);
+
     if (value === undefined) {
       throw new Error(
-        `BUG: ${PREFIX}.${this.section} is not defined in package.json`
+        `BUG: ${this.prefix}.${this.section} is not defined in package.json`
       );
     }
     return value;
@@ -33,7 +37,7 @@ class ConfigValue<T> {
 
   async update(value: T | undefined): Promise<void> {
     await vscode.workspace
-      .getConfiguration(PREFIX)
+      .getConfiguration(this.prefix)
       .update(this.section, value, this.configurationTarget);
   }
 }
@@ -70,6 +74,10 @@ export const metrics = {
   showMessage: new ConfigValue<boolean>('metrics.showMessage'),
 };
 
+export const goExtension = {
+  toolsGopath: new ConfigValue<string>('toolsGopath', GO_PREFIX),
+};
+
 export const TEST_ONLY = {
-  PREFIX,
+  CROS_IDE_PREFIX,
 };

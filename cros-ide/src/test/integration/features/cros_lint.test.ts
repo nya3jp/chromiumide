@@ -73,9 +73,11 @@ const gnLintOutput = `12:34:56.789: ERROR: **** example/BUILD.gn: found 3 issue(
 
 const goFileNameTast = 'tast/aaa.go';
 
-const goFileContentsTast = `// fooId implements api.DutServiceServer.DetectDeviceConfigId.
+const goFileName = 'exmaple/aaa.go';
+
+const goFileContents = `// fooId implements api.DutServiceServer.DetectDeviceConfigId.
 func (s *Foo) FooId(
-\treq *api.req,
+\tbar_var *api.req,
 \tstream api.stream) error {
 \treturn status.Error()
 }`;
@@ -86,6 +88,12 @@ const goLintOutputTast = `Following errors should be modified by yourself:
 
   Refer the following documents for details:
    https://golang.org/wiki/CodeReviewComments#initialisms
+`;
+
+const goLintOutput = `example/aaa.go:1:3: comment on exported method FooId should be of the form "FooId ..."
+example/aaa.go:3:2: don't use underscores in Go names; var bar_var should be barVar
+Found 2 lint suggestions; failing.
+01:43:41: ERROR: Found lint errors in 1 files in 0.044s.
 `;
 
 /** Provides virtual documents for testing. */
@@ -104,7 +112,8 @@ const documentProvider = new TestDocumentProvider(
     [pythonAbsoluteFileName, pythonFileContents],
     [shellFileName, shellFileContents],
     [gnFileName, gnFileContents],
-    [goFileNameTast, goFileContentsTast],
+    [goFileNameTast, goFileContents],
+    [goFileName, goFileContents],
   ])
 );
 const scheme = 'testing';
@@ -248,6 +257,33 @@ describe('Lint Integration', () => {
           new vscode.Position(0, Number.MAX_VALUE)
         ),
         'comment on exported method FooId should be of the form "FooId ..."',
+        vscode.DiagnosticSeverity.Warning
+      ),
+    ];
+    assert.deepStrictEqual(actual, expected);
+  });
+
+  it('parses go errors outside of tast', async () => {
+    const uri = vscode.Uri.from({scheme: scheme, path: goFileName});
+    const textDocument = await vscode.workspace.openTextDocument(uri);
+    const actual = crosLint.parseCrosLintGo(goLintOutput, '', textDocument);
+    await extensionTesting.closeDocument(textDocument);
+    assert.strictEqual(actual.length, 2);
+    const expected = [
+      new vscode.Diagnostic(
+        new vscode.Range(
+          new vscode.Position(0, 2),
+          new vscode.Position(0, Number.MAX_VALUE)
+        ),
+        'comment on exported method FooId should be of the form "FooId ..."',
+        vscode.DiagnosticSeverity.Warning
+      ),
+      new vscode.Diagnostic(
+        new vscode.Range(
+          new vscode.Position(2, 1),
+          new vscode.Position(2, Number.MAX_VALUE)
+        ),
+        "don't use underscores in Go names; var bar_var should be barVar",
         vscode.DiagnosticSeverity.Warning
       ),
     ];
