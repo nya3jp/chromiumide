@@ -56,12 +56,12 @@ export class Coverage {
     );
 
     this.activeEditor = vscode.window.activeTextEditor;
-    this.updateDecorations();
+    void this.updateDecorations();
 
     context.subscriptions.push(
       vscode.window.onDidChangeActiveTextEditor(editor => {
         this.activeEditor = editor;
-        this.updateDecorations();
+        void this.updateDecorations();
       })
     );
   }
@@ -113,6 +113,7 @@ export class Coverage {
       await this.readDocumentCoverage(this.activeEditor.document.fileName);
 
     if (coveredRanges) {
+      // TODO(ttylenda): consider possible race-condition here (crrev.com/c/3802552).
       this.activeEditor.setDecorations(coveredDecoration, coveredRanges);
     }
     if (uncoveredRanges) {
