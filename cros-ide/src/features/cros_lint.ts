@@ -18,7 +18,7 @@ export function activate(
 ) {
   const collection = vscode.languages.createDiagnosticCollection('cros-lint');
   if (vscode.window.activeTextEditor) {
-    updateCrosLintDiagnostics(
+    void updateDiagnosticsWrapper(
       vscode.window.activeTextEditor.document,
       collection,
       statusManager,
@@ -28,12 +28,12 @@ export function activate(
   // TODO(ttylenda): Add integration test to verify that we run linters on events.
   context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument(document => {
-      updateCrosLintDiagnostics(document, collection, statusManager, log);
+      void updateDiagnosticsWrapper(document, collection, statusManager, log);
     })
   );
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(document => {
-      updateCrosLintDiagnostics(document, collection, statusManager, log);
+      void updateDiagnosticsWrapper(document, collection, statusManager, log);
     })
   );
   context.subscriptions.push(
@@ -178,8 +178,31 @@ export async function goLintEnv(
     : {PATH: `${toolsGopathConfig}:${newPathVar}`};
 }
 
+// Wrapper to handle any errors thrown by updateDiagnostics.
+async function updateDiagnosticsWrapper(
+  document: vscode.TextDocument,
+  collection: vscode.DiagnosticCollection,
+  statusManager: bgTaskStatus.StatusManager,
+  log: logs.LoggingBundle
+): Promise<void> {
+  try {
+    await updateDiagnostics(document, collection, statusManager, log);
+  } catch (err) {
+    log.channel.append(`${err}\n`);
+    statusManager.setTask(log.taskId, {
+      status: bgTaskStatus.TaskStatus.ERROR,
+      command: log.showLogCommand,
+    });
+    metrics.send({
+      category: 'error',
+      group: 'lint',
+      description: 'error was thrown',
+    });
+  }
+}
+
 // TODO(ttylenda): Consider making it a class and move statusManager and log to the constructor.
-async function updateCrosLintDiagnostics(
+async function updateDiagnostics(
   document: vscode.TextDocument,
   collection: vscode.DiagnosticCollection,
   statusManager: bgTaskStatus.StatusManager,
