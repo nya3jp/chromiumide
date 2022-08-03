@@ -42,20 +42,19 @@ export async function activate(
   context: vscode.ExtensionContext
 ): Promise<ExtensionApi> {
   if (commonUtil.isInsideChroot()) {
-    const openDocument = 'Open document';
-    vscode.window
-      .showWarningMessage(
+    void (async () => {
+      const openDocument = 'Open document';
+      const choice = await vscode.window.showWarningMessage(
         'Support for running VSCode inside chroot is dropped in the next release that comes soon; please read go/cros-ide-quickstart and update your setup.',
         {modal: true},
         openDocument
-      )
-      .then(x => {
-        if (x === openDocument) {
-          vscode.env.openExternal(
-            vscode.Uri.parse('http://go/cros-ide-quickstart')
-          );
-        }
-      });
+      );
+      if (choice === openDocument) {
+        void vscode.env.openExternal(
+          vscode.Uri.parse('http://go/cros-ide-quickstart')
+        );
+      }
+    })();
   }
 
   const statusManager = bgTaskStatus.activate(context);
@@ -63,7 +62,7 @@ export async function activate(
   const cipdRepository = new cipd.CipdRepository();
 
   // Activate metrics first so that other components can emit metrics on activation.
-  metrics.activate(context);
+  await metrics.activate(context);
 
   vscode.commands.registerCommand(ideUtil.SHOW_UI_LOG.command, () =>
     ideUtil.getUiLogger().show()
@@ -81,7 +80,7 @@ export async function activate(
 
   crosLint.activate(context, statusManager, linterLogger);
   gn.activate(context, statusManager, linterLogger);
-  boardsPackages.activate(context, chrootService);
+  await boardsPackages.activate(context, chrootService);
   shortLinkProvider.activate(context);
   codesearch.activate(context);
   cppCodeCompletion.activate(context, statusManager, chrootService);
@@ -89,7 +88,7 @@ export async function activate(
   targetBoard.activate(context, chrootService);
   feedback.activate(context);
   upstart.activate(context);
-  deviceManagement.activate(
+  await deviceManagement.activate(
     context,
     statusManager,
     chrootService,
@@ -107,7 +106,8 @@ export async function activate(
 
   // Avoid network operations in tests.
   if (context.extensionMode !== vscode.ExtensionMode.Test) {
-    checkUpdates.run(chrootService);
+    // Ignored to let the extension start without waiting for version check.
+    void checkUpdates.run(chrootService);
   }
 
   metrics.send({
