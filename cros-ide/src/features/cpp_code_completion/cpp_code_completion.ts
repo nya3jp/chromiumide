@@ -94,7 +94,7 @@ export class CompilationDatabase implements vscode.Disposable {
 
     const document = vscode.window.activeTextEditor?.document;
     if (document) {
-      this.maybeGenerate(document, false);
+      void this.maybeGenerate(document, false);
     }
   }
 
@@ -120,7 +120,7 @@ export class CompilationDatabase implements vscode.Disposable {
       return;
     }
     if (!this.chrootService.chroot()) {
-      this.handleNoChroot(document.fileName);
+      await this.handleNoChroot(document.fileName);
       return;
     }
     const board = await this.board();
@@ -193,9 +193,9 @@ export class CompilationDatabase implements vscode.Disposable {
     );
 
     if (selection === openOtherFolder) {
-      vscode.commands.executeCommand('vscode.openFolder');
+      await vscode.commands.executeCommand('vscode.openFolder');
     } else if (gitFolder && selection === openGitFolder) {
-      vscode.commands.executeCommand(
+      await vscode.commands.executeCommand(
         'vscode.openFolder',
         vscode.Uri.file(gitFolder)
       );
@@ -282,7 +282,7 @@ export class CompilationDatabase implements vscode.Disposable {
 
     // `await` cannot be used, because it blocks forever if the
     // message is dismissed by timeout.
-    vscode.window.showErrorMessage(message, ...buttons).then(value => {
+    void vscode.window.showErrorMessage(message, ...buttons).then(value => {
       if (button && value === button.name) {
         button.action();
       } else if (value === SHOW_LOG) {
