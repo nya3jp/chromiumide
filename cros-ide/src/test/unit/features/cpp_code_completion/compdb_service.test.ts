@@ -25,12 +25,12 @@ describe('Compdb service', () => {
   });
 
   it('generates compilation database', async () => {
-    fakeExec.on(
-      path.join(state.source, 'chromite/bin/cros_sdk'),
+    fakes.installChrootCommandHandler(
+      fakeExec,
+      state.source,
+      'env',
       testing.exactMatch(
         [
-          '--',
-          'env',
           'USE=compdb_only',
           'ebuild-amd64-generic',
           '/mnt/host/source/src/third_party/chromiumos-overlay/chromeos-base/codelab/codelab-9999.ebuild',
@@ -72,12 +72,12 @@ describe('Compdb service', () => {
   });
 
   it('can update symlink to readonly file', async () => {
-    fakeExec.on(
-      path.join(state.source, 'chromite/bin/cros_sdk'),
+    fakes.installChrootCommandHandler(
+      fakeExec,
+      state.source,
+      'env',
       testing.exactMatch(
         [
-          '--',
-          'env',
           'USE=compdb_only',
           'ebuild-amd64-generic',
           '/mnt/host/source/src/third_party/chromiumos-overlay/chromeos-base/codelab/codelab-9999.ebuild',

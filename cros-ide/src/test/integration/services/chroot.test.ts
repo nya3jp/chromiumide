@@ -15,14 +15,14 @@ import {
   Mutable,
   tempDir,
 } from '../../testing';
-import {installFakeSudo} from '../../testing/fakes';
+import * as fakes from '../../testing/fakes';
 import {installVscodeDouble} from '../doubles';
 
 describe('chroot service', () => {
   const temp = tempDir();
 
   const {fakeExec} = installFakeExec();
-  installFakeSudo(fakeExec);
+  fakes.installFakeSudo(fakeExec);
 
   it('exec passes through if inside chroot', async () => {
     const cros = new ChrootService(
@@ -49,9 +49,11 @@ describe('chroot service', () => {
       /* isInsideChroot = */ () => false
     );
 
-    fakeExec.on(
-      path.join(source, 'chromite/bin/cros_sdk'),
-      exactMatch(['--', 'echo', '1'], async () => '1\n')
+    fakes.installChrootCommandHandler(
+      fakeExec,
+      source,
+      'echo',
+      exactMatch(['1'], async () => '1\n')
     );
     const res = (await cros.exec('echo', ['1'], {
       sudoReason: 'to echo',
@@ -67,9 +69,11 @@ describe('chroot service', () => {
       /* isInsideChroot = */ () => false
     );
 
-    fakeExec.on(
-      path.join(source, 'chromite/bin/cros_sdk'),
-      exactMatch(['--', 'false'], async () => new Error('failed'))
+    fakes.installChrootCommandHandler(
+      fakeExec,
+      source,
+      'false',
+      async () => new Error('failed')
     );
 
     expect(await cros.exec('false', [], {sudoReason: 'to false'})).toEqual(

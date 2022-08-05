@@ -16,7 +16,7 @@ import {cleanState} from './clean_state';
  * `ExecResult`, can emulate return with stderr and non-zero exit status.
  * `Error` can be used to simulate that the command was not found.
  */
-type Handler = (
+export type Handler = (
   args: string[],
   options: ExecOptions
 ) => Promise<string | ExecResult | Error | undefined>;
@@ -36,13 +36,11 @@ export function exactMatch(
   };
 }
 
-export function prefixMatch(
-  wantPrefix: string[],
-  handle: (
-    restArgs: string[],
-    options: ExecOptions
-  ) => Promise<string | ExecResult | Error>
-): Handler {
+/**
+ * Returns a handler that first checks if the prefix of the given args matches with
+ * wantPrefix and if so calls handle with the args without the prefix.
+ */
+export function prefixMatch(wantPrefix: string[], handle: Handler): Handler {
   return async (args, options) => {
     if (
       wantPrefix.length <= args.length &&

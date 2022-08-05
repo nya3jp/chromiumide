@@ -5,6 +5,7 @@
 export {cleanState} from './clean_state';
 export {
   FakeExec,
+  Handler,
   exactMatch,
   installFakeExec,
   lazyHandler,

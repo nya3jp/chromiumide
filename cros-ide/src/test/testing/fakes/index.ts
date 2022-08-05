@@ -5,6 +5,7 @@
 export {FakeCancellationToken} from './cancellation_token';
 export {installFakeCipd} from './cipd';
 export {FakeWorkspaceConfiguration} from './configuration';
+export {installChrootCommandHandler} from './cros_sdk';
 export {FakeCrosfleet, installFakeCrosfleet} from './crosfleet';
 export {ConsoleOutputChannel, VoidOutputChannel} from './output_channel';
 export {installFakeSudo} from './sudo';
