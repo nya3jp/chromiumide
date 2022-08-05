@@ -15,10 +15,21 @@ export function installChrootCommandHandler(
   name: string,
   handler: testing.Handler
 ) {
+  const crosSdk = path.join(source, 'chromite/bin/cros_sdk');
+
   fakeExec.on(
-    path.join(source, 'chromite/bin/cros_sdk'),
+    crosSdk,
     testing.prefixMatch(['--', name], (restArgs, options) => {
       return handler(restArgs, options);
     })
+  );
+  fakeExec.on(
+    'sudo',
+    testing.prefixMatch(
+      ['--askpass', '--', crosSdk, '--', name],
+      (restArgs, options) => {
+        return handler(restArgs, options);
+      }
+    )
   );
 }

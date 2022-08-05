@@ -10,11 +10,14 @@ import {TEST_ONLY} from '../../../features/boards_packages';
 import {ChrootService} from '../../../services/chroot';
 import {
   buildFakeChroot,
+  cleanState,
   exactMatch,
   installFakeExec,
   putFiles,
   tempDir,
 } from '../../testing';
+import * as fakes from '../../testing/fakes';
+import * as commonUtil from '../../../common/common_util';
 import {installVscodeDouble, installFakeConfigs} from '../doubles';
 
 const {BoardItem, PackageItem, BoardPackageProvider, BoardsPackages} =
@@ -25,11 +28,21 @@ describe('Boards and Packages view', () => {
   installFakeConfigs(vscodeSpy, vscodeEmitters);
   const {fakeExec} = installFakeExec();
   const temp = tempDir();
+  const state = cleanState(async () => {
+    const chroot = await buildFakeChroot(temp.path);
+    const source = commonUtil.sourceDir(chroot);
+    return {
+      chroot,
+      source,
+    };
+  });
 
   it('shows a message when starting work on a non existing package', async () => {
     vscodeSpy.window.showInputBox.and.resolveTo('no-such-package');
 
-    fakeExec.on(
+    fakes.installChrootCommandHandler(
+      fakeExec,
+      state.source,
       'cros_workon',
       exactMatch(['--board=eve', 'start', 'no-such-package'], async () => {
         return {
@@ -40,9 +53,9 @@ describe('Boards and Packages view', () => {
       })
     );
     const chrootService = new ChrootService(
-      undefined,
-      undefined,
-      /* isInsideChroot = */ () => true
+      new WrapFs(state.chroot),
+      new WrapFs(state.source),
+      /* isInsideChroot = */ () => false
     );
 
     const board = new BoardItem('eve');
@@ -53,16 +66,18 @@ describe('Boards and Packages view', () => {
   });
 
   it('shows a message if cros_workon is not found', async () => {
-    fakeExec.on(
+    fakes.installChrootCommandHandler(
+      fakeExec,
+      state.source,
       'cros_workon',
       exactMatch(['--board=eve', 'stop', 'shill'], async () => {
         return new Error('cros_workon not found');
       })
     );
     const chrootService = new ChrootService(
-      undefined,
-      undefined,
-      /* isInsideChroot = */ () => true
+      new WrapFs(state.chroot),
+      new WrapFs(state.source),
+      /* isInsideChroot = */ () => false
     );
 
     const board = new BoardItem('eve');
@@ -75,8 +90,7 @@ describe('Boards and Packages view', () => {
 
   // TODO(ttylenda): test error cases
   it('lists setup boards and packages', async () => {
-    const chroot = await buildFakeChroot(temp.path);
-    await putFiles(chroot, {
+    await putFiles(state.chroot, {
       '/build/amd64-generic/x': 'x',
       '/build/bin/x': 'x',
       '/build/coral/x': 'x',
@@ -84,15 +98,18 @@ describe('Boards and Packages view', () => {
 
     await config.boardsAndPackages.showWelcomeMessage.update(false);
 
-    fakeExec.on(
+    fakes.installChrootCommandHandler(
+      fakeExec,
+      state.source,
       'cros_workon',
       exactMatch(['--board=coral', 'list'], async () => {
         return `chromeos-base/cryptohome
 chromeos-base/shill`;
       })
     );
-
-    fakeExec.on(
+    fakes.installChrootCommandHandler(
+      fakeExec,
+      state.source,
       'cros_workon',
       exactMatch(['--host', 'list'], async () => {
         return 'chromeos-base/libbrillo';
@@ -101,9 +118,9 @@ chromeos-base/shill`;
 
     const bpProvider = new BoardPackageProvider(
       new ChrootService(
-        new WrapFs(chroot),
-        undefined,
-        /* isInsideChroot = */ () => true
+        new WrapFs(state.chroot),
+        new WrapFs(state.source),
+        /* isInsideChroot = */ () => false
       )
     );
 
@@ -149,14 +166,6 @@ chromeos-base/shill`;
     ]);
 
     await config.boardsAndPackages.showWelcomeMessage.update(false);
-
-    fakeExec.on(
-      'cros_workon',
-      exactMatch(['--board', 'coral', 'list'], async () => {
-        return `chromeos-base/cryptohome
-chromeos-base/shill`;
-      })
-    );
   });
 
   it('opens ebuild file', async () => {
