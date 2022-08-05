@@ -16,21 +16,6 @@ import {
 describe('Install script', () => {
   const {fakeExec} = installFakeExec();
 
-  it('fails outside chroot for v0.0.10', async () => {
-    fakeExec.on(
-      '../../scripts/gsutil',
-      exactMatch(['ls', 'gs://chromeos-velocity/ide/cros-ide'], async () => {
-        return `gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.9.vsix
-gs://chromeos-velocity/ide/cros-ide/cros-ide-0.0.10.vsix@abcdef10
-`;
-      })
-    );
-
-    await expectAsync(install.install('code')).toBeRejectedWith(
-      new Error('not inside chroot')
-    );
-  });
-
   it('installs default (latest) version', async () => {
     let tempFile = '';
     let installed = false;

@@ -131,12 +131,12 @@ export class Ebuild {
   }
 
   private async artifactPath(): Promise<string | undefined> {
-    const filepath = commonUtil.isInsideChroot()
-      ? 'compile_commands_chroot.json'
-      : 'compile_commands_no_chroot.json';
     const candidates: Array<[Date, string]> = [];
     for (const dir of this.buildDirs()) {
-      const file = path.join(dir, 'out/Default', filepath);
+      const file = path.join(
+        dir,
+        'out/Default/compile_commands_no_chroot.json'
+      );
       try {
         const stat = await this.chrootFs.stat(file);
         candidates.push([stat.mtime, file]);

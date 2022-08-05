@@ -41,21 +41,7 @@ export interface ExtensionApi {
 export async function activate(
   context: vscode.ExtensionContext
 ): Promise<ExtensionApi> {
-  if (commonUtil.isInsideChroot()) {
-    void (async () => {
-      const openDocument = 'Open document';
-      const choice = await vscode.window.showWarningMessage(
-        'Support for running VSCode inside chroot is dropped in the next release that comes soon; please read go/cros-ide-quickstart and update your setup.',
-        {modal: true},
-        openDocument
-      );
-      if (choice === openDocument) {
-        void vscode.env.openExternal(
-          vscode.Uri.parse('http://go/cros-ide-quickstart')
-        );
-      }
-    })();
-  }
+  assertOutsideChroot();
 
   const statusManager = bgTaskStatus.activate(context);
   const chrootService = chroot.activate(context);
@@ -120,4 +106,23 @@ export async function activate(
     context:
       context.extensionMode === vscode.ExtensionMode.Test ? context : undefined,
   };
+}
+
+function assertOutsideChroot() {
+  if (!commonUtil.isInsideChroot()) {
+    return;
+  }
+  void (async () => {
+    const openDocument = 'Open document';
+    const choice = await vscode.window.showWarningMessage(
+      'Support for running VSCode inside chroot is dropped in the next release that comes soon; please read go/cros-ide-quickstart and update your setup.',
+      {modal: true},
+      openDocument
+    );
+    if (choice === openDocument) {
+      void vscode.env.openExternal(
+        vscode.Uri.parse('http://go/cros-ide-quickstart')
+      );
+    }
+  })();
 }

@@ -11,12 +11,6 @@ import * as path from 'path';
 import * as semver from 'semver';
 import * as commonUtil from '../common/common_util';
 
-function assertInsideChroot() {
-  if (!commonUtil.isInsideChroot()) {
-    throw new Error('not inside chroot');
-  }
-}
-
 function assertOutsideChroot() {
   if (commonUtil.isInsideChroot()) {
     throw new Error('installation outside chroot is required');
@@ -189,11 +183,7 @@ export async function install(
 ) {
   const src = await findArchive(forceVersion, gsutil);
 
-  if (src.version.compare('0.0.10') <= 0) {
-    assertInsideChroot();
-  } else {
-    assertOutsideChroot();
-  }
+  assertOutsideChroot();
 
   await commonUtil.withTempDir(async td => {
     const dst = path.join(td, src.name);

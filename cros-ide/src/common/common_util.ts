@@ -44,11 +44,6 @@ export function findChroot(dir: string): Chroot | undefined {
     }
     dir = d;
   }
-  // Check this after the for loop so that testing inside chroot works as
-  // we want.
-  if (isInsideChroot()) {
-    return '/' as Chroot;
-  }
   return undefined;
 }
 
@@ -56,9 +51,6 @@ export function findChroot(dir: string): Chroot | undefined {
  * Returns the ChromiumOS source directory, given the path to chroot.
  */
 export function sourceDir(chroot: Chroot): Source {
-  if (chroot === '/') {
-    return '/mnt/host/source' as Source;
-  }
   return path.dirname(chroot) as Source;
 }
 
