@@ -143,7 +143,7 @@ client, you can control a device remotely.
 CrOS IDE exposes lint errors found by `cros lint` and similar tools in C++,
 Python, shell, and GN files. We run linters every time a file is saved,
 and mark errors with squiggly lines in the editor and show them in
-the _Problems_ box and on mouse hover. This feature bring to your attention
+the _Problems_ box and on mouse hover. This feature brings to your attention
 errors which block `repo upload`.
 
 ![Lint Errors in the IDE](https://storage.googleapis.com/chromeos-velocity/ide/img/lint-virtual.png)
