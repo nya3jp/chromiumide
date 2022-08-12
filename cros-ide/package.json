@@ -8,7 +8,7 @@
     "name": "ChromeOS Velocity Team at Google"
   },
   "repository": "https://chromium.googlesource.com/chromiumos/chromite/+/HEAD/ide_tooling",
-  "license": "Apache-2.0",
+  "license": "BSD-3-Clause",
   "engines": {
     "vscode": "^1.63.0",
     "node": ">=14.0.0"
