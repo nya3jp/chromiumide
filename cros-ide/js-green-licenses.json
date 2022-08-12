@@ -1,0 +1,10 @@
+{
+  "greenLicenses": [
+    // We want to know exectly which 3rd party licenses we require,
+    // so we're making this list restrictive.
+    "MPL-2.0",
+    "MIT",
+    "ISC",
+    "BSD-3-Clause"
+  ]
+}
