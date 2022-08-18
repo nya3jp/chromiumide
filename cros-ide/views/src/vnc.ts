@@ -141,12 +141,13 @@ function openDataChannel(url: string): DataChannel {
 }
 
 function onReady(): void {
+  const spinner = document.getElementById('loading')!;
   const container = document.getElementById('main')!;
   const proxyUrl = container.dataset.webSocketProxyUrl!;
-
   const rfb = new RFB(container, openDataChannel(proxyUrl));
   rfb.scaleViewport = true;
   rfb.addEventListener('connect', () => {
+    spinner.classList.add('loaded');
     postClientMessage({type: 'event', subtype: 'connect'});
   });
   rfb.addEventListener('disconnect', () => {
