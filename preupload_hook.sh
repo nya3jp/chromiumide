@@ -18,9 +18,5 @@ if [[ "$*" =~ /chromite/ide_tooling/cros-ide/ ]]; then
 fi
 
 if [[ "$*" =~ /chromite/ide_tooling/scripts/ ]]; then
-  cd "$(dirname "$0")/scripts" || exit 1
-
-  for x in *_unittest.py; do
-    "./${x}" || exit $?
-  done
+  ./run_tests ide_tooling/scripts/*_unittest.py
 fi
