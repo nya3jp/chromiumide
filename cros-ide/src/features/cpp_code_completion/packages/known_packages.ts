@@ -258,7 +258,6 @@ export const KNOWN_PACKAGES: Array<PackageInfo> = [
   ['src/platform2/vm_tools', 'chromeos-base/vm_host_tools'],
   ['src/platform2/vm_tools/proto', 'chromeos-base/vm_protos'],
   ['src/platform2/vm_tools/sommelier', 'chromeos-base/sommelier'],
-  ['src/platform2/vpn-manager', 'chromeos-base/vpn-manager'],
   ['src/platform2/webserver', 'chromeos-base/webserver'],
 ].map(([sourceDir, atom]) => {
   return {
