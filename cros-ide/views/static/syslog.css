@@ -8,3 +8,11 @@ html, body {
 #main {
   height: 100%;
 }
+
+table {
+  border-collapse:  collapse;
+}
+
+th,td {
+  border: solid 0.1px;
+}

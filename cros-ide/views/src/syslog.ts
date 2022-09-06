@@ -1,4 +1,4 @@
-// Copyright 2022 The ChromiumOS Authors.
+// Copyright 2022 The ChromiumOS Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,7 +6,12 @@ async function onReady(): Promise<void> {
   const container = document.getElementById('main')!;
   const syslogUrl = container.dataset.syslogUrl!;
   const syslog = await getData(syslogUrl);
-  container.textContent = syslog;
+  const syslogs = syslog.split(/\n/);
+  const arrayString: string[][] = [];
+  for (let i = 0; i < syslogs.length; i++) {
+    arrayString[i] = makeElement(syslogs[i]);
+  }
+  makeTable(arrayString, container);
 }
 
 async function getData(url: string): Promise<string> {
@@ -15,6 +20,48 @@ async function getData(url: string): Promise<string> {
   return data;
 }
 
+function makeElement(item: string): string[] {
+  const separatorString = / /;
+  const separateItem = item.split(separatorString);
+  separateItem.push(separateItem.splice(3).join(' '));
+  return separateItem;
+}
+
+function makeTable(data: string[][], container: HTMLElement): void {
+  const table: HTMLTableElement = document.createElement('table');
+  for (const line of data) {
+    const row = table.insertRow();
+    for (const value of line) {
+      const cell = row.insertCell();
+      cell.appendChild(document.createTextNode(value));
+    }
+    colorLogs(line, row);
+  }
+  container.appendChild(table);
+}
+
+function colorLogs(line: string[], row: HTMLTableRowElement): void {
+  if (line[1] === 'NOTICE') {
+    row.style.opacity = '0.8';
+  } else if (line[1] === 'INFO' || line[1] === 'DEBUG') {
+    row.style.opacity = '0.5';
+  } else if (line[1] === 'ERR') {
+    row.style.color = 'red';
+    row.style.border = '1px solid red';
+  } else if (line[1] === 'WARNING') {
+    row.style.color = 'green';
+    row.style.border = '1px solid green';
+  } else if (line[1] === 'CRIT') {
+    row.style.color = 'red';
+    row.style.border = '1px solid red';
+  } else if (line[1] === 'ALERT') {
+    row.style.color = 'red';
+    row.style.border = '1px solid red';
+  } else if (line[1] === 'EMERG') {
+    row.style.color = 'red';
+    row.style.border = '1px solid red';
+  }
+}
 void (async () => {
   try {
     await onReady();
