@@ -1,4 +1,4 @@
-// Copyright 2022 The ChromiumOS Authors
+// Copyright 2022 The ChromiumOS Authors.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -88,7 +88,9 @@ describe('Leased device repository', () => {
   const fakeCrosfleet = fakes.installFakeCrosfleet(fakeExec, cipdRepository);
 
   const state = testing.cleanState(() => {
-    const abandonedDuts = new abandonedDevices.AbandonedDevices();
+    const abandonedDuts = new abandonedDevices.AbandonedDevices(
+      new fakes.Memento()
+    );
     const leasedDeviceRepository = new repository.LeasedDeviceRepository(
       new crosfleet.CrosfleetRunner(
         cipdRepository,
@@ -291,7 +293,7 @@ describe('Device repository', () => {
         cipdRepository,
         new fakes.VoidOutputChannel()
       ),
-      new abandonedDevices.AbandonedDevices()
+      new abandonedDevices.AbandonedDevices(new fakes.Memento())
     );
     return {
       deviceRepository,

@@ -1,4 +1,4 @@
-// Copyright 2022 The ChromiumOS Authors
+// Copyright 2022 The ChromiumOS Authors.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -29,7 +29,9 @@ export async function activate(
     'CrOS IDE: Device Management'
   );
   const crosfleetRunner = new crosfleet.CrosfleetRunner(cipdRepository, output);
-  const abandonedDuts = new abandonedDevices.AbandonedDevices();
+  const abandonedDuts = new abandonedDevices.AbandonedDevices(
+    context.globalState
+  );
   const deviceRepository = new repository.DeviceRepository(
     crosfleetRunner,
     abandonedDuts
