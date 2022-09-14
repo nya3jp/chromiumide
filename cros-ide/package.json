@@ -458,7 +458,7 @@
         "cros-ide.underDevelopment.triciumSpellchecker": {
           "type": "boolean",
           "description": "Enable Tricium Spellchecker (b/217287367).",
-          "default": false
+          "default": true
         },
         "cros-ide.underDevelopment.platformEC": {
           "type": "boolean",
