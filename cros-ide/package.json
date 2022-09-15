@@ -115,8 +115,7 @@
         "command": "cros-ide.deviceManagement.abandonLease",
         "category": "CrOS",
         "title": "Abandon the Device",
-        "icon": "$(close)",
-        "enablement": "config.cros-ide.underDevelopment.deviceManagement"
+        "icon": "$(close)"
       },
       {
         "command": "cros-ide.deviceManagement.copyHostname",
@@ -316,12 +315,12 @@
         },
         {
           "command": "cros-ide.deviceManagement.abandonLease",
-          "when": "view == devices && viewItem == device-leased && config.cros-ide.underDevelopment.deviceManagement",
+          "when": "view == devices && viewItem == device-leased",
           "group": "inline@9"
         },
         {
           "command": "cros-ide.deviceManagement.abandonLease",
-          "when": "view == devices && viewItem == device-leased && config.cros-ide.underDevelopment.deviceManagement",
+          "when": "view == devices && viewItem == device-leased",
           "group": "9_delete"
         },
         {
