@@ -48,15 +48,15 @@ describe('Gerrit support', () => {
       'ide_tooling/cros-ide/src/features/gerrit.ts': [
         {
           originalStartLine: 2,
-          originalLineSize: 0,
+          originalLineSize: 1,
           currentStartLine: 2,
-          currentLineSize: 0,
+          currentLineSize: 1,
         },
         {
           originalStartLine: 3,
           originalLineSize: 1,
           currentStartLine: 4,
-          currentLineSize: 0,
+          currentLineSize: 1,
         },
         {
           originalStartLine: 5,
@@ -68,15 +68,15 @@ describe('Gerrit support', () => {
       'ide_tooling/cros-ide/src/features/git.ts': [
         {
           originalStartLine: 3,
-          originalLineSize: 0,
+          originalLineSize: 1,
           currentStartLine: 3,
-          currentLineSize: 0,
+          currentLineSize: 1,
         },
         {
           originalStartLine: 4,
           originalLineSize: 1,
           currentStartLine: 5,
-          currentLineSize: 0,
+          currentLineSize: 1,
         },
         {
           originalStartLine: 6,

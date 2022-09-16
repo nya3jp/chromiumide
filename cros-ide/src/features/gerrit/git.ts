@@ -36,15 +36,14 @@ export function getHunk(gitDiffContent: string): Hunks {
   let hunkFilePath = '';
   while ((regexArray = gitDiffHunkRegex.exec(gitDiffContent)) !== null) {
     if (regexArray[1]) {
-      console.log(hunkFilePath + ':\n' + hunksAllFiles[hunkFilePath]);
       hunkFilePath = regexArray[1];
       hunksEachFile = [];
     } else {
       const hunk: Hunk = {
         originalStartLine: Number(regexArray[2] || '1'),
-        originalLineSize: Number(regexArray[3]),
+        originalLineSize: Number(regexArray[3] || '1'),
         currentStartLine: Number(regexArray[4] || '1'),
-        currentLineSize: Number(regexArray[5]),
+        currentLineSize: Number(regexArray[5] || '1'),
       };
       hunksEachFile.push(hunk);
       hunksAllFiles[hunkFilePath] = hunksEachFile;

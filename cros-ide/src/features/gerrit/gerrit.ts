@@ -8,6 +8,79 @@ import * as path from 'path';
 import * as commonUtil from '../../common/common_util';
 import * as git from './git';
 
+const HARDCODED_INPUT = `
+{
+  "ide_tooling/cros-ide/src/test/integration/features/short_link_provider.test.ts": [
+    {
+      "author": {
+        "_account_id": 1355869,
+        "name": "Tomasz Tylenda",
+        "email": "ttylenda@chromium.org",
+        "avatars": [
+          {
+            "url": "https://lh3.googleusercontent.com/-9a8_POyNIEg/AAAAAAAAAAI/AAAAAAAAAAA/XD1eDsycuww/s32-p/photo.jpg",
+            "height": 32
+          },
+          {
+            "url": "https://lh3.googleusercontent.com/-9a8_POyNIEg/AAAAAAAAAAI/AAAAAAAAAAA/XD1eDsycuww/s56-p/photo.jpg",
+            "height": 56
+          },
+          {
+            "url": "https://lh3.googleusercontent.com/-9a8_POyNIEg/AAAAAAAAAAI/AAAAAAAAAAA/XD1eDsycuww/s100-p/photo.jpg",
+            "height": 100
+          },
+          {
+            "url": "https://lh3.googleusercontent.com/-9a8_POyNIEg/AAAAAAAAAAI/AAAAAAAAAAA/XD1eDsycuww/s120-p/photo.jpg",
+            "height": 120
+          }
+        ]
+      },
+      "change_message_id": "ad6fcc72c1a7d2ece9ccc596244debbf21570cce",
+      "unresolved": true,
+      "patch_set": 1,
+      "id": "5f2cf98d_4796d62d",
+      "line": 47,
+      "updated": "2022-09-05 05:13:53.000000000",
+      "message": "Comment 1 on SLP. - NOW CHANGED!",
+      "commit_id": "6a72e188f3de9eec46dbe990d2dfa22b3da50637"
+    },
+    {
+      "author": {
+        "_account_id": 1355869,
+        "name": "Tomasz Tylenda",
+        "email": "ttylenda@chromium.org",
+        "avatars": [
+          {
+            "url": "https://lh3.googleusercontent.com/-9a8_POyNIEg/AAAAAAAAAAI/AAAAAAAAAAA/XD1eDsycuww/s32-p/photo.jpg",
+            "height": 32
+          },
+          {
+            "url": "https://lh3.googleusercontent.com/-9a8_POyNIEg/AAAAAAAAAAI/AAAAAAAAAAA/XD1eDsycuww/s56-p/photo.jpg",
+            "height": 56
+          },
+          {
+            "url": "https://lh3.googleusercontent.com/-9a8_POyNIEg/AAAAAAAAAAI/AAAAAAAAAAA/XD1eDsycuww/s100-p/photo.jpg",
+            "height": 100
+          },
+          {
+            "url": "https://lh3.googleusercontent.com/-9a8_POyNIEg/AAAAAAAAAAI/AAAAAAAAAAA/XD1eDsycuww/s120-p/photo.jpg",
+            "height": 120
+          }
+        ]
+      },
+      "change_message_id": "ad6fcc72c1a7d2ece9ccc596244debbf21570cce",
+      "unresolved": true,
+      "patch_set": 1,
+      "id": "7f534daa_be72f2d6",
+      "line": 126,
+      "updated": "2022-09-05 05:13:53.000000000",
+      "message": "Comment 2 on SLP.",
+      "commit_id": "6a72e188f3de9eec46dbe990d2dfa22b3da50637"
+    }
+  ]
+}
+`;
+
 export function activate(context: vscode.ExtensionContext) {
   const controller = vscode.comments.createCommentController(
     'cros-ide-gerrit',
@@ -49,7 +122,10 @@ async function showGerritComments(
   if (!changeIdArray) {
     return;
   }
-  const changeId = changeIdArray[1];
+  // TODO(teramon): Revert when the commit is unified.
+  // For now, comments cannot be gotten if there are multiple commits.
+  let changeId = changeIdArray[1];
+  changeId = 'I9b0050e658554c093b617ae38828a55c470caf9d';
   const commentsUrl =
     'https://chromium-review.googlesource.com/changes/' +
     changeId +
@@ -57,7 +133,9 @@ async function showGerritComments(
 
   try {
     const commentsContent = await httpsGet(commentsUrl);
-    const commentsJson = commentsContent.substring(')]}\n'.length);
+    let commentsJson = commentsContent.substring(')]}\n'.length);
+    // TODO(teramon): Remove this line when the commit is unified.
+    commentsJson = HARDCODED_INPUT;
     const originalChangeComments = JSON.parse(commentsJson) as ChangeComments;
     const gitDir = commonUtil.findGitDir(activeDocument.fileName);
     if (!gitDir) {
@@ -117,11 +195,43 @@ async function shiftChangeComments(
 // TODO(teramon): Avoid using global value.
 const commentThreads: vscode.CommentThread[] = [];
 
-function updateChangeComments(
-  hunks: git.Hunks,
+/**
+ * Repositions comments based on the given hunks.
+ * It modifies given change comments and returns it.
+ */
+export function updateChangeComments(
+  hunksAllFiles: git.Hunks,
   changeComments: ChangeComments
 ): ChangeComments {
-  // TODO(teramon): Add a process to reposition comments
+  for (const [hunkFilePath, hunksEachFile] of Object.entries(hunksAllFiles)) {
+    for (const hunk of hunksEachFile) {
+      const hunkStartLine = hunk.originalStartLine;
+      const hunkDelta = hunk.currentLineSize - hunk.originalLineSize;
+      for (const [commentFilePath, value] of Object.entries(changeComments)) {
+        if (commentFilePath === hunkFilePath) {
+          // Apply delta for the comments below the hunk.
+          value.forEach(commentInfo => {
+            if (
+              // comments for characters
+              commentInfo.range !== undefined &&
+              commentInfo.line !== undefined &&
+              commentInfo.range.startLine >= hunkStartLine
+            ) {
+              commentInfo.range.startLine += hunkDelta;
+              commentInfo.range.endLine += hunkDelta;
+              commentInfo.line += hunkDelta;
+            } else if (
+              // comments for lines
+              commentInfo.line !== undefined &&
+              commentInfo.line >= hunkStartLine
+            ) {
+              commentInfo.line += hunkDelta;
+            }
+          });
+        }
+      }
+    }
+  }
   return changeComments;
 }
 
@@ -142,26 +252,27 @@ function updateCommentThreads(
 
 // Response from Gerrit List Change Comments API.
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-change-comments
-type ChangeComments = {
-  [filepath: string]: CommentInfo[];
+export type ChangeComments = {
+  [filePath: string]: CommentInfo[];
 };
 
-type CommentInfo = {
+export type CommentInfo = {
   author: AccountInfo;
-  range: CommentRange;
-  line: number;
+  range?: CommentRange;
+  // Comments on entire lines have `line` but not `range`.
+  line?: number;
   message: string;
 };
 
-type AccountInfo = {
+export type AccountInfo = {
   name: string;
 };
 
-type CommentRange = {
-  start_line: number; // 1-based
-  start_character: number; // 0-based
-  end_line: number; // 1-based
-  end_character: number; // 0-based
+export type CommentRange = {
+  startLine: number; // 1-based
+  startCharacter: number; // 0-based
+  endLine: number; // 1-based
+  endCharacter: number; // 0-based
 };
 
 function showCommentInfo(
@@ -172,10 +283,10 @@ function showCommentInfo(
   let dataRange;
   if (commentInfo.range !== undefined) {
     dataRange = new vscode.Range(
-      commentInfo.range.start_line - 1,
-      commentInfo.range.start_character,
-      commentInfo.range.end_line - 1,
-      commentInfo.range.end_character
+      commentInfo.range.startLine - 1,
+      commentInfo.range.startCharacter,
+      commentInfo.range.endLine - 1,
+      commentInfo.range.endCharacter
     );
   } else if (commentInfo.line !== undefined) {
     // comments for a line
