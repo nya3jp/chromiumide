@@ -30,10 +30,8 @@ export class SshSession {
     forwardPort: number
   ): Promise<SshSession> {
     const newSession = new SshSession(forwardPort);
-    // TODO(b/242749139): Resolve race condition. Since we do not wait for the connection to be
-    // established, there is a race condition where one could attempt to connect to the host before
-    // local forwarding is set up.
-    void startAndWaitSshConnection(
+
+    await startSshConnection(
       hostname,
       forwardPort,
       output,
@@ -56,54 +54,47 @@ export class SshSession {
   }
 }
 
-/**
- * Establish the SSH connection and wait for the connection to end.
- */
-async function startAndWaitSshConnection(
+async function startSshConnection(
   hostname: string,
   forwardPort: number,
   output: vscode.OutputChannel,
   token: vscode.CancellationToken,
   context: vscode.ExtensionContext
 ): Promise<void> {
-  const serverStopped = connectAndWaitSshCommand(
+  const startTunnelAndWait = createTunnelAndWait(
     hostname,
     forwardPort,
     output,
     token,
     context
   );
-  const serverStarted = waitSshServer(forwardPort, token);
+  const checkTunnelIsUp = waitSshServer(forwardPort, token);
 
   // Wait until connection with server starts, or fails to start.
   try {
-    await Promise.race([serverStarted, serverStopped]);
+    await Promise.race([startTunnelAndWait, checkTunnelIsUp]);
   } catch (err: unknown) {
     void vscode.window.showErrorMessage(`SSH server failed: ${err}`);
     return;
   }
-
-  // Wait until the connection to the server stops.
-  try {
-    await serverStopped;
-  } catch (err: unknown) {
-    void vscode.window.showErrorMessage(`SSH server failed: ${err}`);
-  }
 }
 
-// Connects to SSH server and waits for command to exit.
-async function connectAndWaitSshCommand(
+/**
+ * This call will block indefinitely until tunnel is exited or an error occurs
+ */
+async function createTunnelAndWait(
   hostname: string,
   forwardPort: number,
   output: vscode.OutputChannel,
   token: vscode.CancellationToken,
   context: vscode.ExtensionContext
-): Promise<void> {
+) {
   const SSH_PORT = 22;
   const args = sshUtil.buildSshCommand(hostname, context.extensionUri, [
     '-L',
     `${forwardPort}:localhost:${SSH_PORT}`,
   ]);
+
   const result = await commonUtil.exec(args[0], args.slice(1), {
     logger: output,
     logStdout: true,
@@ -113,7 +104,11 @@ async function connectAndWaitSshCommand(
     return;
   }
   if (result instanceof Error) {
-    throw result;
+    throw new Error(
+      'Problem creating SSH tunnel. Maybe try gcert first?. Full error:'.concat(
+        result.message
+      )
+    );
   }
   throw new Error('SSH server stopped unexpectedly');
 }

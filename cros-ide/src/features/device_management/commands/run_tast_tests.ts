@@ -54,19 +54,33 @@ export async function runTastTests(context: CommandContext): Promise<void> {
     return;
   }
 
-  // Use existing session if there is one.
+  // Check if we can reuse existing session
+  let okToReuseSession = false;
   const existingSession = context.sshSessions.get(hostname);
-  const defaultForwardPort =
-    existingSession === undefined
-      ? await netUtil.findUnusedPort()
-      : existingSession.forwardPort;
-  if (!existingSession) {
+
+  if (existingSession) {
+    // If tunnel is not up, then do not reuse the session
+    const isPortUsed = await netUtil.isPortUsed(existingSession.forwardPort);
+
+    if (isPortUsed) {
+      okToReuseSession = true;
+    } else {
+      existingSession.dispose();
+    }
+  }
+
+  let port: number;
+  if (existingSession && okToReuseSession) {
+    port = existingSession.forwardPort;
+  } else {
     // Create new ssh session.
+    port = await netUtil.findUnusedPort();
+
     const newSession = await ssh.SshSession.create(
       hostname,
       context.extensionContext,
       context.output,
-      defaultForwardPort
+      port
     );
     newSession.onDidDispose(() => context.sshSessions.delete(hostname));
     context.sshSessions.set(hostname, newSession);
@@ -74,7 +88,7 @@ export async function runTastTests(context: CommandContext): Promise<void> {
 
   // Get list of available tests.
   const testName = `${category}.${testFuncName[1]}`;
-  const target = `localhost:${defaultForwardPort}`;
+  const target = `localhost:${port}`;
   let testList = undefined;
   try {
     testList = await getAvailableTests(context, target, testName);
@@ -109,9 +123,12 @@ export async function runTastTests(context: CommandContext): Promise<void> {
   const args = ['run', target, ...choice];
 
   // If terminal for specified host exists, use that.
-  const terminal = terminalForHost(hostname);
+  const tastTerminalName = getTerminalNameForTastExecution(hostname);
+  const terminal = terminalForHost(tastTerminalName);
   const hostTerminal =
-    terminal === undefined ? vscode.window.createTerminal(hostname) : terminal;
+    terminal === undefined
+      ? vscode.window.createTerminal(tastTerminalName)
+      : terminal;
   const terminalCommand = shutil.escapeArray(['cros_sdk', 'tast', ...args]);
   hostTerminal.sendText(terminalCommand);
   hostTerminal.show();
@@ -124,6 +141,10 @@ function terminalForHost(hostname: string): vscode.Terminal | undefined {
     }
   }
   return undefined;
+}
+
+function getTerminalNameForTastExecution(hostname: string): string {
+  return '[tast-test]'.concat(hostname);
 }
 
 /**
@@ -145,7 +166,7 @@ async function getAvailableTests(
     {
       location: vscode.ProgressLocation.Notification,
       cancellable: true,
-      title: 'Getting available tests for host...',
+      title: 'Getting available tests for host... (may take 1+ minutes)',
     },
     async (_progress, token) => {
       const res = await context.chrootService.exec('tast', ['list', target], {

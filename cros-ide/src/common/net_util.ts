@@ -15,3 +15,20 @@ export async function findUnusedPort(): Promise<number> {
     });
   });
 }
+
+export async function isPortUsed(port: number): Promise<boolean> {
+  return new Promise<boolean>(resolve => {
+    const server = net
+      .createServer()
+      .once('error', err => {
+        if (err.message.includes('EADDRINUSE')) {
+          resolve(true);
+        }
+      })
+      .once('listening', () => {
+        server.close();
+        resolve(false);
+      })
+      .listen(port);
+  });
+}
