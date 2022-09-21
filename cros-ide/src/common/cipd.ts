@@ -6,6 +6,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as process from 'process';
 import * as vscode from 'vscode';
+import * as metrics from '../features/metrics/metrics';
 import * as config from '../services/config';
 import * as commonUtil from './common_util';
 
@@ -59,6 +60,11 @@ export class CipdRepository {
         }
       );
       if (result instanceof Error) {
+        metrics.send({
+          category: 'error',
+          group: 'misc',
+          description: `call to cipd failed: ${result}`,
+        });
         throw result;
       }
     });

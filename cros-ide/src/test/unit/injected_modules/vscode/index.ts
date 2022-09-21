@@ -10,5 +10,6 @@ export {CancellationTokenSource} from './cancellation_token';
 export {ConfigurationTarget} from './configuration';
 export {Disposable} from './disposable';
 export {EventEmitter} from './event';
+export {ExtensionMode} from './extension_mode';
 export {Uri} from './uri';
 export {extensions, window, workspace};
