@@ -40,8 +40,8 @@ const testHunks: git.Hunks = {
     hunk(0, 0, 1, 1),
     // Third line removed.
     hunk(3, 1, 3, 0),
-    // Fifth to seventh line removed.
-    hunk(5, 3, 5, 0),
+    // Fifth line modified, sixth to seventh line removed.
+    hunk(5, 3, 5, 1),
   ],
   'bar.ts': [
     // First line added.
@@ -54,12 +54,15 @@ const changeComments = {
     {message: 'foo'}, // comment on a file
     {range: range(1, 1, 1, 2), line: 1}, // comment on characters
     {line: 1}, // comment on a line
+    {line: 3}, // comment on a removed line
     {line: 4},
-    // Not yet implemented
-    // {line: 6}, // comment in a removed hunk
+    {line: 5}, // comment in a removed hunk
+    {line: 7},
+    {line: 8},
     // {range: range(3, 1, 6, 2), line: 1}, // comment across multiple hunks.
   ],
   'bar.ts': [{line: 1}],
+  // TODO(teramon): Add other test cases
 } as unknown as gerrit.ChangeComments;
 
 const wantComments = {
@@ -67,14 +70,15 @@ const wantComments = {
     {message: 'foo'}, // comment on a file
     {range: range(2, 1, 2, 2), line: 2}, // comment on characters
     {line: 2}, // comment on a line
+    {line: 3}, // comment on a removed line
     {line: 4},
-    // Not yet implemented
-    // {line: 6}, // comment in a removed hunk
+    {line: 5}, // comment in a removed hunk
+    {line: 5},
+    {line: 6},
     // {range: range(3, 1, 5, 2), line: 1}, // comment across multiple hunks.
   ],
   'bar.ts': [{line: 2}],
   // TODO(teramon): Add other test cases
-  // comments for a whole file and characters.
 } as unknown as gerrit.ChangeComments;
 
 describe('Gerrit support', () => {

@@ -205,27 +205,38 @@ export function updateChangeComments(
 ): ChangeComments {
   for (const [hunkFilePath, hunksEachFile] of Object.entries(hunksAllFiles)) {
     for (const hunk of hunksEachFile) {
-      const hunkStartLine = hunk.originalStartLine;
+      const hunkEndLine = hunk.originalStartLine + hunk.originalLineSize;
       const hunkDelta = hunk.currentLineSize - hunk.originalLineSize;
-      for (const [commentFilePath, value] of Object.entries(changeComments)) {
+      for (const [commentFilePath, commentInfoArray] of Object.entries(
+        changeComments
+      )) {
         if (commentFilePath === hunkFilePath) {
-          // Apply delta for the comments below the hunk.
-          value.forEach(commentInfo => {
+          commentInfoArray.forEach(commentInfo => {
             if (
-              // comments for characters
-              commentInfo.range !== undefined &&
-              commentInfo.line !== undefined &&
-              commentInfo.range.startLine >= hunkStartLine
+              // comment outside the hunk
+              commentWithinRange(commentInfo, hunkEndLine, Infinity)
             ) {
-              commentInfo.range.startLine += hunkDelta;
-              commentInfo.range.endLine += hunkDelta;
-              commentInfo.line += hunkDelta;
+              shiftComment(commentInfo, hunkDelta);
             } else if (
-              // comments for lines
-              commentInfo.line !== undefined &&
-              commentInfo.line >= hunkStartLine
+              // comment within the hunk
+              commentWithinRange(
+                commentInfo,
+                hunk.originalStartLine,
+                hunkEndLine
+              )
             ) {
-              commentInfo.line += hunkDelta;
+              // Ensure the comment within the hunk still resides in the
+              // hunk. If the hunk removes all the lines, the comment will
+              // be moved to the line preceding the hunk.
+              if (hunkDelta < 0 && commentInfo.line !== undefined) {
+                const protrusion =
+                  commentInfo.line -
+                  (hunk.originalStartLine + hunk.currentLineSize) +
+                  1;
+                if (protrusion > 0) {
+                  shiftComment(commentInfo, -1 * protrusion);
+                }
+              }
             }
           });
         }
@@ -233,6 +244,39 @@ export function updateChangeComments(
     }
   }
   return changeComments;
+}
+
+/**
+ * Returns whether the comment is in the range between
+ * minimum (inclusive) and maximum (exclusive).
+ */
+function commentWithinRange(
+  commentInfo: CommentInfo,
+  minimum: number,
+  maximum: number
+): boolean {
+  return (
+    commentInfo.line !== undefined &&
+    commentInfo.line >= minimum &&
+    commentInfo.line < maximum
+  );
+}
+
+function shiftComment(commentInfo: CommentInfo, delta: number) {
+  if (
+    // Comments for characters
+    commentInfo.range !== undefined &&
+    commentInfo.line !== undefined
+  ) {
+    commentInfo.range.startLine += delta;
+    commentInfo.range.endLine += delta;
+    commentInfo.line += delta;
+  } else if (
+    // Comments for lines
+    commentInfo.line !== undefined
+  ) {
+    commentInfo.line += delta;
+  }
 }
 
 function updateCommentThreads(
