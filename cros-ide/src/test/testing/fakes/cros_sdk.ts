@@ -13,7 +13,8 @@ export function installChrootCommandHandler(
   fakeExec: testing.FakeExec,
   source: commonUtil.Source,
   name: string,
-  handler: testing.Handler
+  handler: testing.Handler,
+  chrootOption?: {crosSdkWorkingDir?: string}
 ) {
   const crosSdk = path.join(source, 'chromite/bin/cros_sdk');
 
@@ -23,13 +24,17 @@ export function installChrootCommandHandler(
       return handler(restArgs, options);
     })
   );
+
+  const prefix = ['--askpass', '--', crosSdk];
+  if (chrootOption?.crosSdkWorkingDir) {
+    prefix.push('--working-dir', chrootOption.crosSdkWorkingDir);
+  }
+  prefix.push('--', name);
+
   fakeExec.on(
     'sudo',
-    testing.prefixMatch(
-      ['--askpass', '--', crosSdk, '--', name],
-      (restArgs, options) => {
-        return handler(restArgs, options);
-      }
-    )
+    testing.prefixMatch(prefix, (restArgs, options) => {
+      return handler(restArgs, options);
+    })
   );
 }

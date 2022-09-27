@@ -5,3 +5,4 @@
 export * from './types';
 
 export {Platform2} from './platform2';
+export {PlatformEc} from './platform_ec';

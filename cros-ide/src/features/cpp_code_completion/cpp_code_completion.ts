@@ -17,7 +17,10 @@ export function activate(
 ) {
   context.subscriptions.push(
     new CppCodeCompletion(
-      [output => new compdbGenerator.Platform2(chrootService, output)],
+      [
+        output => new compdbGenerator.Platform2(chrootService, output),
+        output => new compdbGenerator.PlatformEc(chrootService, output),
+      ],
       statusManager
     )
   );
