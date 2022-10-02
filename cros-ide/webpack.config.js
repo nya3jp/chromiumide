@@ -60,7 +60,7 @@ const extensionConfig = {
   module: {
     rules: [
       {
-        test: /\.ts$/,
+        test: /\.tsx?$/,
         exclude: /node_modules/,
         use: [
           {
@@ -85,6 +85,9 @@ const viewsConfig = {
   // WebView scripts run in the web context.
   target: 'web',
 
+  // TODO(joelbecker): move to common config? Check implications.
+  mode: 'development',
+
   // Entry points.
   // https://webpack.js.org/configuration/entry-context/
   entry: {
@@ -96,10 +99,15 @@ const viewsConfig = {
     filename: '[name].js',
     libraryTarget: 'commonjs2',
   },
+  resolve: {
+    // Support TypeScript, JavaScript, and JSX-enabled TypeScript and
+    // JavaScript for use with React.
+    extensions: ['.ts', '.js', '.tsx', '.jsx'],
+  },
   module: {
     rules: [
       {
-        test: /\.ts$/,
+        test: /\.tsx?$/,
         exclude: /node_modules/,
         use: [
           {
@@ -115,7 +123,7 @@ const viewsConfig = {
   },
   plugins: [
     new CopyPlugin({
-      // This plugin copies views/static/* to dist/views/*.
+      // Copy webview static files to dist/views/*.
       patterns: [{from: 'views/static', to: '.'}],
     }),
   ],
