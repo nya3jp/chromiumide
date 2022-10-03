@@ -116,7 +116,7 @@ async function postMetricsActivate(
   if (config.underDevelopment.gerrit.get()) {
     const gitDocumentProvider = new gitDocument.GitDocumentProvider();
     gitDocumentProvider.activate();
-    gerrit.activate(context, gitDocumentProvider);
+    gerrit.activate(context, statusManager, gitDocumentProvider);
   }
 
   if (config.underDevelopment.triciumSpellchecker.get()) {

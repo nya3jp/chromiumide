@@ -2,17 +2,37 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import * as vscode from 'vscode';
 import * as https from 'https';
 import * as path from 'path';
+import * as vscode from 'vscode';
 import * as commonUtil from '../../common/common_util';
 import * as gitDocument from '../../services/git_document';
+import * as bgTaskStatus from '../../ui/bg_task_status';
 import * as git from './git';
 
 export function activate(
   context: vscode.ExtensionContext,
+  statusManager: bgTaskStatus.StatusManager,
   _gitDocumentProvider: gitDocument.GitDocumentProvider
 ) {
+  const outputChannel = vscode.window.createOutputChannel('CrOS IDE: Gerrit');
+  context.subscriptions.push(outputChannel);
+  const SHOW_LOG_CMD = 'cros-ide.showGerritLog';
+  context.subscriptions.push(
+    vscode.commands.registerCommand(SHOW_LOG_CMD, () => {
+      outputChannel.show();
+    })
+  );
+  // We don't use the status itself. The task provides an easy way
+  // to find the log.
+  statusManager.setTask('Gerrit', {
+    status: bgTaskStatus.TaskStatus.OK,
+    command: {
+      command: SHOW_LOG_CMD,
+      title: 'Show Gerrit Log',
+    },
+  });
+
   const controller = vscode.comments.createCommentController(
     'cros-ide-gerrit',
     'CrOS IDE Gerrit'
@@ -20,7 +40,7 @@ export function activate(
 
   context.subscriptions.push(controller);
 
-  const gerrit = new Gerrit(controller);
+  const gerrit = new Gerrit(controller, outputChannel);
 
   if (vscode.window.activeTextEditor) {
     const document = vscode.window.activeTextEditor.document;
@@ -40,7 +60,10 @@ export function activate(
 }
 
 class Gerrit {
-  constructor(private readonly controller: vscode.CommentController) {}
+  constructor(
+    private readonly controller: vscode.CommentController,
+    private readonly outputChannel: vscode.OutputChannel
+  ) {}
 
   async showComments(activeDocument: vscode.TextDocument) {
     const latestCommit: commonUtil.ExecResult | Error = await commonUtil.exec(
@@ -49,9 +72,8 @@ class Gerrit {
       {cwd: path.dirname(activeDocument.fileName)}
     );
     if (latestCommit instanceof Error) {
-      void vscode.window.showErrorMessage(
-        'Failed to detect a commit'
-        // TODO(teramon): Avoid showing the error message more than once.
+      this.showErrorMessage(
+        `Failed to detect a commit for ${activeDocument.fileName}`
       );
       return;
     }
@@ -73,10 +95,7 @@ class Gerrit {
       const originalChangeComments = JSON.parse(commentsJson) as ChangeComments;
       const gitDir = commonUtil.findGitDir(activeDocument.fileName);
       if (!gitDir) {
-        void vscode.window.showErrorMessage(
-          'Git directory not found'
-          // TODO(teramon): Avoid showing the error message more than once.
-        );
+        this.showErrorMessage('Git directory not found');
         return;
       }
       const shiftedChangeComments = await shiftChangeComments(
@@ -85,12 +104,13 @@ class Gerrit {
       );
       updateCommentThreads(this.controller, shiftedChangeComments, gitDir);
     } catch (err) {
-      void vscode.window.showErrorMessage(
-        `Failed to add Gerrit comments: ${err}`
-        // TODO(teramon): Avoid showing the error message more than once.
-      );
+      this.showErrorMessage(`Failed to add Gerrit comments: ${err}`);
       return;
     }
+  }
+
+  private showErrorMessage(message: string) {
+    this.outputChannel.appendLine(message);
   }
 }
 

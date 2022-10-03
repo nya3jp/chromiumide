@@ -13,3 +13,5 @@ export {EventEmitter} from './event';
 export {ExtensionMode} from './extension_mode';
 export {Uri} from './uri';
 export {extensions, window, workspace};
+
+export class TreeItem {}
