@@ -22,7 +22,7 @@ import {abandonLease} from './lease_abandon';
 import {addLease} from './lease_add';
 import {refreshLeases} from './lease_refresh';
 import {runTastTests} from './run_tast_tests';
-import {openSystemLogViewer} from './systemlog_view';
+import {openSystemLogViewer} from './syslog_viewer';
 
 /**
  * Registers VSCode commands for device management features.
