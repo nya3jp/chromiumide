@@ -2,8 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as path from 'path';
 import * as vscode from 'vscode';
 
+/**
+ * Inserts ChromiumOS license header for new files.
+ */
 export class NewFileTemplate implements vscode.Disposable {
   private readonly subscriptions = [
     vscode.workspace.onDidCreateFiles(e => {
@@ -14,7 +18,7 @@ export class NewFileTemplate implements vscode.Disposable {
   ];
   private shownError = false;
 
-  constructor() {}
+  constructor(private readonly chromiumosRoot: string) {}
 
   dispose() {
     vscode.Disposable.from(...this.subscriptions).dispose();
@@ -22,7 +26,7 @@ export class NewFileTemplate implements vscode.Disposable {
 
   private async handle(uri: vscode.Uri) {
     const document = await vscode.workspace.openTextDocument(uri);
-    const text = textToInsert(document);
+    const text = textToInsert(document, this.chromiumosRoot);
     if (!text) {
       return;
     }
@@ -68,11 +72,18 @@ const SLASH_COMMENT_LANGUAGES = new Set([
 
 const HASH_COMMENT_LANGUAGES = new Set(['gn', 'python', 'shellscript']);
 
-function textToInsert(document: vscode.TextDocument): string | undefined {
+function textToInsert(
+  document: vscode.TextDocument,
+  chromiumosRoot: string
+): string | undefined {
   if (document.lineCount > 3) {
     // The license header may already exist.
     return undefined;
   }
+  if (path.relative(chromiumosRoot, document.fileName).startsWith('..')) {
+    return;
+  }
+
   if (SLASH_COMMENT_LANGUAGES.has(document.languageId)) {
     return fillTemplate(TEMPLATE_SLASH_COMMENT);
   }

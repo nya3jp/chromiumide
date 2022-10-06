@@ -10,6 +10,7 @@
 import * as vscode from 'vscode';
 import * as cipd from './common/cipd';
 import * as commonUtil from './common/common_util';
+import * as features from './features';
 import * as boardsPackages from './features/boards_packages';
 import * as chromiumBuild from './features/chromium_build';
 import * as codesearch from './features/codesearch';
@@ -24,7 +25,6 @@ import * as hints from './features/hints';
 import * as feedback from './features/metrics/feedback';
 import * as metrics from './features/metrics/metrics';
 import * as metricsConfig from './features/metrics/metrics_config';
-import * as newFileTemplate from './features/new_file_template';
 import * as platformEc from './features/platform_ec';
 import * as shortLinkProvider from './features/short_link_provider';
 import * as suggestExtension from './features/suggest_extension';
@@ -33,6 +33,7 @@ import * as spellchecker from './features/tricium/spellchecker';
 import * as upstart from './features/upstart';
 import * as ideUtil from './ide_util';
 import * as logs from './logs';
+import * as services from './services';
 import * as chroot from './services/chroot';
 import * as config from './services/config';
 import * as gitDocument from './services/git_document';
@@ -66,6 +67,8 @@ async function postMetricsActivate(
   context: vscode.ExtensionContext
 ): Promise<ExtensionApi> {
   assertOutsideChroot();
+
+  context.subscriptions.push(new ChromiumosActivation());
 
   const statusManager = bgTaskStatus.activate(context);
   const chrootService = new chroot.ChrootService(undefined, undefined);
@@ -141,10 +144,6 @@ async function postMetricsActivate(
     platformEc.activate(context, statusManager, chrootService);
   }
 
-  if (config.underDevelopment.newFileTemplate.get()) {
-    context.subscriptions.push(new newFileTemplate.NewFileTemplate());
-  }
-
   metrics.send({
     category: 'background',
     group: 'misc',
@@ -163,6 +162,30 @@ async function postMetricsActivate(
     context:
       context.extensionMode === vscode.ExtensionMode.Test ? context : undefined,
   };
+}
+
+/**
+ * Registers a handler to activate chromiumos features when the workspace
+ * contains chromiumos source code.
+ */
+class ChromiumosActivation implements vscode.Disposable {
+  private readonly watcher = new services.ProductWatcher('chromiumos');
+  private chromiumosFeatures?: features.Chromiumos;
+
+  private readonly subscriptions: vscode.Disposable[] = [
+    this.watcher,
+    this.watcher.onDidChangeRoot(root => {
+      this.chromiumosFeatures?.dispose();
+      this.chromiumosFeatures = root
+        ? new features.Chromiumos(root)
+        : undefined;
+    }),
+  ];
+
+  dispose() {
+    this.chromiumosFeatures?.dispose();
+    vscode.Disposable.from(...this.subscriptions.reverse()).dispose();
+  }
 }
 
 function assertOutsideChroot() {
