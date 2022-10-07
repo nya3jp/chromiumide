@@ -58,6 +58,7 @@ function fillTemplate(template: string) {
 }
 
 const SLASH_COMMENT_LANGUAGES = new Set([
+  'c',
   'cpp',
   'go',
   'javascript',
