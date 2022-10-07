@@ -14,6 +14,14 @@ function getBoard() {
   return config.platformEc.board.get();
 }
 
+function getBuild() {
+  return config.platformEc.build.get();
+}
+
+function getMode() {
+  return config.platformEc.mode.get().toLowerCase();
+}
+
 const COMPILE_COMMANDS_JSON = 'compile_commands.json';
 
 export class PlatformEc implements CompdbGenerator {
@@ -21,6 +29,8 @@ export class PlatformEc implements CompdbGenerator {
 
   private readonly subscriptions: vscode.Disposable[] = [];
   private generatedBoard?: string;
+  private generatedBuild?: string;
+  private generatedMode?: string;
 
   constructor(
     private readonly chrootService: services.chromiumos.ChrootService,
@@ -41,11 +51,11 @@ export class PlatformEc implements CompdbGenerator {
       return true;
     }
 
-    if (this.generatedBoard === getBoard()) {
-      return false;
-    }
-
-    return true;
+    return (
+      this.generatedBoard !== getBoard() ||
+      this.generatedBuild !== getBuild() ||
+      this.generatedMode !== getMode()
+    );
   }
 
   async generate(
@@ -53,6 +63,9 @@ export class PlatformEc implements CompdbGenerator {
     _token: vscode.CancellationToken
   ): Promise<void> {
     const board = getBoard();
+    const build = getBuild();
+    const mode = getMode();
+    const os = build === 'Makefile' ? 'ec' : 'zephyr';
     if (!board) {
       throw new ErrorDetails(
         'no board',
@@ -70,8 +83,8 @@ export class PlatformEc implements CompdbGenerator {
     }
 
     const result = await this.chrootService.exec(
-      'make',
-      [`ide-compile-cmds-${board}`],
+      'util/clangd_config.py',
+      ['--os', os, board, mode],
       {
         crosSdkWorkingDir: '/mnt/host/source/src/platform/ec',
         sudoReason: 'to generate compilation database',
@@ -80,7 +93,7 @@ export class PlatformEc implements CompdbGenerator {
     );
     if (result instanceof Error) {
       throw new ErrorDetails(
-        'make command failed',
+        'util/clangd_config.py command failed',
         'Failed to generate compilation database',
         {
           label: 'Show log',
@@ -91,35 +104,9 @@ export class PlatformEc implements CompdbGenerator {
       );
     }
 
-    const ecDir = commonUtil.findGitDir(document.fileName)!;
-    const src = path.join(ecDir, 'build', board, 'RW', COMPILE_COMMANDS_JSON);
-    const dest = path.join(ecDir, COMPILE_COMMANDS_JSON);
-
-    if (!fs.existsSync(src)) {
-      throw new ErrorDetails('compdb not generated', `${src}: file not found`, {
-        label: 'Show log',
-        action: () => {
-          this.output.show();
-        },
-      });
-    }
-
-    try {
-      await fs.promises.copyFile(src, dest);
-    } catch (e) {
-      throw new ErrorDetails(
-        'copy failed',
-        `failed to copy ${src} to ${dest}: ${(e as Error).message}`,
-        {
-          label: 'Show log',
-          action: () => {
-            this.output.show();
-          },
-        }
-      );
-    }
-
     this.generatedBoard = board;
+    this.generatedBuild = build;
+    this.generatedMode = mode;
   }
 
   dispose() {

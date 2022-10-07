@@ -15,6 +15,8 @@ import * as fakes from '../../../../../testing/fakes';
 describe('platform2 compdb generator', () => {
   beforeEach(async () => {
     await config.platformEc.board.update('bloonchipper');
+    await config.platformEc.build.update('Makefile');
+    await config.platformEc.mode.update('RW');
   });
 
   const {fakeExec} = testing.installFakeExec();
@@ -51,15 +53,79 @@ describe('platform2 compdb generator', () => {
     } as vscode.TextDocument;
 
     expect(await state.generator.shouldGenerate(document)).toBeTrue();
-
     fakes.installChrootCommandHandler(
       fakeExec,
       state.source,
-      'make',
-      testing.exactMatch(['ide-compile-cmds-bloonchipper'], async _options => {
+      'util/clangd_config.py',
+      testing.exactMatch(
+        ['--os', 'ec', 'bloonchipper', 'rw'],
+        async _options => {
+          await testing.putFiles(state.source, {
+            'src/platform/ec/compile_commands.json':
+              'compile commands for bloonchipper:RW (Makefile)',
+          });
+          return '';
+        }
+      ),
+      {
+        crosSdkWorkingDir: '/mnt/host/source/src/platform/ec',
+      }
+    );
+    await expectAsync(
+      state.generator.generate(document, state.cancellation.token)
+    ).toBeResolved();
+    expect(
+      await fs.promises.readFile(
+        path.join(state.source, 'src/platform/ec/compile_commands.json'),
+        'utf8'
+      )
+    ).toEqual('compile commands for bloonchipper:RW (Makefile)');
+    expect(await state.generator.shouldGenerate(document)).toBeFalse();
+
+    // Change mode from RW to RO and verify the file is re-generated
+    await config.platformEc.mode.update('RO');
+    expect(await state.generator.shouldGenerate(document)).toBeTrue();
+    fakes.installChrootCommandHandler(
+      fakeExec,
+      state.source,
+      'util/clangd_config.py',
+      testing.exactMatch(
+        ['--os', 'ec', 'bloonchipper', 'ro'],
+        async _options => {
+          await testing.putFiles(state.source, {
+            'src/platform/ec/compile_commands.json':
+              'compile commands for bloonchipper:RO (Makefile)',
+          });
+          return '';
+        }
+      ),
+      {
+        crosSdkWorkingDir: '/mnt/host/source/src/platform/ec',
+      }
+    );
+    await expectAsync(
+      state.generator.generate(document, state.cancellation.token)
+    ).toBeResolved();
+    expect(
+      await fs.promises.readFile(
+        path.join(state.source, 'src/platform/ec/compile_commands.json'),
+        'utf8'
+      )
+    ).toEqual('compile commands for bloonchipper:RO (Makefile)');
+    expect(await state.generator.shouldGenerate(document)).toBeFalse();
+
+    // Change board from bloonchipper to dartmonkey and verify the file is
+    // re-generated
+    await config.platformEc.board.update('dartmonkey');
+    expect(await state.generator.shouldGenerate(document)).toBeTrue();
+    fakes.installChrootCommandHandler(
+      fakeExec,
+      state.source,
+      'util/clangd_config.py',
+      testing.exactMatch(['--os', 'ec', 'dartmonkey', 'ro'], async _options => {
         await testing.putFiles(state.source, {
-          'src/platform/ec/build/bloonchipper/RW/compile_commands.json':
-            'the compile commands',
+          'src/platform/ec/compile_commands.json':
+            'compile commands for dartmonkey:RO (Makefile)',
         });
         return '';
       }),
@@ -67,17 +133,48 @@ describe('platform2 compdb generator', () => {
         crosSdkWorkingDir: '/mnt/host/source/src/platform/ec',
       }
     );
-
     await expectAsync(
       state.generator.generate(document, state.cancellation.token)
     ).toBeResolved();
-
     expect(
       await fs.promises.readFile(
         path.join(state.source, 'src/platform/ec/compile_commands.json'),
         'utf8'
       )
-    ).toEqual('the compile commands');
+    ).toEqual('compile commands for dartmonkey:RO (Makefile)');
+    expect(await state.generator.shouldGenerate(document)).toBeFalse();
+
+    // Change build from Makefile to Zephyr and verify the file is re-generated
+    await config.platformEc.build.update('Zephyr');
+    expect(await state.generator.shouldGenerate(document)).toBeTrue();
+    fakes.installChrootCommandHandler(
+      fakeExec,
+      state.source,
+      'util/clangd_config.py',
+      testing.exactMatch(
+        ['--os', 'zephyr', 'dartmonkey', 'ro'],
+        async _options => {
+          await testing.putFiles(state.source, {
+            'src/platform/ec/compile_commands.json':
+              'compile commands for dartmonkey:RO (Zephyr)',
+          });
+          return '';
+        }
+      ),
+      {
+        crosSdkWorkingDir: '/mnt/host/source/src/platform/ec',
+      }
+    );
+    await expectAsync(
+      state.generator.generate(document, state.cancellation.token)
+    ).toBeResolved();
+    expect(
+      await fs.promises.readFile(
+        path.join(state.source, 'src/platform/ec/compile_commands.json'),
+        'utf8'
+      )
+    ).toEqual('compile commands for dartmonkey:RO (Zephyr)');
+    expect(await state.generator.shouldGenerate(document)).toBeFalse();
   });
 
   it('does not run outside platform/ec', async () => {
