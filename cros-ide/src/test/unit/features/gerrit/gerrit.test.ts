@@ -2,12 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import {CommentInfo, TEST_ONLY} from '../../../../features/gerrit/gerrit';
+import * as api from '../../../../features/gerrit/api';
+import {TEST_ONLY} from '../../../../features/gerrit/gerrit';
 
 const {partitionThreads} = TEST_ONLY;
 
 describe('Gerrit', () => {
-  type CommentInfoLike = Pick<CommentInfo, 'id' | 'updated' | 'in_reply_to'>;
+  type CommentInfoLike = Pick<
+    api.CommentInfo,
+    'id' | 'updated' | 'in_reply_to'
+  >;
 
   it('breaks threads', () => {
     const zeroTime = ' 00:00:00.000000000';
@@ -41,7 +45,7 @@ describe('Gerrit', () => {
       },
     ];
     const input = {
-      'file/path.cc': comments.map(c => c as CommentInfo),
+      'file/path.cc': comments.map(c => c as api.CommentInfo),
     };
 
     const oc = jasmine.objectContaining;

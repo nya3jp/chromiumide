@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 import * as commonUtil from '../../common/common_util';
 import * as gitDocument from '../../services/git_document';
 import * as bgTaskStatus from '../../ui/bg_task_status';
+import * as api from './api';
 import * as git from './git';
 
 export function activate(
@@ -92,7 +93,9 @@ class Gerrit {
     try {
       const commentsContent = await httpsGet(commentsUrl);
       const commentsJson = commentsContent.substring(')]}\n'.length);
-      const originalChangeComments = JSON.parse(commentsJson) as ChangeComments;
+      const originalChangeComments = JSON.parse(
+        commentsJson
+      ) as api.ChangeComments;
       const gitDir = commonUtil.findGitDir(activeDocument.fileName);
       if (!gitDir) {
         this.showErrorMessage('Git directory not found');
@@ -157,7 +160,7 @@ function partitionCommentArray(comments: CommentInfo[]): Thread[] {
  * For each filePath break comments in to threads. That is, turn a comment array
  * into an array of arrays, which represent threads
  */
-function partitionThreads(changeComments: ChangeComments): ChangeThreads {
+function partitionThreads(changeComments: api.ChangeComments): ChangeThreads {
   const changeThreads: ChangeThreads = {};
   for (const [filePath, comments] of Object.entries(changeComments)) {
     changeThreads[filePath] = partitionCommentArray(comments);
@@ -240,7 +243,7 @@ export function updateChangeComments(
  * minimum (inclusive) and maximum (exclusive).
  */
 function commentWithinRange(
-  commentInfo: CommentInfo,
+  commentInfo: api.CommentInfo,
   minimum: number,
   maximum: number
 ): boolean {
@@ -251,7 +254,7 @@ function commentWithinRange(
   );
 }
 
-function shiftComment(commentInfo: CommentInfo, delta: number) {
+function shiftComment(commentInfo: api.CommentInfo, delta: number) {
   if (
     // Comments for characters
     commentInfo.range !== undefined &&
@@ -300,7 +303,7 @@ function updateCommentThreads(
   }
 }
 
-type Thread = CommentInfo[];
+type Thread = api.CommentInfo[];
 
 /**
  * Like ChangeComments, but the comments are partitioned into threads

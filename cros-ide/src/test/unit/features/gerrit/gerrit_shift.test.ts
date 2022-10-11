@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'jasmine';
+import * as api from '../../../../features/gerrit/api';
 import * as gerrit from '../../../../features/gerrit/gerrit';
 import * as git from '../../../../features/gerrit/git';
 
@@ -25,7 +26,7 @@ function range(
   start_character: number,
   end_line: number,
   end_character: number
-): gerrit.CommentRange {
+): api.CommentRange {
   return {
     start_line,
     start_character,
