@@ -35,7 +35,7 @@ inherit cros-workon platform user
     const spiedFakeCompdbService = new SpiedFakeCompdbService(source);
     // CompilationDatabase registers event handlers in the constructor.
     const compdbGenerator = new Platform2(
-      services.chromiumos.ChrootService.maybeCreate(source)!,
+      services.chromiumos.ChrootService.maybeCreate(source, false)!,
       new fakes.ConsoleOutputChannel(),
       spiedFakeCompdbService
     );

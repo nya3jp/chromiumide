@@ -48,13 +48,13 @@ export class ChrootService implements vscode.Disposable {
    * `cros-ide.chrootPath` context for the custom `when` clauses in boards and
    * packages view etc.
    *
-   * TODO(oka): remove setContext. This value is false by default for unit
-   * tests' convenience where vscode.commands.executeCommand is not implemented.
-   * We should fake the method and let it always run.
+   * TODO(oka): remove setContext. This parameter exists for unit tests where
+   * vscode.commands.executeCommand is not implemented. We should fake the
+   * method and let it always run.
    */
   static maybeCreate(
     root: string,
-    setContext = false
+    setContext = true
   ): ChrootService | undefined {
     try {
       return new ChrootService(root, setContext);

@@ -18,7 +18,7 @@ describe('chroot service exec', () => {
     await testing.buildFakeChroot(tempDir.path);
 
     const source = tempDir.path as commonUtil.Source;
-    const cros = services.chromiumos.ChrootService.maybeCreate(source)!;
+    const cros = services.chromiumos.ChrootService.maybeCreate(source, false)!;
 
     fakes.installChrootCommandHandler(
       fakeExec,
@@ -36,7 +36,7 @@ describe('chroot service exec', () => {
     await testing.buildFakeChroot(tempDir.path);
 
     const source = tempDir.path as commonUtil.Source;
-    const cros = services.chromiumos.ChrootService.maybeCreate(source)!;
+    const cros = services.chromiumos.ChrootService.maybeCreate(source, false)!;
 
     fakes.installChrootCommandHandler(
       fakeExec,
@@ -58,7 +58,7 @@ describe('maybeCreate', () => {
 
   it('returns undefined if chrot does not exist', () => {
     expect(
-      services.chromiumos.ChrootService.maybeCreate(tempDir.path)
+      services.chromiumos.ChrootService.maybeCreate(tempDir.path, false)
     ).toBeUndefined();
   });
 });

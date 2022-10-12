@@ -29,7 +29,7 @@ describe('platform2 compdb generator', () => {
 
     // CompilationDatabase registers event handlers in the constructor.
     const generator = new compdbGenerator.PlatformEc(
-      services.chromiumos.ChrootService.maybeCreate(temp.path)!,
+      services.chromiumos.ChrootService.maybeCreate(temp.path, false)!,
       new fakes.ConsoleOutputChannel()
     );
     const cancellation = new vscode.CancellationTokenSource();

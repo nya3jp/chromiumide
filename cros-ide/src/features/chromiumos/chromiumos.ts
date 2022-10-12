@@ -26,8 +26,7 @@ export class Chromiumos implements vscode.Disposable {
     statusManager: bgTaskStatus.StatusManager
   ) {
     const chrootService = services.chromiumos.ChrootService.maybeCreate(
-      this.root,
-      /* setContext = */ true
+      this.root
     );
     if (chrootService) {
       cppCodeCompletion.activate(

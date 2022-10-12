@@ -22,7 +22,10 @@ export function chrootServiceInstance(): services.chromiumos.ChrootService {
     path.dirname(path.dirname(crosIde))
   ) as commonUtil.Source;
 
-  chrootServiceCache = services.chromiumos.ChrootService.maybeCreate(source)!;
+  chrootServiceCache = services.chromiumos.ChrootService.maybeCreate(
+    source,
+    false
+  )!;
   return chrootServiceCache;
 }
 
