@@ -5,10 +5,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import * as commonUtil from '../../../common/common_util';
-import {ChrootService} from '../../../services/chroot';
-import * as config from '../../../services/config';
-import {throwForNoChroot} from './common';
+import * as commonUtil from '../../../../common/common_util';
+import * as services from '../../../../services';
+import * as config from '../../../../services/config';
 import {CompdbGenerator, ErrorDetails} from '.';
 
 function getBoard() {
@@ -24,7 +23,7 @@ export class PlatformEc implements CompdbGenerator {
   private generatedBoard?: string;
 
   constructor(
-    private readonly chrootService: ChrootService,
+    private readonly chrootService: services.chromiumos.ChrootService,
     private readonly output: vscode.OutputChannel
   ) {}
 
@@ -53,10 +52,6 @@ export class PlatformEc implements CompdbGenerator {
     document: vscode.TextDocument,
     _token: vscode.CancellationToken
   ): Promise<void> {
-    const chroot = this.chrootService.chroot();
-    if (!chroot) {
-      throwForNoChroot(document.fileName);
-    }
     const board = getBoard();
     if (!board) {
       throw new ErrorDetails(

@@ -4,11 +4,11 @@
 
 import 'jasmine';
 import * as vscode from 'vscode';
-import {CLANGD_EXTENSION} from '../../../../features/cpp_code_completion/constants';
-import {CppCodeCompletion} from '../../../../features/cpp_code_completion/cpp_code_completion';
+import {CLANGD_EXTENSION} from '../../../../features/chromiumos/cpp_code_completion/constants';
+import {CppCodeCompletion} from '../../../../features/chromiumos/cpp_code_completion/cpp_code_completion';
 import {installVscodeDouble, installFakeConfigs} from '../../doubles';
 import * as bgTaskStatus from '../../../../ui/bg_task_status';
-import {ErrorDetails} from '../../../../features/cpp_code_completion/compdb_generator';
+import {ErrorDetails} from '../../../../features/chromiumos/cpp_code_completion/compdb_generator';
 import * as testing from '../../../testing';
 import * as fakes from '../../../testing/fakes';
 

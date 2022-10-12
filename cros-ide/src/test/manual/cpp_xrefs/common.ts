@@ -4,13 +4,13 @@
 
 import * as path from 'path';
 import * as commonUtil from '../../../common/common_util';
-import * as servicesChroot from '../../../services/chroot';
-import * as cros from '../../../common/cros';
-import * as packages from '../../../features/cpp_code_completion/packages';
+import * as services from '../../../services';
+import * as packages from '../../../features/chromiumos/cpp_code_completion/packages';
 
-let chrootServiceCache: servicesChroot.ChrootService | undefined = undefined;
+let chrootServiceCache: services.chromiumos.ChrootService | undefined =
+  undefined;
 
-export function chrootServiceInstance(): servicesChroot.ChrootService {
+export function chrootServiceInstance(): services.chromiumos.ChrootService {
   if (chrootServiceCache) {
     return chrootServiceCache;
   }
@@ -21,12 +21,8 @@ export function chrootServiceInstance(): servicesChroot.ChrootService {
   const source = path.dirname(
     path.dirname(path.dirname(crosIde))
   ) as commonUtil.Source;
-  const chroot = path.join(source, 'chroot') as commonUtil.Chroot;
 
-  chrootServiceCache = new servicesChroot.ChrootService(
-    new cros.WrapFs(chroot),
-    new cros.WrapFs(source)
-  );
+  chrootServiceCache = services.chromiumos.ChrootService.maybeCreate(source)!;
   return chrootServiceCache;
 }
 

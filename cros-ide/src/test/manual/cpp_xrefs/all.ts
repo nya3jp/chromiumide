@@ -9,9 +9,9 @@ import * as util from 'util';
 import * as vscode from 'vscode';
 import * as commander from 'commander';
 import * as glob from 'glob';
-import * as cppPackages from '../../../features/cpp_code_completion/packages';
+import * as cppPackages from '../../../features/chromiumos/cpp_code_completion/packages';
 import * as testing from '../../testing';
-import {CompilationDatabase} from '../../../features/cpp_code_completion/compdb_service/compilation_database_type';
+import {CompilationDatabase} from '../../../features/chromiumos/cpp_code_completion/compdb_service/compilation_database_type';
 import * as clangd from './clangd';
 import * as compdb from './compdb';
 import {chrootServiceInstance, packagesInstance} from './common';
@@ -157,7 +157,7 @@ class PackageJobsProvider {
       return [];
     }
     const sourceDir = path.join(
-      chrootServiceInstance().source()!.root,
+      chrootServiceInstance().source.root,
       this.packageInfo.sourceDir
     );
     const compdbPath = path.join(sourceDir, 'compile_commands.json');
@@ -215,7 +215,7 @@ class Tester {
   private async createJobsProviders(): Promise<PackageJobsProvider[]> {
     const chrootService = chrootServiceInstance();
 
-    const platform2 = path.join(chrootService.source()!.root, 'src/platform2');
+    const platform2 = path.join(chrootService.source.root, 'src/platform2');
     const allBuildGn = await util.promisify(glob.glob)(
       `${platform2}/**/BUILD.gn`
     );

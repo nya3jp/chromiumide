@@ -5,11 +5,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import * as commonUtil from '../../../../common/common_util';
-import * as cros from '../../../../common/cros';
-import {CompdbServiceImpl} from '../../../../features/cpp_code_completion/compdb_service';
-import * as testing from '../../../testing';
-import * as fakes from '../../../testing/fakes';
+import * as commonUtil from '../../../../../common/common_util';
+import * as cros from '../../../../../common/cros';
+import {CompdbServiceImpl} from '../../../../../features/chromiumos/cpp_code_completion/compdb_service';
+import * as testing from '../../../../testing';
+import * as fakes from '../../../../testing/fakes';
 
 describe('Compdb service', () => {
   const tempdir = testing.tempDir();

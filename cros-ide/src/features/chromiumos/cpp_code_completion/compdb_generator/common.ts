@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import * as commonUtil from '../../../common/common_util';
-import * as metrics from '../../metrics/metrics';
+import * as commonUtil from '../../../../common/common_util';
+import * as metrics from '../../../metrics/metrics';
 import {ErrorDetails} from '.';
 
 export function throwForNoChroot(fileName: string): never {

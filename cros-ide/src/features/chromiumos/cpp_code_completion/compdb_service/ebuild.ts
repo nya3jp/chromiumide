@@ -5,7 +5,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {Atom} from '../packages';
-import * as servicesChroot from '../../../services/chroot';
+import * as servicesChroot from '../../../../services/chroot';
 import {MNT_HOST_SOURCE} from '../constants';
 import {Board, HOST} from './board';
 import {CompdbError, CompdbErrorKind} from './error';

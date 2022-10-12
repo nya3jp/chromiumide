@@ -3,19 +3,19 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import * as metrics from '../metrics/metrics';
-import * as bgTaskStatus from '../../ui/bg_task_status';
-import * as servicesChroot from '../../services/chroot';
-import * as commonUtil from '../../common/common_util';
+import * as metrics from '../../metrics/metrics';
+import * as bgTaskStatus from '../../../ui/bg_task_status';
+import * as services from '../../../services';
+import * as commonUtil from '../../../common/common_util';
 import * as compdbGenerator from './compdb_generator';
 import {CLANGD_EXTENSION, SHOW_LOG_COMMAND} from './constants';
 
 export function activate(
-  context: vscode.ExtensionContext,
+  subscriptions: vscode.Disposable[],
   statusManager: bgTaskStatus.StatusManager,
-  chrootService: servicesChroot.ChrootService
+  chrootService: services.chromiumos.ChrootService
 ) {
-  context.subscriptions.push(
+  subscriptions.push(
     new CppCodeCompletion(
       [
         output => new compdbGenerator.Platform2(chrootService, output),

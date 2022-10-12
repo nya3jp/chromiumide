@@ -4,10 +4,10 @@
 
 import * as fs from 'fs';
 import * as vscode from 'vscode';
-import * as commonUtil from '../../../common/common_util';
-import {getOrSelectTargetBoard, NoBoardError} from '../../../ide_util';
-import {ChrootService} from '../../../services/chroot';
-import * as metrics from '../../metrics/metrics';
+import * as commonUtil from '../../../../common/common_util';
+import {getOrSelectTargetBoard, NoBoardError} from '../../../../ide_util';
+import * as services from '../../../../services';
+import * as metrics from '../../../metrics/metrics';
 import {
   CompdbError,
   CompdbErrorKind,
@@ -16,7 +16,6 @@ import {
   destination,
 } from '../compdb_service';
 import {Atom, Packages} from '../packages';
-import {throwForNoChroot} from './common';
 import {CompdbGenerator, ErrorDetails} from '.';
 
 export class Platform2 implements CompdbGenerator {
@@ -28,18 +27,14 @@ export class Platform2 implements CompdbGenerator {
   private readonly generated = new Set<Atom>();
 
   constructor(
-    private readonly chrootService: ChrootService,
+    private readonly chrootService: services.chromiumos.ChrootService,
     output: vscode.OutputChannel,
-    private compdbService?: CompdbService
+    private readonly compdbService: CompdbService = new CompdbServiceImpl(
+      output,
+      chrootService.crosFs
+    )
   ) {
-    this.packages = new Packages(chrootService, true);
-    this.subscriptions.push(
-      chrootService.onDidActivate(crosFs => {
-        if (!this.compdbService) {
-          this.compdbService = new CompdbServiceImpl(output, crosFs);
-        }
-      })
-    );
+    this.packages = new Packages(this.chrootService, true);
   }
 
   /**
@@ -79,11 +74,7 @@ export class Platform2 implements CompdbGenerator {
       return true;
     }
 
-    const source = this.chrootService.source();
-    if (!source) {
-      // Let `generate` be called and an error be thrown.
-      return true;
-    }
+    const source = this.chrootService.source;
     if (!fs.existsSync(destination(source.root, packageInfo))) {
       return true;
     }
@@ -95,10 +86,7 @@ export class Platform2 implements CompdbGenerator {
     document: vscode.TextDocument,
     _token: vscode.CancellationToken
   ): Promise<void> {
-    const chroot = this.chrootService.chroot();
-    if (!chroot) {
-      throwForNoChroot(document.fileName);
-    }
+    const chroot = this.chrootService.chroot;
     const board = await getOrSelectTargetBoard(chroot);
     if (board instanceof NoBoardError) {
       throw new ErrorDetails('no board', board.message);

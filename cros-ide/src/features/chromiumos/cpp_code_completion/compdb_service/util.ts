@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as path from 'path';
-import * as commonUtil from '../../../common/common_util';
+import * as commonUtil from '../../../../common/common_util';
 import {Atom, PackageInfo} from '../packages';
 
 /**

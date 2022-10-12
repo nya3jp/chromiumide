@@ -5,13 +5,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import * as commonUtil from '../../../../../common/common_util';
-import * as cros from '../../../../../common/cros';
-import * as compdbGenerator from '../../../../../features/cpp_code_completion/compdb_generator';
-import * as servicesChroot from '../../../../../services/chroot';
-import * as config from '../../../../../services/config';
-import * as testing from '../../../../testing';
-import * as fakes from '../../../../testing/fakes';
+import * as commonUtil from '../../../../../../common/common_util';
+import * as compdbGenerator from '../../../../../../features/chromiumos/cpp_code_completion/compdb_generator';
+import * as services from '../../../../../../services';
+import * as config from '../../../../../../services/config';
+import * as testing from '../../../../../testing';
+import * as fakes from '../../../../../testing/fakes';
 
 describe('platform2 compdb generator', () => {
   beforeEach(async () => {
@@ -30,10 +29,7 @@ describe('platform2 compdb generator', () => {
 
     // CompilationDatabase registers event handlers in the constructor.
     const generator = new compdbGenerator.PlatformEc(
-      new servicesChroot.ChrootService(
-        new cros.WrapFs(chroot),
-        new cros.WrapFs(source)
-      ),
+      services.chromiumos.ChrootService.maybeCreate(temp.path)!,
       new fakes.ConsoleOutputChannel()
     );
     const cancellation = new vscode.CancellationTokenSource();

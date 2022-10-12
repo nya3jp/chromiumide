@@ -5,8 +5,8 @@
 import * as fs from 'fs';
 import type * as vscode from 'vscode';
 import * as commander from 'commander';
-import * as cppCompdbService from '../../../features/cpp_code_completion/compdb_service';
-import * as cppPackages from '../../../features/cpp_code_completion/packages';
+import * as cppCompdbService from '../../../features/chromiumos/cpp_code_completion/compdb_service';
+import * as cppPackages from '../../../features/chromiumos/cpp_code_completion/packages';
 import * as fakes from '../../testing/fakes';
 import {chrootServiceInstance, packagesInstance} from './common';
 
@@ -43,8 +43,8 @@ export async function generate(
 ): Promise<void> {
   const chrootService = chrootServiceInstance();
   const compdbService = new cppCompdbService.CompdbServiceImpl(output, {
-    chroot: chrootService.chroot()!,
-    source: chrootService.source()!,
+    chroot: chrootService.chroot,
+    source: chrootService.source,
   });
   await compdbService.generate(board ?? DEFAULT_BOARD, packageInfo);
   return;

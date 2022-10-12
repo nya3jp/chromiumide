@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as uuid from 'uuid';
-import {CrosFs} from '../../../services/chroot';
+import {CrosFs} from '../../../../services/chroot';
 import {PackageInfo} from '../packages';
 import {CompdbService} from './compdb_service';
 import {Ebuild} from './ebuild';

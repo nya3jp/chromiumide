@@ -3,7 +3,10 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import * as services from '../../services';
+import * as bgTaskStatus from '../../ui/bg_task_status';
 import {NewFileTemplate} from './new_file_template';
+import * as cppCodeCompletion from './cpp_code_completion';
 
 /**
  * The root class of all the ChromiumOS features.
@@ -18,7 +21,22 @@ export class Chromiumos implements vscode.Disposable {
   /**
    * @param root Absolute path to the chormiumos root directory.
    */
-  constructor(private readonly root: string) {}
+  constructor(
+    private readonly root: string,
+    statusManager: bgTaskStatus.StatusManager
+  ) {
+    const chrootService = services.chromiumos.ChrootService.maybeCreate(
+      this.root,
+      /* setContext = */ true
+    );
+    if (chrootService) {
+      cppCodeCompletion.activate(
+        this.subscriptions,
+        statusManager,
+        chrootService
+      );
+    }
+  }
 
   dispose() {
     vscode.Disposable.from(...this.subscriptions.reverse()).dispose();

@@ -15,7 +15,6 @@ import * as boardsPackages from './features/boards_packages';
 import * as chromiumBuild from './features/chromium_build';
 import * as codesearch from './features/codesearch';
 import * as coverage from './features/coverage';
-import * as cppCodeCompletion from './features/cpp_code_completion/cpp_code_completion';
 import * as crosFormat from './features/cros_format';
 import * as crosLint from './features/cros_lint';
 import * as deviceManagement from './features/device_management';
@@ -68,9 +67,10 @@ async function postMetricsActivate(
 ): Promise<ExtensionApi> {
   assertOutsideChroot();
 
-  context.subscriptions.push(new ChromiumosActivation());
-
   const statusManager = bgTaskStatus.activate(context);
+
+  context.subscriptions.push(new ChromiumosActivation(statusManager));
+
   const chrootService = new chroot.ChrootService(undefined, undefined);
   context.subscriptions.push(chrootService);
   const cipdRepository = new cipd.CipdRepository();
@@ -96,7 +96,6 @@ async function postMetricsActivate(
   await boardsPackages.activate(context, chrootService);
   shortLinkProvider.activate(context);
   codesearch.activate(context);
-  cppCodeCompletion.activate(context, statusManager, chrootService);
   suggestExtension.activate(context);
   targetBoard.activate(context, chrootService);
   feedback.activate(context);
@@ -177,7 +176,7 @@ class ChromiumosActivation implements vscode.Disposable {
     this.watcher.onDidChangeRoot(root => {
       this.chromiumosFeatures?.dispose();
       this.chromiumosFeatures = root
-        ? new features.Chromiumos(root)
+        ? new features.Chromiumos(root, this.statusManager)
         : undefined;
     }),
   ];
@@ -186,6 +185,8 @@ class ChromiumosActivation implements vscode.Disposable {
     this.chromiumosFeatures?.dispose();
     vscode.Disposable.from(...this.subscriptions.reverse()).dispose();
   }
+
+  constructor(private readonly statusManager: bgTaskStatus.StatusManager) {}
 }
 
 function assertOutsideChroot() {

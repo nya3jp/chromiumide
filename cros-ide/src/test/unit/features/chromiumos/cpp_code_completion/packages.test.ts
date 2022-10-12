@@ -4,11 +4,9 @@
 
 import * as assert from 'assert';
 import * as path from 'path';
-import {WrapFs} from '../../../../common/cros';
-import {Packages} from '../../../../features/cpp_code_completion/packages';
-import {ChrootService} from '../../../../services/chroot';
-import * as testing from '../../../testing';
-import * as commonUtil from '../../../../common/common_util';
+import {Packages} from '../../../../../features/chromiumos/cpp_code_completion/packages';
+import * as services from '../../../../../services';
+import * as testing from '../../../../testing';
 
 describe('Packages', () => {
   const tempDir = testing.tempDir();
@@ -16,7 +14,9 @@ describe('Packages', () => {
   it('returns package information using hard-coded mapping', async () => {
     await testing.buildFakeChroot(tempDir.path);
 
-    const packages = new Packages(new ChrootService(undefined, undefined));
+    const packages = new Packages(
+      services.chromiumos.ChrootService.maybeCreate(tempDir.path)!
+    );
     // A file should exists in the filepath to get its absolute path.
     await testing.putFiles(tempDir.path, {
       'src/platform2/cros-disks/foo.cc': 'x',
@@ -50,13 +50,10 @@ describe('Packages', () => {
   });
 
   it('returns package information', async () => {
-    const chroot = await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChroot(tempDir.path);
 
     const packages = new Packages(
-      new ChrootService(
-        new WrapFs(chroot),
-        new WrapFs(commonUtil.sourceDir(chroot))
-      ),
+      services.chromiumos.ChrootService.maybeCreate(tempDir.path)!,
       true
     );
     // A file should exists in the filepath to get its absolute path.

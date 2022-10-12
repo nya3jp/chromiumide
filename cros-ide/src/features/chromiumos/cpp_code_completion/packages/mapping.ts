@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as util from 'util';
 import * as glob from 'glob';
-import {Source} from '../../../common/common_util';
+import {Source} from '../../../../common/common_util';
 import {PackageInfo} from './types';
 
 export async function generate(source: Source): Promise<PackageInfo[]> {
