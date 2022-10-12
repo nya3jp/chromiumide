@@ -132,7 +132,7 @@ async function httpsGet(url: string): Promise<string> {
   });
 }
 
-function partitionCommentArray(comments: CommentInfo[]): Thread[] {
+function partitionCommentArray(comments: api.CommentInfo[]): Thread[] {
   // Sort the input to make sure we see ids before they are used in in_reply_to.
   comments.sort((c1, c2) => c1.updated.localeCompare(c2.updated));
 
@@ -313,37 +313,7 @@ export type ChangeThreads = {
   [filePath: string]: Thread[];
 };
 
-// TODO(b:216048068): move Gerrit API types to a separate file.
-
-// Response from Gerrit List Change Comments API.
-// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-change-comments
-export type ChangeComments = {
-  [filePath: string]: CommentInfo[];
-};
-
-export type CommentInfo = {
-  id: string;
-  author: AccountInfo;
-  range?: CommentRange;
-  // Comments on entire lines have `line` but not `range`.
-  line?: number;
-  in_reply_to?: string;
-  updated: string;
-  message: string;
-};
-
-export type AccountInfo = {
-  name: string;
-};
-
-export type CommentRange = {
-  start_line: number; // 1-based
-  start_character: number; // 0-based
-  end_line: number; // 1-based
-  end_character: number; // 0-based
-};
-
-function toVscodeComment(c: CommentInfo): vscode.Comment {
+function toVscodeComment(c: api.CommentInfo): vscode.Comment {
   return {
     author: {
       name: c.author.name,
