@@ -4,7 +4,6 @@
 
 import * as commonUtil from '../../../../common/common_util';
 import * as services from '../../../../services';
-import {installVscodeDouble} from '../../../integration/doubles';
 import * as testing from '../../../testing';
 import * as fakes from '../../../testing/fakes';
 
@@ -54,7 +53,7 @@ describe('chroot service exec', () => {
 describe('maybeCreate', () => {
   const tempDir = testing.tempDir();
 
-  installVscodeDouble(); // Fake vscode.window.showErrorMessage
+  testing.installVscodeDouble(); // Fake vscode.window.showErrorMessage
 
   it('returns undefined if chrot does not exist', () => {
     expect(

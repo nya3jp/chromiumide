@@ -4,7 +4,7 @@
 
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import {installVscodeDouble} from './doubles';
+import {installVscodeDouble} from '../testing/doubles';
 
 describe('VSCode test doubles', () => {
   installVscodeDouble();

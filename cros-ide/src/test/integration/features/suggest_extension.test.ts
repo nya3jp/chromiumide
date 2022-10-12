@@ -5,7 +5,7 @@
 import * as vscode from 'vscode';
 import {activateSingle} from '../../../features/suggest_extension';
 import {flushMicrotasks} from '../../testing';
-import {installVscodeDouble} from '../doubles';
+import {installVscodeDouble} from '../../testing/doubles';
 
 describe('Suggest extension module', () => {
   const {vscodeSpy, vscodeEmitters} = installVscodeDouble();

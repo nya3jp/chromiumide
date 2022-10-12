@@ -13,7 +13,7 @@ import {
   installFakeExec,
   tempDir,
 } from '../../testing';
-import {installVscodeDouble, installFakeConfigs} from '../doubles';
+import {installVscodeDouble, installFakeConfigs} from '../../testing/doubles';
 import {closeDocument} from '../extension_testing';
 
 const {openCurrentFile, searchSelection} = codesearch.TEST_ONLY;

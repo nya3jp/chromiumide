@@ -5,8 +5,8 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as config from '../../services/config';
-import {cleanState} from '../testing';
-import * as fakes from '../testing/fakes';
+import * as fakes from './fakes';
+import {cleanState} from '.';
 
 /**
  * Spy for the `vscode` module.

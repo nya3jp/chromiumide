@@ -18,7 +18,7 @@ import {
 } from '../../testing';
 import * as fakes from '../../testing/fakes';
 import * as commonUtil from '../../../common/common_util';
-import {installVscodeDouble, installFakeConfigs} from '../doubles';
+import {installVscodeDouble, installFakeConfigs} from '../../testing/doubles';
 
 const {BoardItem, PackageItem, BoardPackageProvider, BoardsPackages} =
   TEST_ONLY;

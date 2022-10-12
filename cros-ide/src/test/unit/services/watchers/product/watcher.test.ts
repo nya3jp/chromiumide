@@ -6,7 +6,6 @@ import 'jasmine';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {ProductWatcher} from '../../../../../services';
-import {installVscodeDouble} from '../../../../integration/doubles';
 import * as testing from '../../../../testing';
 
 const PUBLIC_MANIFEST = `[core]
@@ -51,7 +50,7 @@ function workspaceFolder(fsPath: string): vscode.WorkspaceFolder {
 describe('Chromiumos product watcher', () => {
   const tempDir = testing.tempDir();
 
-  const {vscodeEmitters} = installVscodeDouble();
+  const {vscodeEmitters} = testing.installVscodeDouble();
 
   const subscriptions: vscode.Disposable[] = [];
   let watcher: ProductWatcher;

@@ -11,7 +11,7 @@ import * as provider from '../../../../features/device_management/device_tree_da
 import * as config from '../../../../services/config';
 import * as testing from '../../../testing';
 import * as fakes from '../../../testing/fakes';
-import * as doubles from '../../doubles';
+import * as doubles from '../../../testing/doubles';
 
 interface RenderedTreeNode {
   item: vscode.TreeItem;

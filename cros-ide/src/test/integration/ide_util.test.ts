@@ -8,7 +8,7 @@ import {WrapFs} from '../../common/cros';
 import * as ideUtil from '../../ide_util';
 import * as config from '../../services/config';
 import * as testing from '../testing';
-import {installVscodeDouble, installFakeConfigs} from './doubles';
+import {installVscodeDouble, installFakeConfigs} from '../testing/doubles';
 
 describe('IDE utilities', () => {
   const tempDir = testing.tempDir();

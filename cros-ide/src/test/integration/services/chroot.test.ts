@@ -16,7 +16,7 @@ import {
   tempDir,
 } from '../../testing';
 import * as fakes from '../../testing/fakes';
-import {installVscodeDouble} from '../doubles';
+import {installVscodeDouble} from '../../testing/doubles';
 
 describe('chroot service', () => {
   const temp = tempDir();

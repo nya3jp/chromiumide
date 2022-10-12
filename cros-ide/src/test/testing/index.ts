@@ -17,3 +17,5 @@ export {BlockingPromise} from './promises';
 export {flushMicrotasks} from './tasks';
 export {Mutable} from './types';
 export {EventReader} from './events';
+
+export {installVscodeDouble} from './doubles';
