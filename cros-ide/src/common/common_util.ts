@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 /**
- * Common utilities between extension code and tools such as installtion
+ * Common utilities between extension code and tools such as installation
  * script. This file should not depend on 'vscode'.
  */
 
