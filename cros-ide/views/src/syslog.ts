@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import {selectColor} from '../../src/features/device_management/color_log';
+import {selectColor} from '../../src/features/chromiumos/device_management/color_log';
 
 async function onReady(): Promise<void> {
   const container = document.getElementById('main')!;

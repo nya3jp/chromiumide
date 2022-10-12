@@ -6,7 +6,7 @@ import * as path from 'path';
 import * as dateFns from 'date-fns';
 import * as cipd from '../../../common/cipd';
 import * as commonUtil from '../../../common/common_util';
-import * as crosfleet from '../../../features/device_management/crosfleet';
+import * as crosfleet from '../../../features/chromiumos/device_management/crosfleet';
 import * as testing from '..';
 
 export class FakeCrosfleet {

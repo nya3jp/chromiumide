@@ -16,7 +16,6 @@ import * as codesearch from './features/codesearch';
 import * as coverage from './features/coverage';
 import * as crosFormat from './features/cros_format';
 import * as crosLint from './features/cros_lint';
-import * as deviceManagement from './features/device_management';
 import * as gerrit from './features/gerrit';
 import * as gn from './features/gn';
 import * as hints from './features/hints';
@@ -67,12 +66,14 @@ async function postMetricsActivate(
   assertOutsideChroot();
 
   const statusManager = bgTaskStatus.activate(context);
+  const cipdRepository = new cipd.CipdRepository();
 
-  context.subscriptions.push(new ChromiumosActivation(statusManager));
+  context.subscriptions.push(
+    new ChromiumosActivation(context, statusManager, cipdRepository)
+  );
 
   const chrootService = new chroot.ChrootService(undefined, undefined);
   context.subscriptions.push(chrootService);
-  const cipdRepository = new cipd.CipdRepository();
 
   context.subscriptions.push(
     vscode.commands.registerCommand(ideUtil.SHOW_UI_LOG.command, () =>
@@ -98,12 +99,6 @@ async function postMetricsActivate(
   targetBoard.activate(context, chrootService);
   feedback.activate(context);
   upstart.activate(context);
-  await deviceManagement.activate(
-    context,
-    statusManager,
-    chrootService,
-    cipdRepository
-  );
   hints.activate(context);
 
   if (config.underDevelopment.testCoverage.get()) {
@@ -169,22 +164,32 @@ class ChromiumosActivation implements vscode.Disposable {
   private readonly watcher = new services.ProductWatcher('chromiumos');
   private chromiumosFeatures?: features.Chromiumos;
 
-  private readonly subscriptions: vscode.Disposable[] = [
-    this.watcher,
-    this.watcher.onDidChangeRoot(root => {
-      this.chromiumosFeatures?.dispose();
-      this.chromiumosFeatures = root
-        ? new features.Chromiumos(root, this.statusManager)
-        : undefined;
-    }),
-  ];
+  private readonly subscriptions: vscode.Disposable[] = [this.watcher];
 
   dispose() {
     this.chromiumosFeatures?.dispose();
     vscode.Disposable.from(...this.subscriptions.reverse()).dispose();
   }
 
-  constructor(private readonly statusManager: bgTaskStatus.StatusManager) {}
+  constructor(
+    context: vscode.ExtensionContext,
+    statusManager: bgTaskStatus.StatusManager,
+    cipdRepository: cipd.CipdRepository
+  ) {
+    this.subscriptions.push(
+      this.watcher.onDidChangeRoot(root => {
+        this.chromiumosFeatures?.dispose();
+        this.chromiumosFeatures = root
+          ? new features.Chromiumos(
+              context,
+              root,
+              statusManager,
+              cipdRepository
+            )
+          : undefined;
+      })
+    );
+  }
 }
 
 function assertOutsideChroot() {

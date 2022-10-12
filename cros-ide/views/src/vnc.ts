@@ -4,7 +4,7 @@
 
 import {Base64} from 'js-base64';
 import RFB, {DataChannel} from '@novnc/novnc/core/rfb';
-import * as webviewShared from '../../src/features/device_management/webview_shared';
+import * as webviewShared from '../../src/features/chromiumos/device_management/webview_shared';
 
 const vscode = acquireVsCodeApi<never>();
 
