@@ -3,3 +3,4 @@
 // found in the LICENSE file.
 
 export {ProductWatcher} from './product';
+export {GitDirsWatcher} from './git_dirs';

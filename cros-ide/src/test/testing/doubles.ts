@@ -159,24 +159,30 @@ export function installVscodeDouble(): {
   const vscodeSpy = cleanState(() => newVscodeSpy());
   const vscodeEmitters = cleanState(() => newVscodeEmitters());
 
-  const real = vscode;
+  // This an injected module for unit tests and real vscode module for integration tests.
+  const theVscode = vscode;
 
   // We cannot use Object.assign({}, real) here; if we do so we see the
   // following error in unit tests where vscode is an injected module.
   // TypeError: Cannot set property CancellationTokenSource of #<Object> which has only a getter
   const original = copyVscodeNamespaces();
   beforeEach(() => {
-    real.commands = vscodeSpy.commands;
-    real.env = vscodeSpy.env;
-    real.extensions = vscodeSpy.extensions;
-    real.window = buildNamespace(vscodeSpy.window, vscodeEmitters.window);
-    real.workspace = buildNamespace(
+    theVscode.commands = vscodeSpy.commands;
+    theVscode.env = vscodeSpy.env;
+    theVscode.extensions = vscodeSpy.extensions;
+    theVscode.window = buildNamespace(
+      theVscode.window,
+      vscodeSpy.window,
+      vscodeEmitters.window
+    );
+    theVscode.workspace = buildNamespace(
+      theVscode.workspace,
       vscodeSpy.workspace,
       vscodeEmitters.workspace
     );
   });
   afterEach(() => {
-    Object.assign(real, original);
+    Object.assign(theVscode, original);
   });
 
   return {
@@ -185,11 +191,26 @@ export function installVscodeDouble(): {
   };
 }
 
+/**
+ * Creates a new object representing a fake vscode namespace. It creates the
+ * result by first copying the original namespace and then updating it using
+ * spies and emitters.
+ * If the given namespace comes from real vscode (in case of integration tests),
+ * we don't copy the original because Object.entries fails for the object.
+ */
 function buildNamespace(
+  maybeFakeVscodeNamespace: Object,
   spies: jasmine.SpyObj<unknown>,
   emitters: {[key: string]: vscode.EventEmitter<unknown>}
 ) {
+  let original: [string, unknown][] = [];
+  try {
+    original = Object.entries(maybeFakeVscodeNamespace);
+  } catch (_e) {
+    // Do nothing
+  }
   return Object.fromEntries([
+    ...original,
     ...Object.entries(spies).map(([key, spy]) => [
       key,
       (...args: unknown[]) => (spy as jasmine.Spy)(...args),

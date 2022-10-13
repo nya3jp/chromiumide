@@ -18,7 +18,7 @@ export type Event = {
  * Watches HEAD of the given git repository and fires events on its changes.
  */
 export class Watcher implements vscode.Disposable {
-  private readonly subscriptions: vscode.Disposable[] = [];
+  readonly subscriptions: vscode.Disposable[] = [];
   dispose() {
     vscode.Disposable.from(...this.subscriptions.reverse()).dispose();
   }
