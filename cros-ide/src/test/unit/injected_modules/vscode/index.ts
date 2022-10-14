@@ -8,6 +8,7 @@ import * as workspace from './workspace';
 
 export {CancellationTokenSource} from './cancellation_token';
 export {CommentMode} from './comment_mode';
+export {CommentThreadCollapsibleState} from './comment_thread_collapsible_state';
 export {ConfigurationTarget} from './configuration';
 export {Disposable} from './disposable';
 export {EventEmitter} from './event';

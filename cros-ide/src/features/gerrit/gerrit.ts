@@ -10,6 +10,7 @@ import * as gitDocument from '../../services/git_document';
 import * as bgTaskStatus from '../../ui/bg_task_status';
 import * as api from './api';
 import * as git from './git';
+import * as helpers from './helpers';
 import * as https from './https';
 
 export function activate(
@@ -101,20 +102,16 @@ class Gerrit {
         this.showErrorMessage('Git directory not found');
         return;
       }
-      const changeThreads = partitionThreads(originalChangeComments);
+      const combinedChangeThreads = partitionThreads(originalChangeComments);
+      const partitionedThreads = partitionByCommitId(combinedChangeThreads);
 
-      // We assume that: 1) all comments are on the same commit_id
-      // 2) and that it is available locally. Neither assumption is true.
-      // TODO(b:216048068): Support comments on multiple patchsets.
-      // TODO(b:216048068): Handle original commit not available locally.
-      const originalCommitId = Gerrit.getAnyCommitId(changeThreads);
-      if (!originalCommitId) {
-        this.showErrorMessage('Did not find any commit id.');
-        return;
+      this.clearCommentThreads();
+
+      for (const [originalCommitId, changeThreads] of partitionedThreads) {
+        // TODO(b:216048068): Handle original commit not available locally.
+        await shiftChangeComments(gitDir, originalCommitId, changeThreads);
+        this.displayCommentThreads(this.controller, changeThreads, gitDir);
       }
-
-      await shiftChangeComments(gitDir, originalCommitId, changeThreads);
-      this.updateCommentThreads(this.controller, changeThreads, gitDir);
     } catch (err) {
       this.showErrorMessage(`Failed to add Gerrit comments: ${err}`);
       return;
@@ -131,26 +128,16 @@ class Gerrit {
     this.outputChannel.appendLine(message);
   }
 
-  // Temporary method to extract any commit id.
-  private static getAnyCommitId(
-    changeThreads: ChangeThreads
-  ): string | undefined {
-    for (const [, threads] of Object.entries(changeThreads)) {
-      for (const thread of threads) {
-        if (thread[0].commit_id) return thread[0].commit_id;
-      }
-    }
-    return undefined;
+  clearCommentThreads() {
+    this.commentThreads.forEach(commentThread => commentThread.dispose());
+    this.commentThreads.length = 0;
   }
 
-  updateCommentThreads(
+  displayCommentThreads(
     controller: vscode.CommentController,
     changeThreads: ChangeThreads,
     gitDir: string
   ) {
-    this.commentThreads.forEach(commentThread => commentThread.dispose());
-    this.commentThreads.length = 0;
-
     for (const [filepath, threads] of Object.entries(changeThreads)) {
       threads.forEach(thread => {
         let uri;
@@ -215,6 +202,16 @@ function partitionThreads(changeComments: api.ChangeComments): ChangeThreads {
     changeThreads[filePath] = partitionCommentArray(comments);
   }
   return changeThreads;
+}
+
+function partitionByCommitId(
+  changeThread: ChangeThreads
+): [string, ChangeThreads][] {
+  return helpers.splitPathMap(
+    changeThread,
+    // TODO(b:216048068): make sure we have the commit_id
+    (thread: Thread) => thread[0].commit_id!
+  );
 }
 
 /**

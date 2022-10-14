@@ -136,6 +136,58 @@ const SIMPLE_COMMENT_GERRIT_JSON = (commitId1: string) => `)]}
 }
 `;
 
+// Based on crrev.com/c/3954724, important bits are:
+//   "Comment on termios" on line 15 (1-base) of the first patch set
+//   "Comment on unistd" on line 18 (1-base) of the second patch set
+const TWO_PATCHSETS_GERRIT_JSON = (commitId1: string, commitId2: string) => `)]}
+{
+  "cryptohome/cryptohome.cc": [
+    {
+      "author": {
+        "_account_id": 1355869,
+        "name": "Tomasz Tylenda",
+        "email": "ttylenda@chromium.org",
+        "avatars": [
+          {
+            "url": "https://lh3.googleusercontent.com/-9a8_POyNIEg/AAAAAAAAAAI/AAAAAAAAAAA/XD1eDsycuww/s32-p/photo.jpg",
+            "height": 32
+          }
+        ]
+      },
+      "change_message_id": "d2e2365a4832e8d38a99d4d6d24fc4937dddb6de",
+      "unresolved": true,
+      "patch_set": 1,
+      "id": "3d3c9023_4550daf0",
+      "line": 15,
+      "updated": "2022-10-14 05:46:56.000000000",
+      "message": "Comment on termios",
+      "commit_id": "${commitId1}"
+    },
+    {
+      "author": {
+        "_account_id": 1355869,
+        "name": "Tomasz Tylenda",
+        "email": "ttylenda@chromium.org",
+        "avatars": [
+          {
+            "url": "https://lh3.googleusercontent.com/-9a8_POyNIEg/AAAAAAAAAAI/AAAAAAAAAAA/XD1eDsycuww/s32-p/photo.jpg",
+            "height": 32
+          }
+        ]
+      },
+      "change_message_id": "4e12822a1acbaefaf43a4e63504cf55fd044b3fa",
+      "unresolved": true,
+      "patch_set": 2,
+      "id": "9845ccec_3e772fd4",
+      "line": 18,
+      "updated": "2022-10-14 05:49:02.000000000",
+      "message": "Comment on unistd",
+      "commit_id": "${commitId2}"
+    }
+  ]
+}
+`;
+
 //TODO(b:253536935): Move Git functions to a common location.
 
 async function gitInit(root: string) {
@@ -159,14 +211,22 @@ async function gitCheckout(
   await commonUtil.execOrThrow('git', args, {cwd: root});
 }
 
-async function gitCommit(root: string, message: string): Promise<string> {
-  await commonUtil.execOrThrow(
-    'git',
-    ['commit', '--allow-empty', '-m', message],
-    {
-      cwd: root,
-    }
-  );
+async function gitCommit(
+  root: string,
+  message: string,
+  opts?: {amend?: boolean; all?: boolean}
+): Promise<string> {
+  const args = [
+    'commit',
+    '--allow-empty',
+    ...cond(opts?.amend, '--amend'),
+    ...cond(opts?.all, '--all'),
+    '-m',
+    message,
+  ];
+  await commonUtil.execOrThrow('git', args, {
+    cwd: root,
+  });
   return (
     await commonUtil.execOrThrow('git', ['rev-parse', 'HEAD'], {cwd: root})
   ).stdout.trim();
@@ -232,5 +292,105 @@ describe('Gerrit', () => {
     expect(callData.args[2][0].body).toEqual(
       'Unresolved comment on the added line.'
     );
+  });
+
+  // Tests, that when a Gerrit change contains multiple patchsets,
+  // comments from distinct patchsets are repositioned correctly.
+  //
+  // To test a single aspect of the algorithm (handling multiple patchsets),
+  // the comments do not overlap with changes. This way changes to
+  // the repositioning algorithm will not affect this test.
+  it('repositions comments from two patch sets', async () => {
+    const root = tempDir.path;
+    const abs = (relative: string) => path.join(root, relative);
+
+    // Create a file that we'll be changing.
+    await gitInit(root);
+    await testing.putFiles(root, {
+      'cryptohome/cryptohome.cc':
+        'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\n' +
+        'Line 7\n' +
+        'Line 8\nLine 9\nLine 10\nLine 11\nLine 12\nLine 13\nLine 14\nLine 15\n',
+    });
+    await gitAddAll(root);
+    await gitCommit(root, 'Initial file');
+    await gitCheckout(root, 'cros/main', {createBranch: true});
+    await gitCheckout(root, 'main');
+
+    // First review patchset.
+    const changeId = 'I6adb56bd6f1998dde6b24af26881095292ac2620';
+    await testing.putFiles(root, {
+      'cryptohome/cryptohome.cc':
+        'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\n' +
+        'ADDED 1.1\nADDED 1.2\nLine 7\n' +
+        'Line 8\nLine 9\nLine 10\nLine 11\nLine 12\nLine 13\nLine 14\nLine 15\n',
+    });
+    const commitId1 = await gitCommit(
+      root,
+      `Change\nChange-Id: ${changeId}\n`,
+      {all: true}
+    );
+
+    // Second review patchset.
+    await testing.putFiles(root, {
+      'cryptohome/cryptohome.cc':
+        'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\n' +
+        'ADDED 1.1\nADDED 1.2\nLine 7\nADDED 2.1\nADDED 2.2\n' +
+        'Line 8\nLine 9\nLine 10\nLine 11\nLine 12\nLine 13\nLine 14\nLine 15\n',
+    });
+    const commitId2 = await gitCommit(
+      root,
+      `Amended\nChange-Id: ${changeId}\n`,
+      {
+        amend: true,
+        all: true,
+      }
+    );
+
+    const commentController = jasmine.createSpyObj<vscode.CommentController>(
+      'commentController',
+      ['createCommentThread']
+    );
+
+    // Without it we get an error setting fields on an undefined object.
+    commentController.createCommentThread.and.returnValue(
+      {} as vscode.CommentThread
+    );
+
+    const gerrit = new Gerrit(
+      commentController,
+      vscode.window.createOutputChannel('gerrit')
+    );
+
+    const document = {
+      fileName: abs('cryptohome/cryptohome.cc'),
+    } as vscode.TextDocument;
+
+    spyOn(https, 'get')
+      .withArgs(
+        `https://chromium-review.googlesource.com/changes/${changeId}/comments`
+      )
+      .and.returnValue(
+        Promise.resolve(TWO_PATCHSETS_GERRIT_JSON(commitId1, commitId2))
+      );
+
+    await expectAsync(gerrit.showComments(document)).toBeResolved();
+
+    expect(commentController.createCommentThread).toHaveBeenCalledTimes(2);
+    // Order of calls is irrelevant, but since our algorithm is deterministic,
+    // we can rely on it for simplicity.
+    const callData = commentController.createCommentThread.calls.all();
+
+    expect(callData[0].args[0].fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    // The original comment is on line 15. It is shifted by 2 lines (+2)
+    // and represented in zero-based (-1).
+    expect(callData[0].args[1].start.line).toEqual(16);
+    expect(callData[0].args[2][0].body).toEqual('Comment on termios');
+
+    expect(callData[1].args[0].fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    // The comment on the second patchset stays on line 18,
+    // but we convert 1-based number to 0-based.
+    expect(callData[1].args[1].start.line).toEqual(17);
+    expect(callData[1].args[2][0].body).toEqual('Comment on unistd');
   });
 });
