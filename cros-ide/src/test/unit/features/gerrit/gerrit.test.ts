@@ -163,6 +163,12 @@ describe('Gerrit', () => {
       ['createCommentThread']
     );
 
+    // Without it we get an error setting fields on an undefined object,
+    // which causes flakiness.
+    commentController.createCommentThread.and.returnValue(
+      {} as vscode.CommentThread
+    );
+
     const gerrit = new Gerrit(
       commentController,
       vscode.window.createOutputChannel('gerrit')
@@ -174,7 +180,7 @@ describe('Gerrit', () => {
 
     spyOn(https, 'get')
       .withArgs(
-        `https://chromium-review.googlesource.com/changes/I23f50ecfe44ee28972aa640e1fa82ceabcc706a8/comments`
+        'https://chromium-review.googlesource.com/changes/I23f50ecfe44ee28972aa640e1fa82ceabcc706a8/comments'
       )
       .and.returnValue(Promise.resolve(SIMPLE_COMMENT_GERRIT_JSON(commitId)));
 
