@@ -74,10 +74,25 @@ export class Chromiumos implements vscode.Disposable {
       }
     );
 
+    const gitDirsWatcher = new services.GitDirsWatcher(this.root);
+
+    // Spellchecker is a corner case. It requires access to CrOS source
+    // directory, which is detected by the presence .repo subdirectory, but
+    // doesn't need chroot subdirectory to exist.
+    if (config.underDevelopment.triciumSpellchecker.get()) {
+      this.featureName = 'spellchecker';
+      await tricium.activateSpellchecker(
+        ephemeralContext,
+        this.statusManager,
+        this.root,
+        this.cipdRepository,
+        gitDirsWatcher
+      );
+    }
+
     const chrootService = services.chromiumos.ChrootService.maybeCreate(
       this.root
     );
-    const gitDirsWatcher = new services.GitDirsWatcher(this.root);
 
     if (chrootService) {
       this.featureName = 'cppCodeCompletion';
@@ -97,17 +112,6 @@ export class Chromiumos implements vscode.Disposable {
         chrootService,
         this.cipdRepository
       );
-
-      if (config.underDevelopment.triciumSpellchecker.get()) {
-        this.featureName = 'spellchecker';
-        await tricium.activateSpellchecker(
-          ephemeralContext,
-          this.statusManager,
-          this.root,
-          this.cipdRepository,
-          gitDirsWatcher
-        );
-      }
 
       if (config.underDevelopment.testCoverage.get()) {
         this.featureName = 'testCoverage';
