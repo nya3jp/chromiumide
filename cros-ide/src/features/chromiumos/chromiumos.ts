@@ -67,13 +67,7 @@ export class Chromiumos implements vscode.Disposable {
 
   // TODO(oka): Cancel ongoing activation when this class is disposed.
   private async activate(context: Context) {
-    const ephemeralContext: vscode.ExtensionContext = Object.assign(
-      {},
-      context,
-      {
-        subscriptions: this.subscriptions,
-      }
-    );
+    const ephemeralContext = newContext(context, this.subscriptions);
 
     const gitDirsWatcher = new services.GitDirsWatcher(this.root);
 
@@ -134,4 +128,29 @@ export class Chromiumos implements vscode.Disposable {
       targetBoard.activate(ephemeralContext, chrootService);
     }
   }
+}
+
+// We cannot use spread syntax for context (b:253964293)
+function newContext(
+  context: Context,
+  subscriptions: vscode.Disposable[]
+): vscode.ExtensionContext {
+  return {
+    environmentVariableCollection: context.environmentVariableCollection,
+    extension: context.extension,
+    extensionMode: context.extensionMode,
+    extensionPath: context.extensionPath,
+    extensionUri: context.extensionUri,
+    globalState: context.globalState,
+    globalStoragePath: context.globalStoragePath,
+    globalStorageUri: context.globalStorageUri,
+    logPath: context.logPath,
+    logUri: context.logUri,
+    secrets: context.secrets,
+    storagePath: context.storagePath,
+    storageUri: context.storageUri,
+    subscriptions,
+    workspaceState: context.workspaceState,
+    asAbsolutePath: context.asAbsolutePath.bind(context),
+  };
 }
