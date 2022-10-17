@@ -35,6 +35,18 @@ function range(
   };
 }
 
+type CommentInfoLike = {
+  line?: any;
+  range?: any;
+  message?: any;
+};
+
+function thread(data: CommentInfoLike): gerrit.Thread {
+  const t = new gerrit.Thread([data as api.CommentInfo]);
+  t.initializeLocation();
+  return t;
+}
+
 const testHunks: git.Hunks = {
   'foo.ts': [
     // First line added.
@@ -52,36 +64,36 @@ const testHunks: git.Hunks = {
 
 describe('Gerrit support', () => {
   it('updates change comments', () => {
-    // changeComments are modified in place
-    const changeComments = {
+    const changeComments: gerrit.ChangeThreads = {
       'foo.ts': [
-        [{message: 'foo'}], // comment on a file
-        [{range: range(1, 1, 1, 2), line: 1}], // comment on characters
-        [{line: 1}], // comment on a line
-        [{line: 3}], // comment on a removed line
-        [{line: 4}],
-        [{line: 5}], // comment in a removed hunk
-        [{line: 7}],
-        [{line: 8}],
+        thread({message: 'foo'}), // comment on a file
+        thread({range: range(1, 1, 1, 2), line: 1}), // comment on characters
+        thread({line: 1}), // comment on a line
+        thread({line: 3}), // comment on a removed line
+        thread({line: 4}),
+        thread({line: 5}), // comment in a removed hunk
+        thread({line: 7}),
+        thread({line: 8}),
         // {range: range(3, 1, 6, 2), line: 1}, // comment across multiple hunks.
       ],
-      'bar.ts': [[{line: 1}]],
+      'bar.ts': [thread({line: 1})],
       // TODO(teramon): Add other test cases
-    } as unknown as gerrit.ChangeThreads;
+    };
 
+    const oc = jasmine.objectContaining;
     const wantComments = {
       'foo.ts': [
-        [{message: 'foo'}], // comment on a file
-        [{range: range(2, 1, 2, 2), line: 2}], // comment on characters
-        [{line: 2}], // comment on a line
-        [{line: 3}], // comment on a removed line
-        [{line: 4}],
-        [{line: 5}], // comment in a removed hunk
-        [{line: 5}],
-        [{line: 6}],
+        oc({comments: [oc({message: 'foo'})]}), // comment on a file
+        oc({range: range(2, 1, 2, 2), line: 2}), // comment on characters
+        oc({line: 2}), // comment on a line
+        oc({line: 3}), // comment on a removed line
+        oc({line: 4}),
+        oc({line: 5}), // comment in a removed hunk
+        oc({line: 5}),
+        oc({line: 6}),
         // {range: range(3, 1, 5, 2), line: 1}, // comment across multiple hunks.
       ],
-      'bar.ts': [[{line: 2}]],
+      'bar.ts': [oc({line: 2})],
       // TODO(teramon): Add other test cases
     } as unknown as gerrit.ChangeThreads;
 

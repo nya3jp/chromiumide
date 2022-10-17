@@ -115,6 +115,12 @@ class Gerrit {
       this.clearCommentThreads();
 
       for (const [originalCommitId, changeThreads] of partitionedThreads) {
+        for (const [, threads] of Object.entries(changeThreads)) {
+          for (const thread of threads) {
+            thread.initializeLocation();
+          }
+        }
+
         // TODO(b:216048068): Handle original commit not available locally.
         await shiftChangeComments(gitDir, originalCommitId, changeThreads);
         this.displayCommentThreads(this.controller, changeThreads, gitDir);
@@ -171,11 +177,10 @@ class Gerrit {
             query: 'HEAD',
           });
           // Compensate the difference between commit message on Gerrit and Terminal
-          const commentInfo = thread[0];
-          if (commentInfo.line !== undefined && commentInfo.line > 6) {
-            shiftComment(commentInfo, -6);
-          } else if (commentInfo.line !== undefined) {
-            shiftComment(commentInfo, -1 * (commentInfo.line - 1));
+          if (thread.line !== undefined && thread.line > 6) {
+            shiftThread(thread, -6);
+          } else if (thread.line !== undefined) {
+            shiftThread(thread, -1 * (thread.line - 1));
           }
           this.commentThreads.push(
             createCommentThread(controller, thread, uri)
@@ -186,7 +191,12 @@ class Gerrit {
   }
 }
 
-function partitionCommentArray(comments: api.CommentInfo[]): Thread[] {
+function partitionCommentArray(
+  apiComments: readonly api.CommentInfo[]
+): Thread[] {
+  // Copy the input to avoid modifying data received from Gerrit API.
+  const comments = [...apiComments];
+
   // Sort the input to make sure we see ids before they are used in in_reply_to.
   comments.sort((c1, c2) => c1.updated.localeCompare(c2.updated));
 
@@ -199,10 +209,10 @@ function partitionCommentArray(comments: api.CommentInfo[]): Thread[] {
     // The second case should not happen.
     let idx = c.in_reply_to ? threadIndex.get(c.in_reply_to) : undefined;
     if (idx !== undefined) {
-      threads[idx].push(c);
+      threads[idx].comments.push(c);
     } else {
       // push() returns the new length of the modiified array
-      idx = threads.push([c]) - 1;
+      idx = threads.push(new Thread([c])) - 1;
     }
     threadIndex.set(c.id, idx);
   }
@@ -225,10 +235,8 @@ function partitionThreads(changeComments: api.ChangeComments): ChangeThreads {
 function partitionByCommitId(
   changeThread: ChangeThreads
 ): [string, ChangeThreads][] {
-  return helpers.splitPathMap(
-    changeThread,
-    // TODO(b:216048068): make sure we have the commit_id
-    (thread: Thread) => thread[0].commit_id!
+  return helpers.splitPathMap(changeThread, (thread: Thread) =>
+    thread.commitId()
   );
 }
 
@@ -270,30 +278,25 @@ export function updateChangeComments(
       for (const [filePath, threads] of Object.entries(changeComments)) {
         if (filePath === hunkFilePath) {
           threads.forEach(thread => {
-            const commentInfo = thread[0];
             if (
               // comment outside the hunk
-              commentWithinRange(commentInfo, hunkEndLine, Infinity)
+              threadWithinRange(thread, hunkEndLine, Infinity)
             ) {
-              shiftComment(commentInfo, hunkDelta);
+              shiftThread(thread, hunkDelta);
             } else if (
               // comment within the hunk
-              commentWithinRange(
-                commentInfo,
-                hunk.originalStartLine,
-                hunkEndLine
-              )
+              threadWithinRange(thread, hunk.originalStartLine, hunkEndLine)
             ) {
               // Ensure the comment within the hunk still resides in the
               // hunk. If the hunk removes all the lines, the comment will
               // be moved to the line preceding the hunk.
-              if (hunkDelta < 0 && commentInfo.line !== undefined) {
+              if (hunkDelta < 0 && thread.line !== undefined) {
                 const protrusion =
-                  commentInfo.line -
+                  thread.line -
                   (hunk.originalStartLine + hunk.currentLineSize) +
                   1;
                 if (protrusion > 0) {
-                  shiftComment(commentInfo, -1 * protrusion);
+                  shiftThread(thread, -1 * protrusion);
                 }
               }
             }
@@ -308,36 +311,73 @@ export function updateChangeComments(
  * Returns whether the comment is in the range between
  * minimum (inclusive) and maximum (exclusive).
  */
-function commentWithinRange(
-  commentInfo: api.CommentInfo,
+function threadWithinRange(
+  thread: Thread,
   minimum: number,
   maximum: number
 ): boolean {
   return (
-    commentInfo.line !== undefined &&
-    commentInfo.line >= minimum &&
-    commentInfo.line < maximum
+    thread.line !== undefined && thread.line >= minimum && thread.line < maximum
   );
 }
 
-function shiftComment(commentInfo: api.CommentInfo, delta: number) {
+function shiftThread(thread: Thread, delta: number) {
   if (
     // Comments for characters
-    commentInfo.range !== undefined &&
-    commentInfo.line !== undefined
+    thread.range !== undefined &&
+    thread.line !== undefined
   ) {
-    commentInfo.range.start_line += delta;
-    commentInfo.range.end_line += delta;
-    commentInfo.line += delta;
+    thread.range.start_line += delta;
+    thread.range.end_line += delta;
+    thread.line += delta;
   } else if (
     // Comments for lines
-    commentInfo.line !== undefined
+    thread.line !== undefined
   ) {
-    commentInfo.line += delta;
+    thread.line += delta;
   }
 }
 
-type Thread = api.CommentInfo[];
+// TODO(b:216048068): connect Thread and vscode.CommentThread
+export class Thread {
+  /** Copy of comments[0].line to be used during repositioning. */
+  line?: number;
+
+  /** Copy of comments[0].range to be used during repositioning. */
+  range?: {
+    start_line: number;
+    start_character: number;
+    end_line: number;
+    end_character: number;
+  };
+
+  constructor(readonly comments: api.CommentInfo[]) {}
+
+  /** Copy location from first comment into the thread. */
+  // TODO(b:216048068): try to remove this method from the public api of this class.
+  initializeLocation() {
+    this.line = this.comments[0].line;
+    if (this.comments[0].range) {
+      this.range = {
+        start_line: this.comments[0].range.start_line,
+        start_character: this.comments[0].range.start_character,
+        end_line: this.comments[0].range.end_line,
+        end_character: this.comments[0].range.end_character,
+      };
+    } else {
+      this.range = undefined;
+    }
+  }
+
+  commitId(): string {
+    // TODO(b:216048068): make sure we have the commit_id
+    return this.comments[0].commit_id!;
+  }
+
+  lastComment(): api.CommentInfo {
+    return this.comments[this.comments.length - 1];
+  }
+}
 
 /**
  * Like ChangeComments, but the comments are partitioned into threads
@@ -395,22 +435,16 @@ function createCommentThread(
   dataUri: vscode.Uri
 ): vscode.CommentThread {
   let dataRange;
-  const commentInfo = thread[0];
-  if (commentInfo.range !== undefined) {
+  if (thread.range !== undefined) {
     dataRange = new vscode.Range(
-      commentInfo.range.start_line - 1,
-      commentInfo.range.start_character,
-      commentInfo.range.end_line - 1,
-      commentInfo.range.end_character
+      thread.range.start_line - 1,
+      thread.range.start_character,
+      thread.range.end_line - 1,
+      thread.range.end_character
     );
-  } else if (commentInfo.line !== undefined) {
+  } else if (thread.line !== undefined) {
     // comments for a line
-    dataRange = new vscode.Range(
-      commentInfo.line - 1,
-      0,
-      commentInfo.line - 1,
-      0
-    );
+    dataRange = new vscode.Range(thread.line - 1, 0, thread.line - 1, 0);
   } else {
     // comments for the entire file
     dataRange = new vscode.Range(0, 0, 0, 0);
@@ -418,10 +452,10 @@ function createCommentThread(
   const vscodeThread = controller.createCommentThread(
     dataUri,
     dataRange,
-    thread.map(c => toVscodeComment(c))
+    thread.comments.map(c => toVscodeComment(c))
   );
   // TODO(b:216048068): We should indicate resolved/unresolved with UI style.
-  const unresolved = thread[thread.length - 1].unresolved;
+  const unresolved = thread.lastComment().unresolved;
   // Unresolved can be undefined according the the API documentation,
   // but Gerrit always sent it on the changes the we inspected.
   vscodeThread.label = unresolved ? 'Unresolved' : 'Resolved';

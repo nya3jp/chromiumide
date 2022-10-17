@@ -55,10 +55,16 @@ describe('partitionThreads', () => {
     const oc = jasmine.objectContaining;
     const want = {
       'file/path.cc': [
-        [oc({id: 'thread_1'}), oc({id: 'reply_1_1'}), oc({id: 'reply_1_2'})],
-        [oc({id: 'thread_2'})],
-        [oc({id: 'thread_3'}), oc({id: 'reply_3_1'})],
-        [oc({id: 'reply_to_nonexisting'})],
+        oc({
+          comments: [
+            oc({id: 'thread_1'}),
+            oc({id: 'reply_1_1'}),
+            oc({id: 'reply_1_2'}),
+          ],
+        }),
+        oc({comments: [oc({id: 'thread_2'})]}),
+        oc({comments: [oc({id: 'thread_3'}), oc({id: 'reply_3_1'})]}),
+        oc({comments: [oc({id: 'reply_to_nonexisting'})]}),
       ],
     };
 
