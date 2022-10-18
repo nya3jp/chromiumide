@@ -268,9 +268,16 @@ describe('Gerrit', () => {
       {} as vscode.CommentThread
     );
 
+    const statusBar = vscode.window.createStatusBarItem();
+    let statusBarShown = false;
+    statusBar.show = () => {
+      statusBarShown = true;
+    };
+
     const gerrit = new Gerrit(
       commentController,
-      vscode.window.createOutputChannel('gerrit')
+      vscode.window.createOutputChannel('gerrit'),
+      statusBar
     );
 
     const document = {
@@ -292,6 +299,9 @@ describe('Gerrit', () => {
     expect(callData.args[2][0].body).toEqual(
       'Unresolved comment on the added line.'
     );
+
+    expect(statusBarShown).toBeTrue();
+    expect(statusBar.text).toEqual('$(comment) 1');
   });
 
   // Tests, that when a Gerrit change contains multiple patchsets,
@@ -359,7 +369,8 @@ describe('Gerrit', () => {
 
     const gerrit = new Gerrit(
       commentController,
-      vscode.window.createOutputChannel('gerrit')
+      vscode.window.createOutputChannel('gerrit'),
+      vscode.window.createStatusBarItem()
     );
 
     const document = {

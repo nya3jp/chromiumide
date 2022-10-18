@@ -3,4 +3,5 @@
 // found in the LICENSE file.
 
 export {createOutputChannel} from './output_channel';
+export {createStatusBarItem} from '../status_bar';
 export const visibleTextEditors = Object.freeze([]);

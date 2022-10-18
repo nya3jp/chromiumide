@@ -15,6 +15,7 @@ export {EventEmitter} from './event';
 export {ExtensionMode} from './extension_mode';
 export {Position} from './position';
 export {Range} from './range';
+export {StatusBarAlignment, StatusBarItem} from './status_bar';
 export {Uri} from './uri';
 export {extensions, window, workspace};
 

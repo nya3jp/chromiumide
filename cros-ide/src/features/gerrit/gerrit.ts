@@ -43,7 +43,13 @@ export function activate(
 
   context.subscriptions.push(controller);
 
-  const gerrit = new Gerrit(controller, outputChannel);
+  const statusBar = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Left,
+    10 // puts this item left of clangd
+  );
+  statusBar.command = 'workbench.action.focusCommentsPanel';
+
+  const gerrit = new Gerrit(controller, outputChannel, statusBar);
 
   if (vscode.window.activeTextEditor) {
     const document = vscode.window.activeTextEditor.document;
@@ -73,7 +79,8 @@ class Gerrit {
 
   constructor(
     private readonly controller: vscode.CommentController,
-    private readonly outputChannel: vscode.OutputChannel
+    private readonly outputChannel: vscode.OutputChannel,
+    private readonly statusBar: vscode.StatusBarItem
   ) {}
 
   // TODO(b:216048068): Do not retrieve data unnecessarily if we only
@@ -111,6 +118,17 @@ class Gerrit {
         // TODO(b:216048068): Handle original commit not available locally.
         await shiftChangeComments(gitDir, originalCommitId, changeThreads);
         this.displayCommentThreads(this.controller, changeThreads, gitDir);
+      }
+
+      const nThreads = this.commentThreads.length;
+      if (nThreads > 0) {
+        // TODO(b:216048068): show number of unresolved comments rather than the total
+        this.statusBar.text = `$(comment) ${nThreads}`;
+        this.statusBar.tooltip =
+          nThreads > 1 ? `${nThreads} Gerrit comments` : '1 Gerrit comment';
+        this.statusBar.show();
+      } else {
+        this.statusBar.hide();
       }
     } catch (err) {
       this.showErrorMessage(`Failed to add Gerrit comments: ${err}`);
