@@ -173,6 +173,10 @@ class Spellchecker {
       return;
     }
 
+    if (path.relative(this.chromiumosRoot, doc.fileName).startsWith('..')) {
+      return;
+    }
+
     // TODO(b:217287367): Cancel the operation if the active editor changes.
     const results = await this.executor.checkFile(
       this.chromiumosRoot,
