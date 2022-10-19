@@ -36,6 +36,7 @@ export async function activate(
   statusManager: bgTaskStatus.StatusManager,
   chromiumosRoot: string,
   cipdRepository: cipd.CipdRepository,
+  textEditorsWatcher: services.TextEditorsWatcher,
   gitDirsWatcher: services.GitDirsWatcher
 ) {
   const outputChannel = vscode.window.createOutputChannel('CrOS IDE: Tricium');
@@ -60,6 +61,7 @@ export async function activate(
     new executor.Executor(triciumSpellchecker, outputChannel),
     statusManager,
     chromiumosRoot,
+    textEditorsWatcher,
     gitDirsWatcher
   );
   spellchecker.subscribeToDocumentChanges(context);
@@ -95,6 +97,7 @@ class Spellchecker {
     private readonly executor: executor.Executor,
     private readonly statusManager: bgTaskStatus.StatusManager,
     private readonly chromiumosRoot: string,
+    private readonly textEditorsWatcher: services.TextEditorsWatcher,
     private readonly gitDirsWatcher: services.GitDirsWatcher
   ) {
     this.diagnosticCollection =
@@ -105,22 +108,26 @@ class Spellchecker {
   /** Attach spellchecker to editor events. */
   subscribeToDocumentChanges(context: vscode.ExtensionContext): void {
     if (vscode.window.activeTextEditor) {
-      void this.refreshFileDiagnostics(vscode.window.activeTextEditor.document);
+      void this.refreshFileDiagnostics(
+        vscode.window.activeTextEditor.document.uri
+      );
     }
     context.subscriptions.push(
-      vscode.workspace.onDidOpenTextDocument(doc => {
-        void this.refreshFileDiagnostics(doc);
+      this.textEditorsWatcher.onDidActivate((doc: vscode.TextDocument) => {
+        void this.refreshFileDiagnostics(doc.uri);
       })
     );
 
     context.subscriptions.push(
       vscode.workspace.onDidSaveTextDocument(doc =>
-        this.refreshFileDiagnostics(doc)
+        this.refreshFileDiagnostics(doc.uri)
       )
     );
 
     context.subscriptions.push(
-      vscode.workspace.onDidCloseTextDocument(doc => this.delete(doc.uri))
+      this.textEditorsWatcher.onDidClose((doc: vscode.TextDocument) =>
+        this.delete(doc.uri)
+      )
     );
 
     // The code below triggers spellchecker on the commit message.
@@ -166,23 +173,21 @@ class Spellchecker {
   }
 
   /** Execute Tricium binary and refreshe diagnostics for the document. */
-  private async refreshFileDiagnostics(
-    doc: vscode.TextDocument
-  ): Promise<void> {
-    if (doc.uri.scheme !== 'file') {
+  private async refreshFileDiagnostics(uri: vscode.Uri): Promise<void> {
+    if (uri.scheme !== 'file') {
       return;
     }
 
-    if (path.relative(this.chromiumosRoot, doc.fileName).startsWith('..')) {
+    if (path.relative(this.chromiumosRoot, uri.fsPath).startsWith('..')) {
       return;
     }
 
     // TODO(b:217287367): Cancel the operation if the active editor changes.
     const results = await this.executor.checkFile(
       this.chromiumosRoot,
-      doc.uri.fsPath
+      uri.fsPath
     );
-    return this.refreshDiagnostics(doc.uri, results);
+    return this.refreshDiagnostics(uri, results);
   }
 
   private async refreshDiagnostics(

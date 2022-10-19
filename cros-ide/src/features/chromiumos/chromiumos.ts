@@ -77,11 +77,13 @@ export class Chromiumos implements vscode.Disposable {
     // doesn't need chroot subdirectory to exist.
     if (config.underDevelopment.triciumSpellchecker.get()) {
       this.featureName = 'spellchecker';
+      const textEditorsWatcher = new services.TextEditorsWatcher();
       await tricium.activateSpellchecker(
         ephemeralContext,
         this.statusManager,
         this.root,
         this.cipdRepository,
+        textEditorsWatcher,
         gitDirsWatcher
       );
     }
