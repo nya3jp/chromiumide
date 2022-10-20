@@ -13,7 +13,7 @@ import * as parser from './parser';
 export class GtestFile implements vscode.Disposable {
   private readonly controller: vscode.TestController;
   private readonly cases = new Map<vscode.TestItem, GtestCase>();
-  private readonly item?: vscode.TestItem;
+  private readonly item: vscode.TestItem;
 
   private constructor(
     cfg: Config,
@@ -59,6 +59,34 @@ export class GtestFile implements vscode.Disposable {
 
     if (this.item) {
       this.controller.items.delete(this.item.id);
+    }
+  }
+
+  /**
+   * Executes f on all the test cases matching the request.
+   */
+  async forEachMatching(
+    request: vscode.TestRunRequest,
+    f: (testCase: GtestCase) => Thenable<void>
+  ) {
+    if (request.exclude?.includes(this.item)) {
+      return;
+    }
+
+    const runAll = request.include?.includes(this.item);
+
+    for (const testCase of this.cases.values()) {
+      if (
+        !runAll &&
+        request.include &&
+        !request.include.includes(testCase.item)
+      ) {
+        continue;
+      }
+      if (request.exclude?.includes(testCase.item)) {
+        continue;
+      }
+      await f(testCase);
     }
   }
 }

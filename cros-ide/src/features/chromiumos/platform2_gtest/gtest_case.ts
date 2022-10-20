@@ -18,7 +18,7 @@ export class GtestCase implements vscode.Disposable {
   constructor(
     cfg: Config,
     private readonly parent: vscode.TestItem,
-    uri: vscode.Uri,
+    readonly uri: vscode.Uri,
     range: vscode.Range,
     private readonly suite: string,
     private readonly name: string
@@ -31,7 +31,7 @@ export class GtestCase implements vscode.Disposable {
     this.parent.children.add(this.item);
   }
 
-  private get testName() {
+  get testName() {
     return `${this.suite}.${this.name}`;
   }
 }

@@ -5,6 +5,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {Config} from './config';
+import {GtestCase} from './gtest_case';
 import {GtestFile} from './gtest_file';
 
 /**
@@ -84,5 +85,17 @@ export class GtestWorkspace implements vscode.Disposable {
       !path.relative(this.cfg.platform2, e.fileName).startsWith('..') &&
       e.fileName.match(/_(unit)?test.(cc|cpp)$/)
     );
+  }
+
+  /**
+   * Executes f on all the test cases matching the request.
+   */
+  async forEachMatching(
+    request: vscode.TestRunRequest,
+    f: (testCase: GtestCase) => Thenable<void>
+  ) {
+    for (const testFile of this.uriToGtestFile.values()) {
+      await testFile.forEachMatching(request, f);
+    }
   }
 }

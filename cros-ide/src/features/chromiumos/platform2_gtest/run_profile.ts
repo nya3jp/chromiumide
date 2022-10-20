@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import * as ideUtil from '../../../ide_util';
 import {Config} from './config';
 import {GtestWorkspace} from './gtest_workspace';
+import {Runner} from './runner';
 
 /**
  * Handles requests to run tests.
@@ -34,6 +35,11 @@ export class RunProfile implements vscode.Disposable {
         vscode.TestRunProfileKind.Run,
         this.runHandler.bind(this, controller),
         /* isDefault = */ true
+      ),
+      controller.createRunProfile(
+        'GTest (Debug)',
+        vscode.TestRunProfileKind.Debug,
+        this.runHandler.bind(this, controller)
       )
     );
   }
@@ -57,10 +63,17 @@ export class RunProfile implements vscode.Disposable {
 
     const run = controller.createTestRun(request);
 
-    await vscode.window.showInformationMessage(
-      'TODO(oka): run tests in the workspace according to the request',
-      'OK'
+    await vscode.commands.executeCommand('testing.showMostRecentOutput');
+
+    const runner = new Runner(
+      this.cfg.chrootService,
+      request,
+      cancellation,
+      run,
+      board,
+      this.gtestWorkspace
     );
+    await runner.run();
 
     run.end();
   }
