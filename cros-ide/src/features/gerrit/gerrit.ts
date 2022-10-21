@@ -289,30 +289,27 @@ export function updateChangeComments(
   hunksAllFiles: git.Hunks,
   changeComments: ChangeThreads
 ) {
-  for (const [hunkFilePath, hunksEachFile] of Object.entries(hunksAllFiles)) {
-    for (const hunk of hunksEachFile) {
-      for (const [filePath, threads] of Object.entries(changeComments)) {
-        if (filePath === hunkFilePath) {
-          threads.forEach(thread => {
-            if (threadWithinRange(thread, hunk.originalEnd, Infinity)) {
-              // comment outside the hunk
-              shiftThread(thread, hunk.sizeDelta);
-            } else if (
-              // comment within the hunk
-              threadWithinRange(thread, hunk.originalStart, hunk.originalEnd)
-            ) {
-              // Ensure the comment within the hunk still resides in the
-              // hunk. If the hunk removes all the lines, the comment will
-              // be moved to the line preceding the hunk.
-              if (hunk.sizeDelta < 0 && thread.line !== undefined) {
-                const protrusion =
-                  thread.line - (hunk.originalStart + hunk.currentSize) + 1;
-                if (protrusion > 0) {
-                  shiftThread(thread, -1 * protrusion);
-                }
-              }
+  for (const [filePath, threads] of Object.entries(changeComments)) {
+    const hunks = hunksAllFiles[filePath] || [];
+    for (const hunk of hunks) {
+      for (const thread of threads) {
+        if (threadWithinRange(thread, hunk.originalEnd, Infinity)) {
+          // comment outside the hunk
+          shiftThread(thread, hunk.sizeDelta);
+        } else if (
+          // comment within the hunk
+          threadWithinRange(thread, hunk.originalStart, hunk.originalEnd)
+        ) {
+          // Ensure the comment within the hunk still resides in the
+          // hunk. If the hunk removes all the lines, the comment will
+          // be moved to the line preceding the hunk.
+          if (hunk.sizeDelta < 0 && thread.line !== undefined) {
+            const protrusion =
+              thread.line - (hunk.originalStart + hunk.currentSize) + 1;
+            if (protrusion > 0) {
+              shiftThread(thread, -1 * protrusion);
             }
-          });
+          }
         }
       }
     }
