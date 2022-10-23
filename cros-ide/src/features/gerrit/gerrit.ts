@@ -197,14 +197,19 @@ class Gerrit {
       return undefined;
     }
 
-    // TODO(teramon): Support multiple commits
-    const commentsUrl = `https://chromium-review.googlesource.com/changes/${changeIds[0]}/comments`;
+    const partitionedThreads: [string, ChangeThreads][] = [];
+    for (const changeId of changeIds) {
+      const commentsUrl = `https://chromium-review.googlesource.com/changes/${changeId}/comments`;
+      const commentsContent = await https.get(commentsUrl);
+      const commentsJson = commentsContent.substring(')]}\n'.length);
+      const changeComments = JSON.parse(commentsJson) as api.ChangeComments;
+      const combinedChangeThreads = partitionThreads(changeComments);
+      for (const item of partitionByCommitId(combinedChangeThreads)) {
+        partitionedThreads.push(item);
+      }
+    }
 
-    const commentsContent = await https.get(commentsUrl);
-    const commentsJson = commentsContent.substring(')]}\n'.length);
-    const changeComments = JSON.parse(commentsJson) as api.ChangeComments;
-    const combinedChangeThreads = partitionThreads(changeComments);
-    return partitionByCommitId(combinedChangeThreads);
+    return partitionedThreads;
   }
 
   /**

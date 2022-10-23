@@ -132,6 +132,36 @@ const SIMPLE_COMMENT_GERRIT_JSON = (commitId1: string) => `)]}
 }
 `;
 
+// Based on crrev.com/c/3980425
+// For testing chains of changes
+const SECOND_COMMIT_IN_CHAIN = (commitId: string) => `)]}
+{
+  "cryptohome/cryptohome.cc": [
+    {
+      "author": {
+        "_account_id": 1355869,
+        "name": "Tomasz Tylenda",
+        "email": "ttylenda@chromium.org",
+        "avatars": [
+          {
+            "url": "https://lh3.googleusercontent.com/-9a8_POyNIEg/AAAAAAAAAAI/AAAAAAAAAAA/XD1eDsycuww/s32-p/photo.jpg",
+            "height": 32
+          }
+        ]
+      },
+      "change_message_id": "9ebb20d4049951302c6f80e591364d9f8bd1d790",
+      "unresolved": true,
+      "patch_set": 1,
+      "id": "91ffb8ea_d3594fb4",
+      "line": 6,
+      "updated": "2022-10-26 08:07:05.000000000",
+      "message": "Comment on the second change",
+      "commit_id": "${commitId}"
+    }
+  ]
+}
+`;
+
 // Based on crrev.com/c/3954724, important bits are:
 //   "Comment on termios" on line 15 (1-base) of the first patch set
 //   "Comment on unistd" on line 18 (1-base) of the second patch set
@@ -354,5 +384,120 @@ describe('Gerrit', () => {
     // but we convert 1-based number to 0-based.
     expect(callData[1].args[1].start.line).toEqual(17);
     expect(callData[1].args[2][0].body).toEqual('Comment on unistd');
+  });
+
+  it('shows all comments in a chain', async () => {
+    const abs = (relative: string) => path.join(tempDir.path, relative);
+
+    const git = new testing.Git(tempDir.path);
+    await git.init();
+    await testing.putFiles(git.root, {
+      'cryptohome/cryptohome.cc': `Line 1
+          Line 2
+          Line 3
+          Line 4
+          Line 5
+          Line 6
+          Line 7
+          Line 8`,
+    });
+    await git.commit('Merged');
+    await git.checkout('cros/main', {createBranch: true});
+    await git.checkout('main');
+
+    // First commit in a chain.
+    await testing.putFiles(git.root, {
+      'cryptohome/cryptohome.cc': `Line 1
+          Line 2
+          ADD-1
+          Line 3
+          Line 4
+          Line 5`,
+    });
+    await git.addAll();
+    const commitId1 = await git.commit(
+      'First uploaded\nChange-Id: I23f50ecfe44ee28972aa640e1fa82ceabcc706a8'
+    );
+
+    // Second commit in a chain.
+    await testing.putFiles(git.root, {
+      'cryptohome/cryptohome.cc': `Line 1
+          Line 2
+          ADD-1
+          Line 3
+          Line 4
+          ADD-2
+          Line 5`,
+    });
+    await git.addAll();
+    const commitId2 = await git.commit(
+      'Second uploaded\nChange-Id: Iecc86ab5691709978e6b171795c95e538aec1a47'
+    );
+
+    spyOn(https, 'get')
+      .withArgs(
+        'https://chromium-review.googlesource.com/changes/I23f50ecfe44ee28972aa640e1fa82ceabcc706a8/comments'
+      )
+      .and.returnValue(Promise.resolve(SIMPLE_COMMENT_GERRIT_JSON(commitId1)))
+      .withArgs(
+        'https://chromium-review.googlesource.com/changes/Iecc86ab5691709978e6b171795c95e538aec1a47/comments'
+      )
+      .and.returnValue(Promise.resolve(SECOND_COMMIT_IN_CHAIN(commitId2)));
+
+    spyOn(metrics, 'send');
+
+    const commentController = jasmine.createSpyObj<vscode.CommentController>(
+      'commentController',
+      ['createCommentThread']
+    );
+
+    commentController.createCommentThread.and.returnValue(
+      {} as vscode.CommentThread
+    );
+
+    const statusBar = vscode.window.createStatusBarItem();
+    let statusBarShown = false;
+    statusBar.show = () => {
+      statusBarShown = true;
+    };
+
+    const gerrit = new Gerrit(
+      commentController,
+      vscode.window.createOutputChannel('gerrit'),
+      statusBar
+    );
+
+    await expectAsync(
+      gerrit.showComments(abs('cryptohome/cryptohome.cc'))
+    ).toBeResolved();
+
+    expect(commentController.createCommentThread).toHaveBeenCalledTimes(2);
+    const calls = commentController.createCommentThread.calls.all();
+
+    expect(calls[0].args[0].fsPath).toMatch(/cryptohome\/cryptohome.cc/);
+    // The comment in the second Gerrit change is on line 6,
+    // but we convert 1-based number (Gerrit) to 0-based (VScode).
+    // There are no local modification that require shifting the comment.
+    expect(calls[0].args[1].start.line).toEqual(5);
+    expect(calls[0].args[2][0].body).toEqual('Comment on the second change');
+
+    expect(calls[1].args[0].fsPath).toMatch(/cryptohome\/cryptohome.cc/);
+    // The comment in the second Gerrit change is on line 3,
+    // but we convert 1-based number (Gerrit) to 0-based (VScode).
+    // The second Gerrit change affects lines below this change,
+    // so shifting is not needed.
+    expect(calls[1].args[1].start.line).toEqual(2);
+    expect(calls[1].args[2][0].body).toEqual(
+      'Unresolved comment on the added line.'
+    );
+
+    expect(statusBarShown).toBeTrue();
+    expect(statusBar.text).toEqual('$(comment) 2');
+    expect(metrics.send).toHaveBeenCalledOnceWith({
+      category: 'background',
+      group: 'gerrit',
+      action: 'update comments',
+      value: 2,
+    });
   });
 });
