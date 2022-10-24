@@ -118,7 +118,7 @@ class Gerrit {
         }
 
         // TODO(b:216048068): Handle original commit not available locally.
-        await shiftChangeComments(gitDir, originalCommitId, changeThreads);
+        await this.shiftChangeComments(gitDir, originalCommitId, changeThreads);
         this.displayCommentThreads(this.controller, changeThreads, gitDir);
       }
       this.updateStatusBar();
@@ -169,6 +169,26 @@ class Gerrit {
     const changeComments = JSON.parse(commentsJson) as api.ChangeComments;
     const combinedChangeThreads = partitionThreads(changeComments);
     return partitionByCommitId(combinedChangeThreads);
+  }
+
+  /**
+   * Updates line numbers in `changeThreads`, which are assumed to be made
+   * on the `originalCommitId`, so they can be placed in the right lines on the files
+   * in the working tree.
+   */
+  async shiftChangeComments(
+    gitDir: string,
+    originalCommitId: string,
+    changeThreads: ChangeThreads
+  ): Promise<void> {
+    const hunks = await git.readDiffHunks(gitDir, originalCommitId);
+    if (hunks instanceof Error) {
+      this.showErrorMessage(
+        'Failed to get git diff to reposition Gerrit comments'
+      );
+      return;
+    }
+    updateChangeComments(hunks, changeThreads);
   }
 
   private showErrorMessage(message: string) {
@@ -257,27 +277,6 @@ function partitionByCommitId(
   return helpers.splitPathMap(changeThread, (thread: Thread) =>
     thread.commitId()
   );
-}
-
-/**
- * Updates line numbers in `changeThreads`, which are assumed to be made
- * on the `originalCommitId`, so they can be placed in the right lines on the files
- * in the working tree.
- */
-async function shiftChangeComments(
-  gitDir: string,
-  originalCommitId: string,
-  changeThreads: ChangeThreads
-): Promise<void> {
-  const hunks = await git.readDiffHunks(gitDir, originalCommitId);
-  if (hunks instanceof Error) {
-    void vscode.window.showErrorMessage(
-      'Failed to get git diff to reposition Gerrit comments'
-      // TODO(teramon): Avoid showing the error message more than once.
-    );
-    return;
-  }
-  updateChangeComments(hunks, changeThreads);
 }
 
 /**
