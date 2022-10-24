@@ -59,7 +59,7 @@ export class PlatformEc implements CompdbGenerator {
   }
 
   async generate(
-    document: vscode.TextDocument,
+    _document: vscode.TextDocument,
     _token: vscode.CancellationToken
   ): Promise<void> {
     const board = getBoard();
