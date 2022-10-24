@@ -142,7 +142,28 @@ export class FakeCrosfleet {
       deadline: dateFns.addMinutes(new Date(), 60),
     });
 
-    return {exitStatus: 0, stdout: '', stderr: ''};
+    return {
+      exitStatus: 0,
+      stdout: `
+    Verifying the provided DUT dimensions...
+    Found 32 DUT(s) (32 busy) matching the provided DUT dimensions
+    Requesting 5 minute lease at https://ci.chromium.org/ui/p/chromeos/builders/test_runner/dut_leaser/b8799650214213181409
+    Waiting to confirm DUT lease request validation and print leased DUT details...
+    (To skip this step, pass the -exit-early flag on future DUT lease commands)
+    Leased host1 until 21 Oct 22 17:02 PDT
+
+    DUT_HOSTNAME=host1
+    MODEL=model1
+    BOARD=board1
+    SERVO_HOSTNAME=servoHostname1
+    SERVO_PORT=9995
+    SERVO_SERIAL=S2010291819
+
+    Visit http://go/chromeos-lab-duts-ssh for up-to-date docs on SSHing to a leased DUT
+    Visit http://go/my-crosfleet to track all of your crosfleet-launched tasks
+        `,
+      stderr: '',
+    };
   }
 }
 

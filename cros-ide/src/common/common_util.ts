@@ -194,6 +194,17 @@ export class CancelledError extends Error {
 }
 
 /**
+ * Executed command or tooling didn't behave as expected. This could happen if the tool changes in
+ * a breaking way with our integration, and cros-ide has not been updated.
+ */
+export class UnexpectedCommandBehaviorError extends Error {
+  constructor(msg: string) {
+    super(msg);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
+/**
  * Executes command with optionally logging its output. The promise will be
  * resolved with outputs of the command or an Error. It's guaranteed that
  * data passed to log ends with a newline.

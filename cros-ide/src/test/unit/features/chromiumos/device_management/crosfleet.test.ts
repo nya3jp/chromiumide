@@ -6,7 +6,7 @@ import * as crosfleet from '../../../../../features/chromiumos/device_management
 import * as testing from '../../../../testing';
 import * as fakes from '../../../../testing/fakes';
 
-describe('Crosfleet runner', () => {
+describe('CrosfleetRunner', () => {
   const clock = jasmine.clock();
   beforeEach(() => {
     clock.install();
@@ -120,5 +120,54 @@ describe('Crosfleet runner', () => {
         deadline: new Date('2000-01-01T01:00:00Z'),
       },
     ]);
+  });
+});
+
+describe('crosfleet', () => {
+  describe('parseCrosfleetDutLeaseOutput', () => {
+    it('parses dut lease output', () => {
+      const result = crosfleet.parseCrosfleetDutLeaseOutput(`
+Verifying the provided DUT dimensions...
+Found 32 DUT(s) (32 busy) matching the provided DUT dimensions
+Requesting 5 minute lease at https://ci.chromium.org/ui/p/chromeos/builders/test_runner/dut_leaser/b8799650214213181409
+Waiting to confirm DUT lease request validation and print leased DUT details...
+(To skip this step, pass the -exit-early flag on future DUT lease commands)
+Leased chromeos2-row7-rack7-host43 until 21 Oct 22 17:02 PDT
+
+DUT_HOSTNAME=chromeos2-row7-rack7-host43
+MODEL=berknip
+BOARD=zork
+SERVO_HOSTNAME=chromeos2-row7-rack7-labstation7
+SERVO_PORT=9995
+SERVO_SERIAL=S2010291819
+
+Visit http://go/chromeos-lab-duts-ssh for up-to-date docs on SSHing to a leased DUT
+Visit http://go/my-crosfleet to track all of your crosfleet-launched tasks
+`);
+      expect(result).toEqual({
+        dutHostname: 'chromeos2-row7-rack7-host43',
+        model: 'berknip',
+        board: 'zork',
+        servoHostname: 'chromeos2-row7-rack7-labstation7',
+        servoPort: 9995,
+        servoSerial: 'S2010291819',
+      });
+    });
+
+    it('Throws when any expected info is missing', () => {
+      const output = `
+MODEL=berknip
+BOARD=zork
+SERVO_HOSTNAME=chromeos2-row7-rack7-labstation7
+SERVO_PORT=9995
+SERVO_SERIAL=S2010291819
+`;
+      expect(() => crosfleet.parseCrosfleetDutLeaseOutput(output)).toThrow(
+        new Error(
+          'Unable to extract complete DUT info from `crosfleet dut lease` output:\n' +
+            output
+        )
+      );
+    });
   });
 });

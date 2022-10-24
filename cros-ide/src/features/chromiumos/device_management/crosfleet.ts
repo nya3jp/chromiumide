@@ -6,7 +6,9 @@ import * as vscode from 'vscode';
 import * as dateFns from 'date-fns';
 import * as cipd from '../../../common/cipd';
 import * as commonUtil from '../../../common/common_util';
+import * as outputParsing from '../../../common/output_parsing';
 import * as shutil from '../../../common/shutil';
+import {UnexpectedCommandBehaviorError} from './../../../common/common_util';
 
 /**
  * Represents a leased device.
@@ -32,6 +34,48 @@ export interface LeaseOptions {
   readonly board?: string;
   readonly model?: string;
   readonly hostname?: string;
+}
+
+/** Information available from the `crosfleet dut lease` command. */
+export type CrosfleetDutLeaseOutput = {
+  readonly dutHostname: string;
+  readonly model: string;
+  readonly board: string;
+  readonly servoHostname: string;
+  readonly servoPort: number;
+  readonly servoSerial: string;
+};
+
+/** Extracts the information available from the `crosfleet dut lease` command.
+ *
+ * @throws UnexpectedCommandBehaviorError If the information cannot be extracted.
+ */
+export function parseCrosfleetDutLeaseOutput(
+  output: string
+): CrosfleetDutLeaseOutput {
+  const record = outputParsing.parseMultilineKeyEqualsValue(output);
+  const info = {
+    dutHostname: record.DUT_HOSTNAME,
+    model: record.MODEL,
+    board: record.BOARD,
+    servoHostname: record.SERVO_HOSTNAME,
+    servoPort: Number(record.SERVO_PORT),
+    servoSerial: record.SERVO_SERIAL,
+  };
+  if (
+    !info.dutHostname ||
+    !info.model ||
+    !info.board ||
+    !info.servoHostname ||
+    !info.servoPort ||
+    !info.servoSerial
+  ) {
+    throw new UnexpectedCommandBehaviorError(
+      'Unable to extract complete DUT info from `crosfleet dut lease` output:\n' +
+        output
+    );
+  }
+  return info;
 }
 
 /**
@@ -128,8 +172,10 @@ export class CrosfleetRunner {
 
   /**
    * Requests to lease a new device.
+   *
+   * @throws UnexpectedCommandBehaviorError
    */
-  async requestLease(options: LeaseOptions): Promise<void> {
+  async requestLease(options: LeaseOptions): Promise<CrosfleetDutLeaseOutput> {
     const args = [
       'dut',
       'lease',
@@ -150,8 +196,9 @@ export class CrosfleetRunner {
     if (result instanceof Error) {
       throw result;
     }
-
     this.onDidChangeEmitter.fire();
+    const unorderedOutput = result.stdout + '\n' + result.stderr;
+    return parseCrosfleetDutLeaseOutput(unorderedOutput);
   }
 
   /**
