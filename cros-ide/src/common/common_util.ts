@@ -203,6 +203,9 @@ export class CancelledError extends Error {
  * If the command terminates with non-zero exit status then we return `ExecutionError`
  * unless `ignoreNonZeroExit` was set.
  *
+ * Tests can use testing.installFakeExec to fake this function. See the
+ * documentation of the function for details.
+ *
  * @param options Optional parameters. See `ExecOptions` for the description.
  */
 export function exec(
