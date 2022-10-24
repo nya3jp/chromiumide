@@ -146,11 +146,7 @@ class Spellchecker {
   }
 
   private commitMessageUri(dir: string) {
-    return vscode.Uri.from({
-      scheme: 'gitmsg',
-      path: path.join(dir, 'COMMIT MESSAGE'),
-      query: 'HEAD',
-    });
+    return gitDocument.commitMessageUri(dir, 'HEAD');
   }
 
   /** Execute Tricium binary and refresh diagnostics for the commit message. */

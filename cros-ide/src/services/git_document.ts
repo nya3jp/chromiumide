@@ -6,7 +6,22 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as commonUtil from '../common/common_util';
 
-export const GIT_MSG_SCHEME = 'gitmsg';
+const GIT_MSG_SCHEME = 'gitmsg';
+const COMMIT_MESSAGE = 'COMMIT MESSAGE';
+
+/**
+ * Creates a URI for which GitDocumentProvider provides a document containing
+ * the commit message of the specified revision. The dir should be a directory
+ * containing a git repository and the ref should be a revision
+ * in the repository (for example, SHA or 'HEAD').
+ */
+export function commitMessageUri(dir: string, ref: string) {
+  return vscode.Uri.from({
+    scheme: GIT_MSG_SCHEME,
+    path: path.join(dir, COMMIT_MESSAGE),
+    query: ref,
+  });
+}
 
 export class GitDocumentProvider implements vscode.TextDocumentContentProvider {
   cache = new Map<string, string>();
@@ -14,6 +29,7 @@ export class GitDocumentProvider implements vscode.TextDocumentContentProvider {
   activate() {
     vscode.workspace.registerTextDocumentContentProvider(GIT_MSG_SCHEME, this);
   }
+
   private async getCommitMessageCached(
     fsPath: string,
     sha: string
@@ -38,7 +54,13 @@ export class GitDocumentProvider implements vscode.TextDocumentContentProvider {
   }
 
   async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-    return this.getCommitMessageCached(uri.path, uri.query);
+    const file = path.basename(uri.path);
+
+    if (file === COMMIT_MESSAGE) {
+      return this.getCommitMessageCached(uri.path, uri.query);
+    }
+
+    return `Internal error in CrOS IDE.\nReport it at http://go/cros-ide-new-bug\n\nURI: ${uri}\n`;
   }
 }
 

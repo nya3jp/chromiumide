@@ -192,11 +192,7 @@ class Gerrit {
             this.commentThreads.push(vscodeThread);
           }
         } else {
-          uri = vscode.Uri.from({
-            scheme: gitDocument.GIT_MSG_SCHEME,
-            path: path.join(gitDir, 'COMMIT MESSAGE'),
-            query: 'HEAD',
-          });
+          uri = gitDocument.commitMessageUri(gitDir, 'HEAD');
           // Compensate the difference between commit message on Gerrit and Terminal
           if (thread.line !== undefined && thread.line > 6) {
             shiftThread(thread, -6);
