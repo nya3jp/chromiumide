@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.4.0 (November 2022)
+
+- Fixes for features crashing outside ChromeOS source tree.
+- Run the spellchecker on commit messages.
+
 ## 0.2.0 (October 2022)
 
 - **Announced global dogfooding**
