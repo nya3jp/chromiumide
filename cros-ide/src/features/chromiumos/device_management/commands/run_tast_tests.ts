@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as shutil from '../../../../common/shutil';
@@ -24,12 +23,9 @@ export async function runTastTests(context: CommandContext): Promise<void> {
     return;
   }
   const category = path.basename(path.dirname(document.uri.fsPath));
-  const contents = await fs.promises.readFile(document.uri.fsPath, {
-    encoding: 'utf-8',
-  });
   const testFuncRE = /^\s*Func:\s*(\w+),/m;
   // Check if it is possible to run a test from the file.
-  const testFuncName = contents.match(testFuncRE);
+  const testFuncName = document.getText().match(testFuncRE);
   if (testFuncName === null) {
     const choice = await vscode.window.showErrorMessage(
       'Could not find test to run from file. Was the test registered?',
