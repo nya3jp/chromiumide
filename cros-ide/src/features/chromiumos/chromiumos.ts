@@ -16,6 +16,7 @@ import {NewFileTemplate} from './new_file_template';
 import {Platform2Gtest} from './platform2_gtest';
 import * as platformEc from './platform_ec';
 import * as targetBoard from './target_board';
+import {Tast} from './tast';
 import * as tricium from './tricium';
 
 /**
@@ -132,6 +133,10 @@ export class Chromiumos implements vscode.Disposable {
 
       if (config.underDevelopment.platform2GtestDebugging.get()) {
         this.subscriptions.push(new Platform2Gtest(this.root, chrootService));
+      }
+
+      if (config.underDevelopment.tast.get()) {
+        this.subscriptions.push(new Tast());
       }
     }
   }

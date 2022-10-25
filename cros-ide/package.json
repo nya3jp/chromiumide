@@ -508,6 +508,11 @@
           "description": "Enable display system log viewer (incomplete)",
           "default": false
         },
+        "cros-ide.underDevelopment.tast": {
+          "type": "boolean",
+          "description": "Enable Tast Support",
+          "default": false
+        },
         "cros-ide.underDevelopment.testCoverage": {
           "type": "boolean",
           "description": "Enable Test Coverage (incomplete)",
