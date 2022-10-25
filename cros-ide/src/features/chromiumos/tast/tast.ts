@@ -3,11 +3,41 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import * as services from '../../../services';
+import {TastTests} from './tast_tests';
 
 export class Tast implements vscode.Disposable {
-  dispose() {}
+  private readonly subscriptions: vscode.Disposable[] = [];
 
-  constructor() {
-    void vscode.window.showErrorMessage('TODO(oka): implement Tast support');
+  private tastTests?: TastTests;
+
+  constructor(
+    chrootService: services.chromiumos.ChrootService,
+    gitDirsWatcher: services.GitDirsWatcher
+  ) {
+    this.subscriptions.push(
+      gitDirsWatcher.onDidChangeVisibleGitDirs(e => {
+        if (e.added.find(isTastTests)) {
+          this.tastTests?.dispose();
+          this.tastTests = new TastTests(chrootService);
+        }
+        if (e.removed.find(isTastTests)) {
+          this.tastTests?.dispose();
+        }
+      })
+    );
+
+    if (gitDirsWatcher.visibleGitDirs.find(isTastTests)) {
+      this.tastTests = new TastTests(chrootService);
+    }
   }
+
+  dispose() {
+    this.tastTests?.dispose();
+    vscode.Disposable.from(...this.subscriptions.reverse()).dispose();
+  }
+}
+
+function isTastTests(gitDir: string) {
+  return gitDir.endsWith('/src/platform/tast-tests');
 }

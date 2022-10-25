@@ -105,7 +105,13 @@ export const platformEc = {
   build: new ConfigValue<'Makefile' | 'Zephyr'>('platformEC.build'),
 };
 
+// https://github.com/golang/vscode-go/blob/master/docs/settings.md#detailed-list
 export const goExtension = {
+  gopath: new ConfigValue<string>(
+    'gopath',
+    GO_PREFIX,
+    vscode.ConfigurationTarget.Workspace
+  ),
   toolsGopath: new ConfigValue<string>('toolsGopath', GO_PREFIX),
 };
 
