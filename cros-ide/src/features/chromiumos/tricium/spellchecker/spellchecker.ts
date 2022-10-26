@@ -124,9 +124,11 @@ class Spellchecker {
     );
 
     context.subscriptions.push(
-      this.textEditorsWatcher.onDidClose((doc: vscode.TextDocument) =>
-        this.delete(doc.uri)
-      )
+      this.textEditorsWatcher.onDidClose((doc: vscode.TextDocument) => {
+        if (doc.uri.scheme === 'file') {
+          this.delete(doc.uri);
+        }
+      })
     );
 
     // The code below triggers spellchecker on the commit message.
