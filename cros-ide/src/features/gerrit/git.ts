@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as vscode from 'vscode';
 import * as commonUtil from '../../common/common_util';
 
 export type Hunks = {
@@ -49,13 +50,15 @@ export class Hunk {
  */
 export async function readDiffHunks(
   dir: string,
-  originalCommitId: string
+  originalCommitId: string,
+  logger?: vscode.OutputChannel
 ): Promise<Hunks | Error> {
   const gitDiff = await commonUtil.exec(
     'git',
     ['diff', '-U0', originalCommitId],
     {
       cwd: dir,
+      logger,
     }
   );
   if (gitDiff instanceof Error) {
@@ -109,9 +112,13 @@ function parseDiffHunks(gitDiffContent: string): Hunks {
  * The ids are ordered from new to old. If the HEAD is already merged,
  * the result will be an empty array.
  */
-export async function readChangeIds(dir: string): Promise<string[] | Error> {
+export async function readChangeIds(
+  dir: string,
+  logger?: vscode.OutputChannel
+): Promise<string[] | Error> {
   const branchLog = await commonUtil.exec('git', ['log', 'cros/main..HEAD'], {
     cwd: dir,
+    logger,
   });
   if (branchLog instanceof Error) {
     return branchLog;

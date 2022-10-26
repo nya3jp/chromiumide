@@ -185,7 +185,10 @@ class Gerrit {
    * to partition it into threads and by commit id.
    */
   private async fetchComments(fileName: string) {
-    const changeIds = await git.readChangeIds(path.dirname(fileName));
+    const changeIds = await git.readChangeIds(
+      path.dirname(fileName),
+      this.outputChannel
+    );
     if (changeIds instanceof Error) {
       this.showErrorMessage(`Failed to detect a commits for ${fileName}`);
       return undefined;
@@ -214,7 +217,11 @@ class Gerrit {
     originalCommitId: string,
     changeThreads: ChangeThreads
   ): Promise<void> {
-    const hunks = await git.readDiffHunks(gitDir, originalCommitId);
+    const hunks = await git.readDiffHunks(
+      gitDir,
+      originalCommitId,
+      this.outputChannel
+    );
     if (hunks instanceof Error) {
       this.showErrorMessage(
         'Failed to get git diff to reposition Gerrit comments'
