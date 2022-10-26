@@ -122,7 +122,7 @@ export type GitLogInfo = {
 export async function readChangeIds(
   dir: string,
   logger?: vscode.OutputChannel
-): Promise<string[] | Error> {
+): Promise<GitLogInfo[] | Error> {
   const branchLog = await commonUtil.exec('git', ['log', 'cros/main..HEAD'], {
     cwd: dir,
     logger,
@@ -130,7 +130,7 @@ export async function readChangeIds(
   if (branchLog instanceof Error) {
     return branchLog;
   }
-  return parseChangeIds(branchLog.stdout).map(item => item.gerritChangeId);
+  return parseChangeIds(branchLog.stdout);
 }
 
 function parseChangeIds(log: string): GitLogInfo[] {

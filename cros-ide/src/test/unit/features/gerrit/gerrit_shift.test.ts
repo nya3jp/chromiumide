@@ -35,7 +35,10 @@ function thread(
   data: CommentInfoLike,
   opts?: {shifted: number}
 ): gerrit.Thread {
-  const t = new gerrit.Thread([data as api.CommentInfo]);
+  const t = new gerrit.Thread([data as api.CommentInfo], {
+    gitSha: 'aa',
+    gerritChangeId: 'Ibb',
+  });
   t.initializeLocation();
   if (opts?.shifted) {
     t.line = opts.shifted;

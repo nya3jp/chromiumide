@@ -69,7 +69,12 @@ describe('partitionThreads', () => {
       ],
     };
 
-    expect(partitionThreads(input)).toEqual(want);
+    expect(
+      partitionThreads(input, {
+        gitSha: 'aa',
+        gerritChangeId: 'Ibb',
+      })
+    ).toEqual(want);
   });
 });
 
@@ -322,8 +327,12 @@ describe('Gerrit', () => {
       'cryptohome/crypto.h': 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
     });
     await git.addAll();
-    const commitId = await git.commit(
+    const reviewCommitId = await git.commit(
       'Under review\nChange-Id: Iba73f448e0da2a814f7303d1456049bb3554676e'
+    );
+    const amendedCommitId = await git.commit(
+      'Under review with local amend\nChange-Id: Iba73f448e0da2a814f7303d1456049bb3554676e',
+      {amend: true}
     );
 
     const commentController = jasmine.createSpyObj<vscode.CommentController>(
@@ -352,7 +361,7 @@ describe('Gerrit', () => {
         'https://chromium-review.googlesource.com/changes/Iba73f448e0da2a814f7303d1456049bb3554676e/comments'
       )
       .and.returnValue(
-        Promise.resolve(apiString(SPECIAL_COMMENT_TYPES(commitId)))
+        Promise.resolve(apiString(SPECIAL_COMMENT_TYPES(reviewCommitId)))
       );
 
     spyOn(metrics, 'send');
@@ -367,15 +376,19 @@ describe('Gerrit', () => {
     // we can rely on it for simplicity.
     const callData = commentController.createCommentThread.calls.all();
 
-    // TODO(b:216048068): check more than just fsPath on special Uris
-
-    expect(callData[0].args[0].fsPath).toEqual(abs('COMMIT MESSAGE'));
+    expect(callData[0].args[0]).toEqual(
+      vscode.Uri.parse(`gitmsg://${git.root}/COMMIT MESSAGE?${amendedCommitId}`)
+    );
     // Gerrit returns line 7, but our virtual documents don't have some headers,
     // so we shift the message by 6 lines and convert it to 0-based.
     expect(callData[0].args[1].start.line).toEqual(0);
     expect(callData[0].args[2][0].body).toEqual('Commit message comment');
 
-    expect(callData[1].args[0].fsPath).toEqual(abs('PATCHSET_LEVEL'));
+    expect(callData[1].args[0]).toEqual(
+      vscode.Uri.parse(
+        `gerrit://${git.root}/PATCHSET_LEVEL?Iba73f448e0da2a814f7303d1456049bb3554676e`
+      )
+    );
     // Patchset level comments should always be shown on the first line.
     expect(callData[1].args[1].start.line).toEqual(0);
     expect(callData[1].args[2][0].body).toEqual('Patchset level comment.');

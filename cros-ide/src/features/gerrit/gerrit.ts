@@ -118,7 +118,7 @@ class Gerrit {
     try {
       const doFetch = !opts?.noFetch;
       if (doFetch) {
-        this.partitionedThreads = await this.fetchComments(fileName);
+        await this.fetchComments(fileName);
         this.clearCommentThreads();
       }
       if (!this.partitionedThreads) {
@@ -182,34 +182,39 @@ class Gerrit {
 
   /**
    * Retrieves data from Gerrit API and applies basic transformations
-   * to partition it into threads and by commit id.
+   * to partition it into threads and by commit id. The data is then
+   * stored in `this.partitionedThreads`.
    */
   private async fetchComments(fileName: string) {
-    const changeIds = await git.readChangeIds(
+    const gitLogInfos = await git.readChangeIds(
       path.dirname(fileName),
       this.outputChannel
     );
-    if (changeIds instanceof Error) {
+    if (gitLogInfos instanceof Error) {
       this.showErrorMessage(`Failed to detect a commits for ${fileName}`);
       return undefined;
     }
-    if (changeIds.length === 0) {
+    if (gitLogInfos.length === 0) {
       return undefined;
     }
 
     const partitionedThreads: [string, ChangeThreads][] = [];
-    for (const changeId of changeIds) {
-      const commentsUrl = `https://chromium-review.googlesource.com/changes/${changeId}/comments`;
+
+    for (const gitLogInfo of gitLogInfos) {
+      const commentsUrl = `https://chromium-review.googlesource.com/changes/${gitLogInfo.gerritChangeId}/comments`;
       const commentsContent = await https.get(commentsUrl);
       const commentsJson = commentsContent.substring(')]}\n'.length);
       const changeComments = JSON.parse(commentsJson) as api.ChangeComments;
-      const combinedChangeThreads = partitionThreads(changeComments);
+      const combinedChangeThreads = partitionThreads(
+        changeComments,
+        gitLogInfo
+      );
       for (const item of partitionByCommitId(combinedChangeThreads)) {
         partitionedThreads.push(item);
       }
     }
 
-    return partitionedThreads;
+    this.partitionedThreads = partitionedThreads;
   }
 
   /**
@@ -261,7 +266,7 @@ class Gerrit {
       threads.forEach(thread => {
         let uri;
         if (filepath === '/COMMIT_MSG') {
-          uri = gitDocument.commitMessageUri(gitDir, 'HEAD');
+          uri = gitDocument.commitMessageUri(gitDir, thread.gitLogInfo.gitSha);
           // Compensate the difference between commit message on Gerrit and Terminal
           if (thread.line !== undefined && thread.line > 6) {
             shiftThread(thread, -6);
@@ -269,7 +274,10 @@ class Gerrit {
             shiftThread(thread, -1 * (thread.line - 1));
           }
         } else if (filepath === '/PATCHSET_LEVEL') {
-          uri = virtualDocument.patchSetUri(gitDir);
+          uri = virtualDocument.patchSetUri(
+            gitDir,
+            thread.gitLogInfo.gerritChangeId
+          );
         } else {
           uri = vscode.Uri.file(path.join(gitDir, filepath));
         }
@@ -283,7 +291,8 @@ class Gerrit {
 }
 
 function partitionCommentArray(
-  apiComments: readonly api.CommentInfo[]
+  apiComments: readonly api.CommentInfo[],
+  gitLogInfo: git.GitLogInfo
 ): Thread[] {
   // Copy the input to avoid modifying data received from Gerrit API.
   const comments = [...apiComments];
@@ -303,7 +312,7 @@ function partitionCommentArray(
       threads[idx].comments.push(c);
     } else {
       // push() returns the new length of the modiified array
-      idx = threads.push(new Thread([c])) - 1;
+      idx = threads.push(new Thread([c], gitLogInfo)) - 1;
     }
     threadIndex.set(c.id, idx);
   }
@@ -315,10 +324,13 @@ function partitionCommentArray(
  * For each filePath break comments in to threads. That is, turn a comment array
  * into an array of arrays, which represent threads
  */
-function partitionThreads(changeComments: api.ChangeComments): ChangeThreads {
+function partitionThreads(
+  changeComments: api.ChangeComments,
+  gitLogInfo: git.GitLogInfo
+): ChangeThreads {
   const changeThreads: ChangeThreads = {};
   for (const [filePath, comments] of Object.entries(changeComments)) {
-    changeThreads[filePath] = partitionCommentArray(comments);
+    changeThreads[filePath] = partitionCommentArray(comments, gitLogInfo);
   }
   return changeThreads;
 }
@@ -435,7 +447,10 @@ export class Thread {
 
   vscodeThread?: vscode.CommentThread;
 
-  constructor(readonly comments: api.CommentInfo[]) {}
+  constructor(
+    readonly comments: api.CommentInfo[],
+    readonly gitLogInfo: git.GitLogInfo
+  ) {}
 
   /** Copy location from first comment into the thread. */
   // TODO(b:216048068): try to remove this method from the public api of this class.
