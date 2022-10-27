@@ -184,4 +184,16 @@ describe('Background Task Status', () => {
     treeItem = statusTreeData.getTreeItem('task-1') as vscode.TreeItem;
     expect(treeItem.command).toBeUndefined();
   });
+
+  it('updating task status preserves other task data', async () => {
+    const command: vscode.Command = {title: '', command: 'command1'};
+
+    statusManager.setTask('task-1', {status: TaskStatus.OK, command});
+    statusManager.setStatus('task-1', TaskStatus.ERROR);
+
+    const treeItem = await statusTreeData.getTreeItem('task-1');
+    // verify that the command was not changed
+    expect(treeItem.command).toEqual(command);
+    expect(statusTreeData.getChildren(undefined)).toEqual(['task-1']);
+  });
 });

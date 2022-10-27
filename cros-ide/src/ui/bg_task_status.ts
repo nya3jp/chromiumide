@@ -86,6 +86,7 @@ export interface TaskData {
 export interface StatusManager {
   setTask(taskName: TaskName, taskData: TaskData): void;
   deleteTask(taskName: TaskName): void;
+  setStatus(taskName: TaskName, status: TaskStatus): void;
 }
 
 type ChangeHandler = (arg: StatusManagerImpl) => void;
@@ -102,6 +103,11 @@ class StatusManagerImpl implements StatusManager {
   deleteTask(taskName: TaskName) {
     this.tasks.delete(taskName);
     this.handleChange();
+  }
+
+  setStatus(taskName: TaskName, status: TaskStatus) {
+    const data = this.tasks.get(taskName);
+    this.tasks.set(taskName, {...data, status});
   }
 
   getTasks(): TaskName[] {
