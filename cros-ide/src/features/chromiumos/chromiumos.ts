@@ -54,7 +54,8 @@ export class Chromiumos implements vscode.Disposable {
       try {
         // The method shouldn't throw an error as its API contract.
         await this.activate(context);
-      } catch (_e) {
+      } catch (e) {
+        console.error('Failed to activate chromiumos features', e);
         metrics.send({
           category: 'error',
           group: 'misc',
