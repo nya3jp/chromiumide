@@ -413,7 +413,7 @@ export function parseCrosLintCpp(
     }
     const message = match[3];
     if (sameFile(document.uri.fsPath, file)) {
-      diagnostics.push(createDiagnostic(message, line));
+      diagnostics.push(createDiagnostic(message, 'CrOS lint', line));
     }
   }
   return diagnostics;
@@ -434,7 +434,9 @@ export function parseLibchromeCheck(
     const startCol = Number(match[3]);
     const message = match[4];
     if (sameFile(document.uri.fsPath, file)) {
-      diagnostics.push(createDiagnostic(message, line, startCol));
+      diagnostics.push(
+        createDiagnostic(message, 'CrOS libchrome', line, startCol)
+      );
     }
   }
   return diagnostics;
@@ -462,7 +464,9 @@ export function parseCrosLintGn(
     // Keep the same logic for matching file names,
     // although here it effectively no-op (always BUILD.gn)
     if (sameFile(document.uri.fsPath, file)) {
-      diagnostics.push(createDiagnostic(message, line, startCol));
+      diagnostics.push(
+        createDiagnostic(message, 'CrOS GN lint', line, startCol)
+      );
     }
   }
   return diagnostics;
@@ -484,7 +488,7 @@ export function parseCrosLintPython(
     const startCol = Number(match[3]) + 1;
     const message = match[4];
     if (sameFile(document.uri.fsPath, file)) {
-      diagnostics.push(createDiagnostic(message, line, startCol));
+      diagnostics.push(createDiagnostic(message, 'CrOS lint', line, startCol));
     }
   }
   return diagnostics;
@@ -505,7 +509,7 @@ export function parseCrosLintShell(
     const startCol = Number(match[3]);
     const message = match[4];
     if (sameFile(document.uri.fsPath, file)) {
-      diagnostics.push(createDiagnostic(message, line, startCol));
+      diagnostics.push(createDiagnostic(message, 'CrOS lint', line, startCol));
     }
   }
   return diagnostics;
@@ -525,7 +529,9 @@ export function parseCrosLintGo(
     const startCol = Number(match[3]);
     const message = match[4];
     if (sameFile(document.uri.fsPath, file)) {
-      diagnostics.push(createDiagnostic(message, line, startCol));
+      diagnostics.push(
+        createDiagnostic(message, 'CrOS Go lint', line, startCol)
+      );
     }
   }
   return diagnostics;
@@ -535,10 +541,11 @@ export function parseCrosLintGo(
 // line and startCol are both 1-based.
 function createDiagnostic(
   message: string,
+  source: string,
   line: number,
   startCol?: number
 ): vscode.Diagnostic {
-  return new vscode.Diagnostic(
+  const diagnostic = new vscode.Diagnostic(
     new vscode.Range(
       new vscode.Position(line - 1, startCol ? startCol - 1 : 0),
       new vscode.Position(line - 1, Number.MAX_VALUE)
@@ -548,4 +555,6 @@ function createDiagnostic(
     // repo upload?
     vscode.DiagnosticSeverity.Warning
   );
+  diagnostic.source = source;
+  return diagnostic;
 }

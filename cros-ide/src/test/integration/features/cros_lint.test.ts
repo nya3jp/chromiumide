@@ -136,6 +136,20 @@ const documentProvider = new TestDocumentProvider(
 const scheme = 'testing';
 vscode.workspace.registerTextDocumentContentProvider(scheme, documentProvider);
 
+function warning(
+  range: vscode.Range,
+  message: string,
+  source?: string
+): vscode.Diagnostic {
+  const diagnostic = new vscode.Diagnostic(
+    range,
+    message,
+    vscode.DiagnosticSeverity.Warning
+  );
+  diagnostic.source = source;
+  return diagnostic;
+}
+
 describe('Lint Integration', () => {
   it('parses C++ errors', async () => {
     const uri = vscode.Uri.from({scheme: scheme, path: cppFileName});
@@ -143,21 +157,21 @@ describe('Lint Integration', () => {
     const actual = crosLint.parseCrosLintCpp(cppLintOutput, '', textDocument);
     await extensionTesting.closeDocument(textDocument);
     const expected = [
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(0, 0),
           new vscode.Position(0, Number.MAX_VALUE)
         ),
         'No copyright message found.  You should have a line: "Copyright [year] <Copyright Owner>"',
-        vscode.DiagnosticSeverity.Warning
+        'CrOS lint'
       ),
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(3, 0),
           new vscode.Position(3, Number.MAX_VALUE)
         ),
         'Do not use unnamed namespaces in header files.  See https://google.github.io/styleguide/cppguide.html#Namespaces for more information.',
-        vscode.DiagnosticSeverity.Warning
+        'CrOS lint'
       ),
     ];
     expect(expected).toEqual(actual);
@@ -173,21 +187,21 @@ describe('Lint Integration', () => {
     );
     await extensionTesting.closeDocument(textDocument);
     const expected: vscode.Diagnostic[] = [
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(3, 1),
           new vscode.Position(3, Number.MAX_VALUE)
         ),
         'Use std::optional. absl::optional is an alias of std::optional. See go/use-std-optional-in-cros for discussion.',
-        vscode.DiagnosticSeverity.Warning
+        'CrOS libchrome'
       ),
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(6, 2),
           new vscode.Position(6, Number.MAX_VALUE)
         ),
         'Use std::optional. absl::optional is an alias of std::optional. See go/use-std-optional-in-cros for discussion.',
-        vscode.DiagnosticSeverity.Warning
+        'CrOS libchrome'
       ),
     ];
     expect(expected).toEqual(actual);
@@ -203,29 +217,29 @@ describe('Lint Integration', () => {
     );
     await extensionTesting.closeDocument(textDocument);
     const expected = [
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(0, 0),
           new vscode.Position(0, Number.MAX_VALUE)
         ),
         'C9001: Modules should have docstrings (even a one liner) (module-missing-docstring)',
-        vscode.DiagnosticSeverity.Warning
+        'CrOS lint'
       ),
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(2, 0),
           new vscode.Position(2, Number.MAX_VALUE)
         ),
         'C9002: Classes should have docstrings (even a one liner) (class-missing-docstring)',
-        vscode.DiagnosticSeverity.Warning
+        'CrOS lint'
       ),
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(7, 4),
           new vscode.Position(7, Number.MAX_VALUE)
         ),
         "W0612: Unused variable 'abc' (unused-variable)",
-        vscode.DiagnosticSeverity.Warning
+        'CrOS lint'
       ),
     ];
     expect(expected).toEqual(actual);
@@ -241,13 +255,13 @@ describe('Lint Integration', () => {
     );
     await extensionTesting.closeDocument(textDocument);
     const expected = [
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(2, 5),
           new vscode.Position(2, Number.MAX_VALUE)
         ),
         'note: Double quote to prevent globbing and word splitting. [SC2086]',
-        vscode.DiagnosticSeverity.Warning
+        'CrOS lint'
       ),
     ];
     expect(actual).toEqual(expected);
@@ -259,21 +273,21 @@ describe('Lint Integration', () => {
     const actual = crosLint.parseCrosLintGn('', gnLintOutput, textDocument);
     await extensionTesting.closeDocument(textDocument);
     const expected = [
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(1, 14),
           new vscode.Position(1, Number.MAX_VALUE)
         ),
         'GnLintLibFlags: Libraries should be specified by "libs", not -l flags in "ldflags": -lm',
-        vscode.DiagnosticSeverity.Warning
+        'CrOS GN lint'
       ),
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(2, 2),
           new vscode.Position(2, Number.MAX_VALUE)
         ),
         'GnLintOrderingWithinTarget: wrong parameter order in executable(my_exec): put parameters in the following order: output_name/visibility/testonly, sources, other parameters, public_deps and deps',
-        vscode.DiagnosticSeverity.Warning
+        'CrOS GN lint'
       ),
     ];
     expect(expected).toEqual(actual);
@@ -285,21 +299,21 @@ describe('Lint Integration', () => {
     const actual = crosLint.parseCrosLintGo(goLintOutputTast, '', textDocument);
     await extensionTesting.closeDocument(textDocument);
     const expected = [
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(0, 9),
           new vscode.Position(0, Number.MAX_VALUE)
         ),
         'method FooId should be FooID',
-        vscode.DiagnosticSeverity.Warning
+        'CrOS Go lint'
       ),
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(0, 2),
           new vscode.Position(0, Number.MAX_VALUE)
         ),
         'comment on exported method FooId should be of the form "FooId ..."',
-        vscode.DiagnosticSeverity.Warning
+        'CrOS Go lint'
       ),
     ];
     expect(actual).toEqual(expected);
@@ -311,21 +325,21 @@ describe('Lint Integration', () => {
     const actual = crosLint.parseCrosLintGo(goLintOutput, '', textDocument);
     await extensionTesting.closeDocument(textDocument);
     const expected = [
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(0, 2),
           new vscode.Position(0, Number.MAX_VALUE)
         ),
         'comment on exported method FooId should be of the form "FooId ..."',
-        vscode.DiagnosticSeverity.Warning
+        'CrOS Go lint'
       ),
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(2, 1),
           new vscode.Position(2, Number.MAX_VALUE)
         ),
         "don't use underscores in Go names; var bar_var should be barVar",
-        vscode.DiagnosticSeverity.Warning
+        'CrOS Go lint'
       ),
     ];
     expect(actual).toEqual(expected);
@@ -341,29 +355,29 @@ describe('Lint Integration', () => {
     );
     await extensionTesting.closeDocument(textDocument);
     const expected = [
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(0, 0),
           new vscode.Position(0, Number.MAX_VALUE)
         ),
         'C9001: Modules should have docstrings (even a one liner) (module-missing-docstring)',
-        vscode.DiagnosticSeverity.Warning
+        'CrOS lint'
       ),
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(2, 0),
           new vscode.Position(2, Number.MAX_VALUE)
         ),
         'C9002: Classes should have docstrings (even a one liner) (class-missing-docstring)',
-        vscode.DiagnosticSeverity.Warning
+        'CrOS lint'
       ),
-      new vscode.Diagnostic(
+      warning(
         new vscode.Range(
           new vscode.Position(7, 4),
           new vscode.Position(7, Number.MAX_VALUE)
         ),
         "W0612: Unused variable 'abc' (unused-variable)",
-        vscode.DiagnosticSeverity.Warning
+        'CrOS lint'
       ),
     ];
     expect(expected).toEqual(actual);
