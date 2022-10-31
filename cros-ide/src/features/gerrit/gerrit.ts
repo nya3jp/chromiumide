@@ -84,6 +84,8 @@ export function activate(
     statusManager
   );
 
+  let gitHead: string | undefined;
+
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(document => {
       void gerrit.showComments(document.fileName, {noFetch: true});
@@ -100,11 +102,13 @@ export function activate(
       }
     ),
     gitDirsWatcher.onDidChangeHead(async event => {
-      if (event.head) {
+      // 1. Check !event.head to avoid closing comments
+      //    when the only visible file is closed or replaced.
+      // 2. Check event.head !== gitHead to avoid reloading comments
+      //    on "head_1 -> undefined -> head_1" sequence.
+      if (event.head && event.head !== gitHead) {
+        gitHead = event.head;
         await gerrit.showComments(event.gitDir);
-      } else {
-        gerrit.clearCommentThreads();
-        gerrit.updateStatusBar();
       }
     })
   );
