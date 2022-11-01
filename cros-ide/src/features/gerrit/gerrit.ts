@@ -189,7 +189,10 @@ class Gerrit {
         this.sendMetrics();
       }
     } catch (err) {
-      this.showErrorMessage(`Failed to add Gerrit comments: ${err}`);
+      this.showErrorMessage({
+        log: `Failed to add Gerrit comments: ${err}`,
+        metrics: 'Failed to add Gerrit comments (top-level error)',
+      });
       return;
     }
   }
@@ -235,7 +238,10 @@ class Gerrit {
   private async fetchComments(gitDir: string) {
     const gitLogInfos = await git.readChangeIds(gitDir, this.outputChannel);
     if (gitLogInfos instanceof Error) {
-      this.showErrorMessage(`Failed to detect a commits in ${gitDir}`);
+      this.showErrorMessage({
+        log: `Failed to detect commits in ${gitDir}`,
+        metrics: 'FetchComments failed to detect commits',
+      });
       return undefined;
     }
     if (gitLogInfos.length === 0) {
@@ -297,9 +303,25 @@ class Gerrit {
     updateChangeComments(hunks, changeThreads);
   }
 
-  private showErrorMessage(message: string) {
-    this.outputChannel.appendLine(message);
+  /**
+   * Show `message.log` in the IDE, set task status to error,
+   * and send `message.metrics` via metrics if it is set.
+   *
+   * If `message` is a string, it is used both in the log and metrics.
+   */
+  private showErrorMessage(message: string | {log: string; metrics?: string}) {
+    const m: {log: string; metrics?: string} =
+      typeof message === 'string' ? {log: message, metrics: message} : message;
+
+    this.outputChannel.appendLine(m.log);
     this.statusManager.setStatus(GERRIT, bgTaskStatus.TaskStatus.ERROR);
+    if (m.metrics) {
+      metrics.send({
+        category: 'error',
+        group: 'gerrit',
+        description: m.metrics,
+      });
+    }
   }
 
   clearCommentThreads() {
