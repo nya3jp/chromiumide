@@ -12,7 +12,6 @@ import * as sourceMapSupport from 'source-map-support';
 import * as cipd from './common/cipd';
 import * as commonUtil from './common/common_util';
 import * as features from './features';
-import * as chromiumBuild from './features/chromium_build';
 import * as codesearch from './features/codesearch';
 import * as crosFormat from './features/cros_format';
 import * as crosLint from './features/cros_lint';
@@ -69,6 +68,7 @@ async function postMetricsActivate(
   const cipdRepository = new cipd.CipdRepository();
 
   context.subscriptions.push(
+    new ChromiumActivation(context, statusManager),
     new ChromiumosActivation(context, statusManager, cipdRepository)
   );
 
@@ -130,10 +130,6 @@ async function postMetricsActivate(
     });
   }
 
-  if (config.underDevelopment.chromiumBuild.get()) {
-    chromiumBuild.activate(context, statusManager);
-  }
-
   metrics.send({
     category: 'background',
     group: 'misc',
@@ -184,6 +180,36 @@ class ChromiumosActivation implements vscode.Disposable {
               statusManager,
               cipdRepository
             )
+          : undefined;
+      })
+    );
+  }
+}
+
+/**
+ * Registers a handler to activate chromium features when the workspace
+ * contains chromium source code.
+ */
+class ChromiumActivation implements vscode.Disposable {
+  private readonly watcher = new services.ProductWatcher('chromium');
+  private chromiumFeatures?: features.Chromium;
+
+  private readonly subscriptions: vscode.Disposable[] = [this.watcher];
+
+  dispose() {
+    this.chromiumFeatures?.dispose();
+    vscode.Disposable.from(...this.subscriptions.reverse()).dispose();
+  }
+
+  constructor(
+    context: vscode.ExtensionContext,
+    statusManager: bgTaskStatus.StatusManager
+  ) {
+    this.subscriptions.push(
+      this.watcher.onDidChangeRoot(root => {
+        this.chromiumFeatures?.dispose();
+        this.chromiumFeatures = root
+          ? new features.Chromium(context, root, statusManager)
           : undefined;
       })
     );

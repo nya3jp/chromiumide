@@ -3,4 +3,3 @@
 // found in the LICENSE file.
 
 export {Chromium} from './chromium';
-export {Chromiumos} from './chromiumos';
