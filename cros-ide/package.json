@@ -444,7 +444,7 @@
         "cros-ide.gerrit.enabled": {
           "type": "boolean",
           "markdownDescription": "Enable Gerrit comments.",
-          "default": false
+          "default": true
         },
         "cros-ide.platformEC.board": {
           "type": "string",
