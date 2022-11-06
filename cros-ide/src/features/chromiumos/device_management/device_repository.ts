@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import * as dateFns from 'date-fns';
 import * as config from '../../../services/config';
+import * as commonUtil from '../../../common/common_util';
 import * as abandonedDevices from './abandoned_devices';
 import * as crosfleet from './crosfleet';
 
@@ -43,6 +44,8 @@ export class OwnedDeviceRepository
   implements IDeviceRepository<OwnedDevice>, vscode.Disposable
 {
   private readonly onDidChangeEmitter = new vscode.EventEmitter<void>();
+  private readonly configMutex = new commonUtil.Mutex<void>();
+
   readonly onDidChange = this.onDidChangeEmitter.event;
 
   private readonly subscriptions: vscode.Disposable[] = [
@@ -72,21 +75,25 @@ export class OwnedDeviceRepository
   }
 
   async addDevice(hostname: string): Promise<void> {
-    const hostnames = this.getHostnames();
-    if (hostnames.includes(hostname)) {
-      return;
-    }
-    const newHostnames = [...hostnames, hostname];
-    await this.setHostnames(newHostnames);
+    await this.configMutex.runExclusive(async () => {
+      const hostnames = this.getHostnames();
+      if (hostnames.includes(hostname)) {
+        return;
+      }
+      const newHostnames = [...hostnames, hostname];
+      await this.setHostnames(newHostnames);
+    });
   }
 
   async removeDevice(hostname: string): Promise<void> {
-    const hostnames = this.getHostnames();
-    if (!hostnames.includes(hostname)) {
-      throw new Error(`Unknown owned host: ${hostname}`);
-    }
-    const newHostnames = hostnames.filter(h => h !== hostname);
-    await this.setHostnames(newHostnames);
+    await this.configMutex.runExclusive(async () => {
+      const hostnames = this.getHostnames();
+      if (!hostnames.includes(hostname)) {
+        throw new Error(`Unknown owned host: ${hostname}`);
+      }
+      const newHostnames = hostnames.filter(h => h !== hostname);
+      await this.setHostnames(newHostnames);
+    });
   }
 
   private getHostnames(): string[] {
