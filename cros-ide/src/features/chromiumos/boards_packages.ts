@@ -153,6 +153,11 @@ class BoardsPackages {
     const fileName = srcRoot.realpath(relFileName);
     const document = await vscode.workspace.openTextDocument(fileName);
     await vscode.window.showTextDocument(document);
+    metrics.send({
+      category: 'interactive',
+      group: 'package',
+      action: 'open ebuild',
+    });
   }
 }
 
