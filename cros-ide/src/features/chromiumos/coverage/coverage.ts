@@ -10,6 +10,8 @@ import * as services from '../../../services';
 import * as bgTaskStatus from '../../../ui/bg_task_status';
 import * as metrics from '../../metrics/metrics';
 import {Package} from './../boards_packages';
+import {llvmToLineFormat} from './llvm_json_parser';
+import {CoverageJson, LlvmFileCoverage} from './types';
 
 // Highlight colors were copied from Code Search.
 const coveredDecoration = vscode.window.createTextEditorDecorationType({
@@ -145,23 +147,21 @@ export class Coverage {
       return {};
     }
 
-    const segments = await getSegments(coverageJson, relativePath);
-    if (!segments) {
+    const llvmCoverage = getLlvmCoverage(coverageJson, relativePath);
+    if (!llvmCoverage) {
       return {};
     }
 
-    // TODO(ttylenda): process segments to display correct output
+    const converted = llvmToLineFormat(llvmCoverage);
 
-    const coveredRanges: vscode.Range[] = [];
-    const uncoveredRanges: vscode.Range[] = [];
-
-    for (const s of segments) {
-      const line = s[LINE_NUMBER];
-      const range = new vscode.Range(line, 0, line, Number.MAX_VALUE);
-      (s[COUNT] > 0 ? coveredRanges : uncoveredRanges).push(range);
+    function toVscodeRange(line: number) {
+      return new vscode.Range(line - 1, 0, line - 1, Number.MAX_VALUE);
     }
 
-    return {covered: coveredRanges, uncovered: uncoveredRanges};
+    return {
+      covered: converted.covered.map(line => toVscodeRange(line)),
+      uncovered: converted.uncovered.map(line => toVscodeRange(line)),
+    };
   }
 
   private async findCoverageFile(
@@ -213,34 +213,6 @@ interface CoverageRanges {
   uncovered?: vscode.Range[];
 }
 
-/**
- * LLVM's coverage format.
- *
- * Fields:
- *   number - the line where this segment begins
- *   column - the column where this segment begins
- *   count - the execution count, or zero if no count was recorded
- *   hasCount - when false, the segment was uninstrumented or skipped
- *   IsRegionEntry - whether this enters a new region or returns
- *                   to a previous count
- */
-type Segment = [number, number, number, boolean, boolean, boolean?];
-
-const LINE_NUMBER = 0;
-const COUNT = 2;
-
-/** Actual coverage data that we need. */
-interface FileCoverage {
-  filename: string;
-  segments: Segment[];
-}
-
-/** Top-level element in coverage.json */
-interface CoverageJson {
-  // Only data[0] appears to be used.
-  data: {files: FileCoverage[]}[];
-}
-
 const platform2 = 'platform2/';
 
 /** Get package name and relative path from a path to platform2 file. */
@@ -261,13 +233,13 @@ function parseFileName(documentFileName: string): {
 // TODO(ttylenda): Decide if we need a specific board or can we use whatever is available in chroot.
 const coverageDir = '/build/amd64-generic/build/coverage_data/';
 
-/** Get segments data from a coverage JSON object. */
-async function getSegments(
+/** Get LLVM data from a coverage JSON object. */
+function getLlvmCoverage(
   coverage: CoverageJson,
   relativePath: string
-): Promise<Segment[] | undefined> {
+): LlvmFileCoverage | undefined {
   const files = coverage.data[0].files;
   // TODO(ttylenda): Find the right file in a more accurate way.
   const currentFile = files.find(f => f.filename.endsWith(relativePath));
-  return currentFile && currentFile.segments;
+  return currentFile;
 }
