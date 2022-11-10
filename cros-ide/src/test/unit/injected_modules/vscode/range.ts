@@ -2,19 +2,36 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import type * as vscode from 'vscode';
 import {Position} from './position';
 
 export class Range {
   readonly start: Position;
   readonly end: Position;
+
+  constructor(start: vscode.Position, end: vscode.Position);
   constructor(
     startLine: number,
     startCharacter: number,
     endLine: number,
     endCharacter: number
+  );
+  constructor(
+    startOrStartLine: vscode.Position | number,
+    endOrStartCharacter: vscode.Position | number,
+    endLine?: number,
+    endCharacter?: number
   ) {
-    this.start = new Position(startLine, startCharacter);
-    this.end = new Position(endLine, endCharacter);
+    if (typeof startOrStartLine === 'number') {
+      this.start = new Position(
+        startOrStartLine,
+        endOrStartCharacter as number
+      );
+      this.end = new Position(endLine!, endCharacter!);
+    } else {
+      this.start = startOrStartLine;
+      this.end = endOrStartCharacter as vscode.Position;
+    }
   }
 
   contains(_positionOrRange: Range | Position): boolean {

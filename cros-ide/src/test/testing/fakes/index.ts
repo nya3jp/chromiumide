@@ -10,3 +10,4 @@ export {installChrootCommandHandler} from './cros_sdk';
 export {Memento} from './memento';
 export {ConsoleOutputChannel, VoidOutputChannel} from './output_channel';
 export {installFakeSudo} from './sudo';
+export {FakeTextDocument} from './text_document';
