@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 import * as assert from 'assert';
-import {Coverage} from '../../../../features/chromiumos/coverage';
-import * as services from '../../../../services';
-import * as bgTaskStatus from '../../../../ui/bg_task_status';
-import * as testing from '../../../testing';
+import {Coverage} from '../../../../../features/chromiumos/coverage';
+import * as services from '../../../../../services';
+import * as bgTaskStatus from '../../../../../ui/bg_task_status';
+import * as testing from '../../../../testing';
 
 const coverageJsonContents =
   `{"data": [{ "files": [{

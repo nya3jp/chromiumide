@@ -6,10 +6,10 @@ import * as fs from 'fs';
 import * as util from 'util';
 import * as vscode from 'vscode';
 import * as glob from 'glob';
-import * as services from '../../services';
-import * as bgTaskStatus from '../../ui/bg_task_status';
-import * as metrics from '../metrics/metrics';
-import {Package} from './boards_packages';
+import * as services from '../../../services';
+import * as bgTaskStatus from '../../../ui/bg_task_status';
+import * as metrics from '../../metrics/metrics';
+import {Package} from './../boards_packages';
 
 // Highlight colors were copied from Code Search.
 const coveredDecoration = vscode.window.createTextEditorDecorationType({
