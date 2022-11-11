@@ -5,7 +5,13 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import * as dateFns from 'date-fns';
 import {Device, IDeviceRepository} from './device_repository';
+import * as sshUtil from './ssh_util';
+
+// TODO(joelbecker): import normally once tsconfig esModuleInterop=true doesn't break a lot of
+// other things.
+const SSHConfig = require('ssh-config');
 
 export const defaultConfigPath = path.join(os.homedir(), '.ssh', 'config');
 
@@ -65,4 +71,51 @@ export async function readUnaddedSshHosts<TDevice extends Device>(
   );
   const knownHostSet = new Set(knownHosts);
   return sshHosts.filter(hostname => !knownHostSet.has(hostname));
+}
+
+/**
+ * Adds an ssh config entry, first backing up the file.
+ *
+ * @throws Error if unable to modify the config.
+ */
+export async function addSshConfigEntry(
+  entry: sshUtil.SshConfigHostEntry,
+  sshConfigPath: string = defaultConfigPath
+): Promise<void> {
+  await backupAndModifySshConfig(sshConfig => {
+    sshConfig.prepend(
+      Object.assign({}, ...Object.entries(entry).map(x => ({[x[0]]: x[1]})))
+    );
+  }, sshConfigPath);
+}
+
+/**
+ * Removes an ssh config entry by hostname (the Host line), first backing up the file.
+ *
+ * @throws Error if unable to modify the config.
+ */
+export async function removeSshConfigEntry(
+  hostname: string,
+  sshConfigPath: string = defaultConfigPath
+): Promise<boolean> {
+  let found = false;
+  await backupAndModifySshConfig((sshConfig: typeof SSHConfig) => {
+    while (sshConfig.remove({Host: hostname})) {
+      found = true;
+    }
+  }, sshConfigPath);
+  return found;
+}
+
+async function backupAndModifySshConfig(
+  modifier: (config: typeof SSHConfig) => void,
+  sshConfigPath: string = defaultConfigPath
+): Promise<void> {
+  const fileContents = fs.readFileSync(sshConfigPath).toString();
+  const sshConfig = SSHConfig.parse(fileContents);
+  modifier(sshConfig);
+  const timestamp = dateFns.format(new Date(), 'yyyy-MMM-dd--HH-mm-ss');
+  const backupPath = sshConfigPath + '.cros-ide-bak.' + timestamp;
+  fs.copyFileSync(sshConfigPath, backupPath);
+  fs.writeFileSync(sshConfigPath, sshConfig.toString());
 }

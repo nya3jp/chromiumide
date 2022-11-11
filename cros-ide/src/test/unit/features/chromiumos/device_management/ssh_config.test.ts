@@ -7,6 +7,7 @@ import * as mockFs from 'mock-fs';
 import 'jasmine';
 import * as sshConfig from '../../../../../features/chromiumos/device_management/ssh_config';
 import {FakeDeviceRepository} from './fake_device_repository';
+import {SshConfigHostEntry} from './../../../../../features/chromiumos/device_management/ssh_util';
 
 const TEST_CONFIG_FILE = `
 # Comments are ignored
@@ -62,6 +63,109 @@ describe('SSH config parser', () => {
       );
 
       expect(result).toEqual(['dut1', 'dut3']);
+    });
+  });
+
+  describe('modifying functions', () => {
+    const hostname = 'host1';
+    const configContentsWithoutHost1 = `
+    Host preexisting-entry
+      Hostname 127.0.0.1
+      Port 4242
+    `;
+    const configContentsWithHost1 = `Host ${hostname}
+      Hostname 1.2.3.4
+
+
+    Host preexisting-entry
+      Hostname 127.0.0.1
+      Port 4242
+    `;
+    const entry: SshConfigHostEntry = {
+      Host: hostname,
+      Hostname: '1.2.3.4',
+    };
+    const startingTime = new Date(2022, 0, 2, 3, 4, 5);
+    const backupFilename = 'config.cros-ide-bak.2022-Jan-02--03-04-05';
+
+    beforeEach(() => {
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(startingTime));
+    });
+
+    afterEach(() => {
+      jasmine.clock().uninstall();
+      mockFs.restore();
+    });
+
+    it('backs up the .ssh config and adds the new entry, preserving previous entries', async () => {
+      mockFs({
+        '/test/.ssh/config': configContentsWithoutHost1,
+      });
+      await sshConfig.addSshConfigEntry(entry, '/test/.ssh/config');
+
+      const files = await fs.promises.readdir('/test/.ssh');
+      expect(files).toEqual(['config', backupFilename]);
+      const backupContents = fs
+        .readFileSync(`/test/.ssh/${backupFilename}`)
+        .toString();
+      const newContents = fs.readFileSync('/test/.ssh/config').toString();
+      expect(newContents).toBe(configContentsWithHost1);
+      expect(backupContents).toBe(configContentsWithoutHost1);
+    });
+
+    it('backs up the .ssh config and removes the entry for the given host', async () => {
+      mockFs({
+        '/test/.ssh/config': configContentsWithHost1,
+      });
+      await sshConfig.removeSshConfigEntry(hostname, '/test/.ssh/config');
+
+      const files = await fs.promises.readdir('/test/.ssh');
+      expect(files).toEqual(['config', backupFilename]);
+      const backupContents = fs
+        .readFileSync(`/test/.ssh/${backupFilename}`)
+        .toString();
+      const newContents = fs.readFileSync('/test/.ssh/config').toString();
+      expect(newContents.trim()).toBe(configContentsWithoutHost1.trim());
+      expect(backupContents.trim()).toBe(configContentsWithHost1.trim());
+    });
+
+    it('Removes all Host entries for the given host name, unless there are also other host names in the entry', async () => {
+      mockFs({
+        '/test/.ssh/config': `
+        Host host1 host2 host3
+          Hostname 1.2.3.4
+
+        Host host2 host1
+          Hostname 1.2.3.4
+
+        Host host1
+          Hostname 1.2.3.4
+
+        Host host1
+          Hostname 4.3.2.1
+
+        Host preexisting-entry
+          Hostname 127.0.0.1
+          Port 4242
+        `,
+      });
+      await sshConfig.removeSshConfigEntry(hostname, '/test/.ssh/config');
+
+      const newContents = fs.readFileSync('/test/.ssh/config').toString();
+      expect(newContents.trim()).toBe(
+        `
+        Host host1 host2 host3
+          Hostname 1.2.3.4
+
+        Host host2 host1
+          Hostname 1.2.3.4
+
+        Host preexisting-entry
+          Hostname 127.0.0.1
+          Port 4242
+      `.trim()
+      );
     });
   });
 });

@@ -2,18 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import * as fs from 'fs';
 import {OutputChannel} from 'vscode';
-import * as dateFns from 'date-fns';
 import {OwnedDeviceRepository} from '../device_repository';
 import {buildSshArgs, SshConfigHostEntry} from '../ssh_util';
+import * as sshConfig from '../ssh_config';
 import {DeviceClient} from './../device_client';
 import {DutConnectionConfig, DutNetworkType} from './add_owned_device_model';
 import * as addExistingHostsCommand from './../commands/add_existing_hosts';
-
-// TODO(joelbecker): import normally once tsconfig esModuleInterop=true doesn't break a lot of
-// other things.
-const SSHConfig = require('ssh-config');
 
 export class AddOwnedDeviceService {
   constructor(
@@ -62,20 +57,11 @@ export class AddOwnedDeviceService {
    *
    * @throws Error if unable to modify the config.
    */
-  addHostToSshConfig(config: DutConnectionConfig): void {
-    this.modifySshConfig(sshConfig => {
-      sshConfig.prepend(this.sshConfigHostTemplate(config));
-    });
-  }
-
-  private modifySshConfig(modifier: (config: typeof SSHConfig) => void): void {
-    const fileContents = fs.readFileSync(this.sshConfigPath).toString();
-    const sshConfig = SSHConfig.parse(fileContents);
-    modifier(sshConfig);
-    const timestamp = dateFns.format(new Date(), 'yyyy-MMM-dd--HH-mm-ss');
-    const backupPath = this.sshConfigPath + '.cros-ide-bak.' + timestamp;
-    fs.copyFileSync(this.sshConfigPath, backupPath);
-    fs.writeFileSync(this.sshConfigPath, sshConfig.toString());
+  async addHostToSshConfig(config: DutConnectionConfig): Promise<void> {
+    await sshConfig.addSshConfigEntry(
+      this.sshConfigHostTemplate(config),
+      this.sshConfigPath
+    );
   }
 
   // TODO(joelbecker): Get from user configuration.

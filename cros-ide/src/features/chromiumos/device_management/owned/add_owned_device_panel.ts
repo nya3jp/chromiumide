@@ -67,7 +67,7 @@ export class AddOwnedDevicePanel extends ReactPanel<AddOwnedDeviceViewContext> {
   async configureAndTestConnection(config: DutConnectionConfig): Promise<void> {
     await this.service.tryToConnect(config);
     if (config.addToSshConfig) {
-      this.service.addHostToSshConfig(config);
+      await this.service.addHostToSshConfig(config);
     }
     if (config.addToHostsFile) {
       // TODO(joelbecker): this.addToHostsFile(config); // but with execSudo() or the like

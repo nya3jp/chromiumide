@@ -72,7 +72,7 @@ Host preexisting-entry
         new OwnedDeviceRepository()
       );
 
-      svc.addHostToSshConfig(dutConnectionConfig);
+      await svc.addHostToSshConfig(dutConnectionConfig);
 
       const files = await fs.promises.readdir('/test/.ssh');
       expect(files).toEqual(['config', backupFilename]);
