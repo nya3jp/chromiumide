@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as crosLint from '../../../features/cros_lint';
 import * as extensionTesting from '../extension_testing';
@@ -143,7 +142,6 @@ describe('Lint Integration', () => {
     const textDocument = await vscode.workspace.openTextDocument(uri);
     const actual = crosLint.parseCrosLintCpp(cppLintOutput, '', textDocument);
     await extensionTesting.closeDocument(textDocument);
-    assert.strictEqual(actual.length, 2);
     const expected = [
       new vscode.Diagnostic(
         new vscode.Range(
@@ -162,7 +160,7 @@ describe('Lint Integration', () => {
         vscode.DiagnosticSeverity.Warning
       ),
     ];
-    assert.deepStrictEqual(expected, actual);
+    expect(expected).toEqual(actual);
   });
 
   it('parses libchrome errors', async () => {
@@ -174,7 +172,6 @@ describe('Lint Integration', () => {
       textDocument
     );
     await extensionTesting.closeDocument(textDocument);
-    assert.strictEqual(actual.length, 2);
     const expected: vscode.Diagnostic[] = [
       new vscode.Diagnostic(
         new vscode.Range(
@@ -193,7 +190,7 @@ describe('Lint Integration', () => {
         vscode.DiagnosticSeverity.Warning
       ),
     ];
-    assert.deepStrictEqual(expected, actual);
+    expect(expected).toEqual(actual);
   });
 
   it('parses Python errors', async () => {
@@ -205,7 +202,6 @@ describe('Lint Integration', () => {
       textDocument
     );
     await extensionTesting.closeDocument(textDocument);
-    assert.strictEqual(actual.length, 3);
     const expected = [
       new vscode.Diagnostic(
         new vscode.Range(
@@ -232,7 +228,7 @@ describe('Lint Integration', () => {
         vscode.DiagnosticSeverity.Warning
       ),
     ];
-    assert.deepStrictEqual(expected, actual);
+    expect(expected).toEqual(actual);
   });
 
   it('parses shell errors', async () => {
@@ -244,7 +240,6 @@ describe('Lint Integration', () => {
       textDocument
     );
     await extensionTesting.closeDocument(textDocument);
-    assert.strictEqual(actual.length, 1);
     const expected = [
       new vscode.Diagnostic(
         new vscode.Range(
@@ -255,14 +250,13 @@ describe('Lint Integration', () => {
         vscode.DiagnosticSeverity.Warning
       ),
     ];
-    assert.deepStrictEqual(actual, expected);
+    expect(actual).toEqual(expected);
   });
 
   it('parses GN errors', async () => {
     const uri = vscode.Uri.from({scheme: scheme, path: gnFileName});
     const textDocument = await vscode.workspace.openTextDocument(uri);
     const actual = crosLint.parseCrosLintGn('', gnLintOutput, textDocument);
-    assert.strictEqual(actual.length, 2);
     await extensionTesting.closeDocument(textDocument);
     const expected = [
       new vscode.Diagnostic(
@@ -282,7 +276,7 @@ describe('Lint Integration', () => {
         vscode.DiagnosticSeverity.Warning
       ),
     ];
-    assert.deepStrictEqual(expected, actual);
+    expect(expected).toEqual(actual);
   });
 
   it('parses go errors in tast', async () => {
@@ -290,7 +284,6 @@ describe('Lint Integration', () => {
     const textDocument = await vscode.workspace.openTextDocument(uri);
     const actual = crosLint.parseCrosLintGo(goLintOutputTast, '', textDocument);
     await extensionTesting.closeDocument(textDocument);
-    assert.strictEqual(actual.length, 2);
     const expected = [
       new vscode.Diagnostic(
         new vscode.Range(
@@ -309,7 +302,7 @@ describe('Lint Integration', () => {
         vscode.DiagnosticSeverity.Warning
       ),
     ];
-    assert.deepStrictEqual(actual, expected);
+    expect(actual).toEqual(expected);
   });
 
   it('parses go errors outside of tast', async () => {
@@ -317,7 +310,6 @@ describe('Lint Integration', () => {
     const textDocument = await vscode.workspace.openTextDocument(uri);
     const actual = crosLint.parseCrosLintGo(goLintOutput, '', textDocument);
     await extensionTesting.closeDocument(textDocument);
-    assert.strictEqual(actual.length, 2);
     const expected = [
       new vscode.Diagnostic(
         new vscode.Range(
@@ -336,7 +328,7 @@ describe('Lint Integration', () => {
         vscode.DiagnosticSeverity.Warning
       ),
     ];
-    assert.deepStrictEqual(actual, expected);
+    expect(actual).toEqual(expected);
   });
 
   it('handles absolute document paths when parsing Python errors', async () => {
@@ -348,7 +340,6 @@ describe('Lint Integration', () => {
       textDocument
     );
     await extensionTesting.closeDocument(textDocument);
-    assert.strictEqual(actual.length, 3);
     const expected = [
       new vscode.Diagnostic(
         new vscode.Range(
@@ -375,6 +366,6 @@ describe('Lint Integration', () => {
         vscode.DiagnosticSeverity.Warning
       ),
     ];
-    assert.deepStrictEqual(expected, actual);
+    expect(expected).toEqual(actual);
   });
 });
