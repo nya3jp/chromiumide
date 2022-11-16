@@ -680,7 +680,7 @@ describe('Gerrit', () => {
     // It should be placed on line 0 (0-based).
     expect(callData.args[1].start.line).toEqual(0);
     expect(callData.args[2][0].body).toEqual(
-      'Unresolved comment on the added line.'
+      new vscode.MarkdownString('Unresolved comment on the added line.')
     );
   });
 
