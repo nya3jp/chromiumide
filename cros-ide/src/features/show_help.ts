@@ -19,7 +19,14 @@ export function activate(context: vscode.ExtensionContext) {
       'cros-ide.showHelpForIdeStatus',
       vscode.Uri.parse('http://go/cros-ide-doc-ide-status'),
     ],
-    // TODO(b:256974503): Add buttons in Problems for liners and in Comments for Gerrit.
+    [
+      'cros-ide.showHelpForGerrit',
+      vscode.Uri.parse('http://go/cros-ide-doc-gerrit'),
+    ],
+    [
+      'cros-ide.showHelpForLint',
+      vscode.Uri.parse('http://go/cros-ide-doc-linting'),
+    ],
   ];
 
   for (const [command, link] of commandLink) {

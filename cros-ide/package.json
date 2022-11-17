@@ -236,8 +236,18 @@
         "icon": "$(question)"
       },
       {
+        "command": "cros-ide.showHelpForGerrit",
+        "title": "CrOS IDE Help",
+        "icon": "$(question)"
+      },
+      {
         "command": "cros-ide.showHelpForIdeStatus",
         "title": "Show Help",
+        "icon": "$(question)"
+      },
+      {
+        "command": "cros-ide.showHelpForLint",
+        "title": "CrOS IDE Help",
         "icon": "$(question)"
       }
     ],
@@ -307,8 +317,18 @@
           "group": "navigation"
         },
         {
+          "command": "cros-ide.showHelpForGerrit",
+          "when": "view == workbench.panel.comments",
+          "group": "navigation"
+        },
+        {
           "command": "cros-ide.showHelpForIdeStatus",
           "when": "view == cros-ide-status",
+          "group": "navigation"
+        },
+        {
+          "command": "cros-ide.showHelpForLint",
+          "when": "view == workbench.panel.markers.view",
           "group": "navigation"
         }
       ],
