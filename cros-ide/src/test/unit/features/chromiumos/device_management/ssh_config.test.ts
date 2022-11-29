@@ -38,6 +38,19 @@ describe('SSH config parser', () => {
       const result = await sshConfig.readConfiguredSshHosts(CONFIG_PATH);
       expect(result).toEqual(['dut1', 'dut2', 'dut3', 'dut4']);
     });
+
+    it("doesn't return duplicate host names", async () => {
+      mockFs({
+        [CONFIG_PATH]: `
+        Host dut1 dut2 dut3
+        Host dut2 dut3
+        Host dut3
+        `,
+      });
+
+      const result = await sshConfig.readConfiguredSshHosts(CONFIG_PATH);
+      expect(result).toEqual(['dut1', 'dut2', 'dut3']);
+    });
   });
 
   describe('isLabAccessConfigured', () => {

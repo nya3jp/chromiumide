@@ -46,7 +46,10 @@ export async function readConfiguredSshHosts(
   configPath: string = defaultConfigPath
 ): Promise<string[]> {
   const hosts = await readAllHosts(configPath);
-  return hosts.filter(host => !host.includes('*') && !host.startsWith('!'));
+  const configuredHosts = hosts.filter(
+    host => !host.includes('*') && !host.startsWith('!')
+  );
+  return [...new Set(configuredHosts)];
 }
 
 export async function isLabAccessConfigured(
