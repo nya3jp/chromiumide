@@ -8,7 +8,6 @@ import * as vscode from 'vscode';
 import * as glob from 'glob';
 import * as services from '../../../services';
 import * as bgTaskStatus from '../../../ui/bg_task_status';
-import * as metrics from '../../metrics/metrics';
 import {Package} from './../boards_packages';
 import {llvmToLineFormat} from './llvm_json_parser';
 import {CoverageJson, LlvmFileCoverage} from './types';
@@ -26,11 +25,6 @@ const uncoveredDecoration = vscode.window.createTextEditorDecorationType({
 });
 
 const COVERAGE_TASK_ID = 'Code Coverage';
-
-const SHOW_LOG_COMMAND: vscode.Command = {
-  command: 'cros-ide.coverage.showLog',
-  title: 'Show Code Coverage Log',
-};
 
 export class Coverage {
   private activeEditor?: vscode.TextEditor;
@@ -52,15 +46,7 @@ export class Coverage {
       vscode.commands.registerCommand(
         'cros-ide.coverage.showReport',
         (pkg: Package) => this.showReport(pkg)
-      ),
-      vscode.commands.registerCommand(SHOW_LOG_COMMAND.command, () => {
-        this.output.show();
-        metrics.send({
-          category: 'interactive',
-          group: 'idestatus',
-          action: 'show coverage log',
-        });
-      })
+      )
     );
 
     this.activeEditor = vscode.window.activeTextEditor;
@@ -87,7 +73,7 @@ export class Coverage {
   private async generateCoverage(pkg: Package) {
     this.statusManager.setTask(COVERAGE_TASK_ID, {
       status: bgTaskStatus.TaskStatus.RUNNING,
-      command: SHOW_LOG_COMMAND,
+      outputChannel: this.output,
     });
     const res = await this.chrootService.exec(
       'env',
@@ -104,12 +90,10 @@ export class Coverage {
       }
     );
     const statusOk = !(res instanceof Error) && res.exitStatus === 0;
-    this.statusManager.setTask(COVERAGE_TASK_ID, {
-      status: statusOk
-        ? bgTaskStatus.TaskStatus.OK
-        : bgTaskStatus.TaskStatus.ERROR,
-      command: SHOW_LOG_COMMAND,
-    });
+    this.statusManager.setStatus(
+      COVERAGE_TASK_ID,
+      statusOk ? bgTaskStatus.TaskStatus.OK : bgTaskStatus.TaskStatus.ERROR
+    );
   }
 
   private async updateDecorations() {
