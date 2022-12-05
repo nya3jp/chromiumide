@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import {ExecResult} from '../../../../common/common_util';
 import * as chroot from '../../../../services/chromiumos/chroot';
 import * as model from './flash_device_model';
-import {ExecResult} from '/code/chromiumos/chromite/ide_tooling/cros-ide/src/common/common_util';
 
 export class FlashDeviceService implements vscode.Disposable {
   constructor(
