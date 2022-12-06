@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.6.0 (December 2022)
+
+- Gerrit integration (readonly)
+- Platform2 unit tests support
+
 ## 0.4.0 (November 2022)
 
 - Fixes for features crashing outside ChromeOS source tree.
