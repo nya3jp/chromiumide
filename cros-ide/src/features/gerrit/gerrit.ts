@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 import * as dateFns from 'date-fns';
 import * as commonUtil from '../../common/common_util';
 import * as services from '../../services';
+import {underDevelopment} from '../../services/config';
 import * as gitDocument from '../../services/git_document';
 import * as bgTaskStatus from '../../ui/bg_task_status';
 import * as metrics from '../metrics/metrics';
@@ -14,6 +15,7 @@ import * as api from './api';
 import * as git from './git';
 import * as helpers from './helpers';
 import * as https from './https';
+import * as auth from './auth';
 import * as virtualDocument from './virtual_document';
 
 // Task name in the status manager.
@@ -40,6 +42,32 @@ export function activate(
   );
 
   context.subscriptions.push(controller);
+
+  if (underDevelopment.gerrit) {
+    // Test auth for Gerrit
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        'cros-ide.gerrit.internal.testAuth',
+        async () => {
+          const cookie = await auth.readGitcookies(outputChannel);
+          // Fetch from some internal Gerrit change
+          const str = await https.getOrThrow(
+            'https://chrome-internal-review.googlesource.com/changes/5103048/comments',
+            {headers: {cookie}}
+          );
+          outputChannel.appendLine(
+            '[Internal] REST output for the Gerrit auth test:' + str
+          );
+          // Auth succeeded if the REST returned a valid JSON
+          void vscode.window.showInformationMessage(
+            str && JSON.parse(str.split('\n')[1])
+              ? 'Auth succeeded!'
+              : 'Auth failed!'
+          );
+        }
+      )
+    );
+  }
 
   const focusCommentsPanel = 'cros-ide.gerrit.focusCommentsPanel';
   context.subscriptions.push(

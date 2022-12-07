@@ -219,6 +219,13 @@
         "enablement": "config.cros-ide.underDevelopment.testCoverage"
       },
       {
+        "command": "cros-ide.gerrit.internal.testAuth",
+        "category": "CrOS",
+        "title": "[Internal] Test Gerrit Auth",
+        "icon": "$(bug)",
+        "enablement": "config.cros-ide.underDevelopment.gerrit"
+      },
+      {
         "command": "cros-ide.gerrit.collapseAllComments",
         "category": "CrOS",
         "title": "Collapse All Comments",
@@ -553,6 +560,11 @@
         "cros-ide.underDevelopment.deviceManagement": {
           "type": "boolean",
           "description": "Enable experimental Device Management features.",
+          "default": false
+        },
+        "cros-ide.underDevelopment.gerrit": {
+          "type": "boolean",
+          "description": "Enable new features for Gerrit (under development)",
           "default": false
         },
         "cros-ide.underDevelopment.platform2GtestDebugging": {
