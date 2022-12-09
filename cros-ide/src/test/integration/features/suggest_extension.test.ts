@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import * as metrics from '../../../features/metrics/metrics';
 import {activateSingle} from '../../../features/suggest_extension';
 import {flushMicrotasks} from '../../testing';
 import {installVscodeDouble} from '../../testing/doubles';
@@ -14,6 +15,7 @@ describe('Suggest extension module', () => {
   beforeEach(() => {
     vscode.Disposable.from(...subscriptions).dispose();
     subscriptions.splice(0);
+    spyOn(metrics, 'send');
   });
 
   it('suggests an extension', async () => {
@@ -54,6 +56,19 @@ describe('Suggest extension module', () => {
       'workbench.extensions.installExtension',
       'foo'
     );
+    expect(metrics.send).toHaveBeenCalledTimes(2);
+    expect(metrics.send).toHaveBeenCalledWith({
+      category: 'background',
+      group: 'misc',
+      action: 'show suggestion',
+      label: 'foo',
+    });
+    expect(metrics.send).toHaveBeenCalledWith({
+      category: 'interactive',
+      group: 'misc',
+      action: 'install suggested',
+      label: 'foo',
+    });
   });
 
   it('does not suggest if languages do not match', async () => {

@@ -4,6 +4,7 @@
 
 import * as vscode from 'vscode';
 import * as ideUtil from '../ide_util';
+import * as metrics from '../features/metrics/metrics';
 
 export function activate(context: vscode.ExtensionContext): void {
   const recommendations: Recommendation[] = [
@@ -135,6 +136,12 @@ class Recommender implements vscode.Disposable {
         YES,
         LATER
       );
+      metrics.send({
+        category: 'background',
+        group: 'misc',
+        action: 'show suggestion',
+        label: this.recommendation.extensionId,
+      });
       if (choice === YES) {
         await vscode.commands.executeCommand(
           'extension.open',
@@ -144,6 +151,12 @@ class Recommender implements vscode.Disposable {
           'workbench.extensions.installExtension',
           this.recommendation.extensionId
         );
+        metrics.send({
+          category: 'interactive',
+          group: 'misc',
+          action: 'install suggested',
+          label: this.recommendation.extensionId,
+        });
       }
     })();
 
