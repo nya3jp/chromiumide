@@ -669,6 +669,15 @@
         ]
       },
       {
+        "id": "seccomp",
+        "aliases": [
+          "Seccomp Policy"
+        ],
+        "extensions": [
+          ".policy"
+        ]
+      },
+      {
         "id": "sepolicy",
         "aliases": [
           "SELinux policy"
