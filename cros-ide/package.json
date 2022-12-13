@@ -54,6 +54,7 @@
     "onLanguage:cpp",
     "onLanguage:gn",
     "onLanguage:go",
+    "onLanguage:portage",
     "onLanguage:python",
     "onLanguage:sepolicy",
     "onLanguage:shellscript",
@@ -669,6 +670,24 @@
         ]
       },
       {
+        "id": "portage",
+        "aliases": [
+          "Portage Config"
+        ],
+        "filenames": [
+          "package.accept_keywords",
+          "package.force",
+          "package.keywords",
+          "package.mask",
+          "package.provided",
+          "package.unmask",
+          "package.use",
+          "package.use.force",
+          "package.use.mask"
+        ],
+        "configuration": "./languages/portage-language-configuration.json"
+      },
+      {
         "id": "seccomp",
         "aliases": [
           "Seccomp Policy"
@@ -716,6 +735,11 @@
         "embeddedLanguages": {
           "meta.embedded.block.shellscript": "shellscript"
         }
+      },
+      {
+        "language": "portage",
+        "scopeName": "source.portage",
+        "path": "./languages/portage.tmLanguage.json"
       }
     ],
     "taskDefinitions": [
