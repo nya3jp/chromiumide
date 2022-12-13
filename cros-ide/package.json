@@ -625,8 +625,8 @@
         "extensions": [
           ".eclass"
         ],
-        "aliases": [
-          "Eclass"
+        "filenames": [
+          "make.defaults"
         ]
       },
       {
