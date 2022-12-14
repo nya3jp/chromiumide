@@ -127,7 +127,11 @@ async function flashDeviceV2(
   hostname: string,
   board: string
 ) {
-  const service = new FlashDeviceService(context.chrootService, context.output);
+  const service = new FlashDeviceService(
+    context.chrootService,
+    context.output,
+    context.extensionContext
+  );
   const buildInfoService = new BuildInfoService(
     new CnsFileCache(
       context.output,

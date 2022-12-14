@@ -3,11 +3,14 @@
 // found in the LICENSE file.
 
 import 'jasmine';
+import * as vscode from 'vscode';
 import {FakeChrootService} from '../../../../../testing/fakes/fake_chroot_service';
+import * as testing from './../../../../../../test/testing';
 import {Source} from './../../../../../../common/common_util';
 import * as model from './../../../../../../features/chromiumos/device_management/flash/flash_device_model';
 import {FlashDeviceService} from './../../../../../../features/chromiumos/device_management/flash/flash_device_service';
 import * as chroot from './../../../../../../services/chromiumos/chroot';
+import * as sshSession from './../../../../../../features/chromiumos/device_management/ssh_session';
 import {ChrootService} from './../../../../../../services/chromiumos/chroot';
 import {VoidOutputChannel} from './../../../../../testing/fakes/output_channel';
 
@@ -16,9 +19,21 @@ describe('FlashDeviceService', () => {
     it('runs cros flash with the given flash parameters', async () => {
       const chrootService = new FakeChrootService() as ChrootService;
       spyOn(chroot, 'execInChroot');
+      spyOn(sshSession, 'withSshTunnel').and.callFake(
+        (
+          hostname: string,
+          _context: vscode.ExtensionContext,
+          _output: vscode.OutputChannel,
+          action
+        ) => {
+          expect(hostname).toEqual('test-host');
+          return Promise.resolve(action(12345));
+        }
+      );
       const service = new FlashDeviceService(
         chrootService,
-        new VoidOutputChannel()
+        new VoidOutputChannel(),
+        {extensionUri: testing.getExtensionUri()} as vscode.ExtensionContext
       );
       const config: model.FlashDeviceViewState = {
         step: model.FlashDeviceStep.FLASH_PROGRESS,
@@ -46,10 +61,10 @@ describe('FlashDeviceService', () => {
         'cros',
         [
           'flash',
-          '--log-level=debug',
+          '--log-level=info',
           '--flag1',
           '--flag3',
-          'ssh://test-host',
+          'ssh://localhost:12345',
           xbuddyPath,
         ],
         jasmine.any(Object)

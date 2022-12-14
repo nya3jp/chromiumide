@@ -5,12 +5,14 @@
 import * as vscode from 'vscode';
 import {ExecResult} from '../../../../common/common_util';
 import * as chroot from '../../../../services/chromiumos/chroot';
+import * as sshSession from './../ssh_session';
 import * as model from './flash_device_model';
 
 export class FlashDeviceService implements vscode.Disposable {
   constructor(
     private readonly chrootService: chroot.ChrootService,
-    private readonly output: vscode.OutputChannel
+    private readonly output: vscode.OutputChannel,
+    private readonly extensionContext: vscode.ExtensionContext
   ) {}
 
   private readonly onProgressUpdateEmitter = new vscode.EventEmitter<number>();
@@ -36,27 +38,36 @@ export class FlashDeviceService implements vscode.Disposable {
     // TODO(b/259722092): Before the bug is resolved, the output is our only progress indicator.
     this.output.show();
 
-    const result = await chroot.execInChroot(
-      this.chrootService.source.root,
-      'cros',
-      [
-        'flash',
-        '--log-level=debug',
-        ...config.flashCliFlags,
-        `ssh://${config.hostname}`,
-        xbuddyPath,
-      ],
-      {
-        sudoReason: 'to flash a device',
-        logger: {
-          append: line => {
-            this.updateProgressFromOutput(line);
-            this.output.append(line);
-          },
-        },
+    // Create an SSH tunnel so that chroot can access the DUT outside of chroot where the proper
+    // configuration already exists (~/.ssh/config, corp-ssh-helper, etc.)
+    return await sshSession.withSshTunnel(
+      config.hostname,
+      this.extensionContext,
+      this.output,
+      async forwardedPort => {
+        const result = await chroot.execInChroot(
+          this.chrootService.source.root,
+          'cros',
+          [
+            'flash',
+            '--log-level=info',
+            ...config.flashCliFlags,
+            `ssh://localhost:${forwardedPort}`,
+            xbuddyPath,
+          ],
+          {
+            sudoReason: 'to flash a device',
+            logger: {
+              append: line => {
+                this.updateProgressFromOutput(line);
+                this.output.append(line);
+              },
+            },
+          }
+        );
+        return result;
       }
     );
-    return result;
   }
 
   /**

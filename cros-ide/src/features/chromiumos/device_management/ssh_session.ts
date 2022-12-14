@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import * as vscode from 'vscode';
 import * as net from 'net';
+import * as vscode from 'vscode';
 import * as commonUtil from '../../../common/common_util';
+import * as netUtil from '../../../common/net_util';
 import * as sshUtil from './ssh_util';
 
 /**
@@ -51,6 +52,32 @@ export class SshSession {
     vscode.Disposable.from(...this.subscriptions).dispose();
     this.onDidDisposeEmitter.fire();
     this.onDidDisposeEmitter.dispose();
+  }
+}
+
+/**
+ * Runs the given function during an active SSH tunnel. This is useful for running one or more SSH
+ * commands that require a tunnel, e.g. `cros flash` to access an SSH-configured device outside of
+ * chroot.
+ */
+export async function withSshTunnel<T>(
+  hostname: string,
+  context: vscode.ExtensionContext,
+  output: vscode.OutputChannel,
+  action: (forwardedPort: number) => T
+): Promise<T> {
+  const forwardPort = await netUtil.findUnusedPort();
+  const sshSession = await SshSession.create(
+    hostname,
+    context,
+    output,
+    forwardPort
+  );
+
+  try {
+    return action(forwardPort);
+  } finally {
+    sshSession.dispose();
   }
 }
 
