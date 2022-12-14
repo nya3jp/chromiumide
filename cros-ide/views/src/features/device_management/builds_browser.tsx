@@ -9,6 +9,12 @@ import {PrebuildInfo} from '../../../../src/features/chromiumos/device_managemen
 
 const BUILD_TABLE_COLUMNS = [
   {
+    field: 'boardName',
+    headerName: 'Board',
+    width: 140,
+    sortable: false,
+  },
+  {
     field: 'chromeVersion',
     headerName: 'Chrome Version',
     width: 140,
@@ -17,7 +23,7 @@ const BUILD_TABLE_COLUMNS = [
   {
     field: 'chromeOsVersion',
     headerName: 'ChromeOS Version',
-    width: 120,
+    width: 140,
     sortable: false,
   },
   {
@@ -41,10 +47,12 @@ const BUILD_TABLE_COLUMNS = [
   {
     field: 'buildDate',
     headerName: 'Date',
-    width: 180,
+    width: 220,
     sortable: false,
     valueFormatter: (params: {value: Date}) =>
-      params?.value?.toLocaleString(undefined),
+      params?.value?.toLocaleString(undefined, {
+        timeZone: 'PST', // consistent with go/goldeneye
+      } as Intl.DateTimeFormatOptions) + ' PST',
   },
 ];
 
@@ -96,7 +104,11 @@ export function BuildsBrowser(props: {
           }}
           {...props.state.builds}
           rows={props.state.builds}
-          columns={BUILD_TABLE_COLUMNS}
+          columns={
+            props.state.board
+              ? BUILD_TABLE_COLUMNS.slice(1)
+              : BUILD_TABLE_COLUMNS
+          }
           getRowId={row =>
             row.signedBuildId + row.buildDate.getTime() + row.boardName
           }

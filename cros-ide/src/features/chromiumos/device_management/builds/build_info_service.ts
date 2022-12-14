@@ -47,9 +47,11 @@ export class BuildInfoService {
 
   /** Loads info on all builds for the given board, or for all boards if no board provided.
    *
+   * @param board Board for which to load builds, or '' to load all builds.
+   *
    * TODO(b/262300937): Revisit the duplicates issue once the correct data source is used.
    */
-  async loadBuildInfos(board: string | null): Promise<model.PrebuildInfo[]> {
+  async loadBuildInfos(board: string | ''): Promise<model.PrebuildInfo[]> {
     const infos = await this.loadRawBuildInfos();
     if (board) {
       return infos.filter(info => info.boardName.startsWith(board));

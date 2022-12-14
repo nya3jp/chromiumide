@@ -81,6 +81,12 @@
         "enablement": "config.cros-ide.underDevelopment.chromiumBuild"
       },
       {
+        "command": "cros-ide.deviceManagement.browseChromeOsBuilds",
+        "category": "CrOS",
+        "title": "Browse ChromeOS Builds",
+        "icon": "$(list-flat)"
+      },
+      {
         "command": "cros-ide.deviceManagement.connectToDeviceForScreen",
         "category": "CrOS",
         "title": "Connect to Device (VNC)",
@@ -317,6 +323,11 @@
         }
       ],
       "view/title": [
+        {
+          "command": "cros-ide.deviceManagement.browseChromeOsBuilds",
+          "when": "view == devices",
+          "group": "navigation"
+        },
         {
           "command": "cros-ide.refreshBoardsPackages",
           "when": "view == boards-packages",

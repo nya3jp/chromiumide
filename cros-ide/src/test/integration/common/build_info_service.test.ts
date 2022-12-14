@@ -34,7 +34,7 @@ describe('BuildInfoService', () => {
         new CnsFileCache(new VoidOutputChannel(), cacheDir)
       );
 
-      const result = await service.loadBuildInfos(null);
+      const result = await service.loadBuildInfos('');
 
       // TODO(b/262300937): Remove once the duplicates are resolved with the correct data source.
       result
