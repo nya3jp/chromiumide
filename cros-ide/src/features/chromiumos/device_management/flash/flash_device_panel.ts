@@ -19,7 +19,7 @@ export class FlashDevicePanel extends ReactPanel<model.FlashDeviceViewState> {
       buildSelectionType: model.BuildSelectionType.LATEST_OF_CHANNEL,
       hostname: hostname,
       board: deviceBoard,
-      buildChannel: model.BuildChannel.STABLE,
+      buildChannel: 'stable',
       flashCliFlags: [],
       flashProgress: 0.0,
       flashingComplete: false,

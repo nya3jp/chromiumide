@@ -25,7 +25,7 @@ describe('FlashDeviceService', () => {
         buildSelectionType: model.BuildSelectionType.LATEST_OF_CHANNEL,
         hostname: 'test-host',
         board: 'zork',
-        buildChannel: model.BuildChannel.STABLE,
+        buildChannel: 'stable',
         buildInfo: undefined,
         flashCliFlags: ['--flag1', '--flag3'],
         flashProgress: 0.0,

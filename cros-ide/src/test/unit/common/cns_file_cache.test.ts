@@ -35,7 +35,7 @@ describe('CnsFileCache', () => {
       spyOn(commonUtil, 'execOrThrow');
       jasmine.clock().mockDate(new Date(19999));
 
-      const result = await cache.getCachedFile(FAKE_CNS_FILE, 10);
+      const result = await cache.getCachedFile(FAKE_CNS_FILE, {seconds: 10});
 
       expect(result).toEqual(FAKE_CACHED_FILE);
       expect(commonUtil.execOrThrow).not.toHaveBeenCalled();
@@ -50,9 +50,9 @@ describe('CnsFileCache', () => {
       });
       const cache = new CnsFileCache(new VoidOutputChannel(), FAKE_CACHE_DIR);
       spyOn(commonUtil, 'execOrThrow');
-      jasmine.clock().mockDate(new Date(20000));
+      jasmine.clock().mockDate(new Date(20001));
 
-      const result = await cache.getCachedFile(FAKE_CNS_FILE, 10);
+      const result = await cache.getCachedFile(FAKE_CNS_FILE, {seconds: 10});
 
       expect(result).toEqual(FAKE_CACHED_FILE);
       expect(commonUtil.execOrThrow).toHaveBeenCalledOnceWith(
@@ -69,7 +69,7 @@ describe('CnsFileCache', () => {
       const cache = new CnsFileCache(undefined, FAKE_CACHE_DIR);
       spyOn(commonUtil, 'execOrThrow');
 
-      const result = await cache.getCachedFile(FAKE_CNS_FILE, 10);
+      const result = await cache.getCachedFile(FAKE_CNS_FILE, {seconds: 10});
 
       expect(result).toEqual(FAKE_CACHED_FILE);
       expect(commonUtil.execOrThrow).toHaveBeenCalledOnceWith(

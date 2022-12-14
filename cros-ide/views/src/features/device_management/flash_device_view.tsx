@@ -118,13 +118,13 @@ function HighLevelBuildSelectionStep(props: {
   };
   const handleKeydown = (e: any) => {
     if (e.key === 'c') {
-      handleBuildChannel(model.BuildChannel.CANARY);
+      handleBuildChannel('canary');
     } else if (e.key === 'd') {
-      handleBuildChannel(model.BuildChannel.DEV);
+      handleBuildChannel('dev');
     } else if (e.key === 'b') {
-      handleBuildChannel(model.BuildChannel.BETA);
+      handleBuildChannel('beta');
     } else if (e.key === 's') {
-      handleBuildChannel(model.BuildChannel.STABLE);
+      handleBuildChannel('stable');
     } else if (e.key === 'l') {
       handleBuildSelectionType(model.BuildSelectionType.LATEST_OF_CHANNEL);
     } else if (e.key === 'f') {
@@ -176,18 +176,18 @@ function HighLevelBuildSelectionStep(props: {
                   }}
                 >
                   <ToggleButton
-                    value={model.BuildChannel.CANARY}
+                    value={'canary'}
                     title="The very latest build of all"
                   >
                     <u>C</u>anary
                   </ToggleButton>
-                  <ToggleButton value={model.BuildChannel.DEV}>
+                  <ToggleButton value={'dev'}>
                     <u>D</u>ev
                   </ToggleButton>
-                  <ToggleButton value={model.BuildChannel.BETA}>
+                  <ToggleButton value={'beta'}>
                     <u>B</u>eta
                   </ToggleButton>
-                  <ToggleButton value={model.BuildChannel.STABLE}>
+                  <ToggleButton value={'stable'}>
                     <u>S</u>table
                   </ToggleButton>
                 </ToggleButtonGroup>

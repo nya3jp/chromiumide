@@ -5,6 +5,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import * as dateFns from 'date-fns';
 import * as common_util from './common_util';
 
 /**
@@ -38,15 +39,15 @@ export class CnsFileCache {
    * refreshing if necessary.
    *
    * @param cnsPath The path of the file on CNS (/cns/...)
-   * @param refreshFrequencyInSeconds How often the file should be downloaded again.
+   * @param refreshFrequency How often the file should be downloaded again.
    * @throws Error upon failure.
    */
   async getCachedFile(
     cnsPath: string,
-    refreshFrequencyInSeconds = Infinity
+    refreshFrequency: dateFns.Duration = {years: Infinity}
   ): Promise<string> {
     const updated = await this.readTimeOfLastDownload(cnsPath);
-    if (Date.now() - updated.getTime() >= refreshFrequencyInSeconds * 1000) {
+    if (dateFns.isAfter(Date.now(), dateFns.add(updated, refreshFrequency))) {
       await this.forceRedownload(cnsPath);
       // Note that we could simply check the timestamp of the file on CNS to see if it has been
       // updated, before downloading it unnecessarily. However, even listing a file on CNS can take

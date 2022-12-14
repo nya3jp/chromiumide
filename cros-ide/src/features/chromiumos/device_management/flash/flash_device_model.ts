@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as buildModel from './../builds/build_model';
+
 export type FlashDeviceViewState = {
   readonly step: FlashDeviceStep;
   readonly buildSelectionType: BuildSelectionType;
@@ -15,6 +17,8 @@ export type FlashDeviceViewState = {
   readonly flashError: string;
 };
 
+export type BuildChannel = buildModel.BuildChannel;
+
 export enum FlashDeviceStep {
   HIGH_LEVEL_BUILD_SELECTION,
   BUILD_BROWSER,
@@ -26,13 +30,6 @@ export enum BuildSelectionType {
   LATEST_OF_CHANNEL,
   SPECIFIC_BUILD,
   // LOCAL_CROS_REPO,
-}
-
-export enum BuildChannel {
-  CANARY = 'canary',
-  DEV = 'dev',
-  BETA = 'beta',
-  STABLE = 'stable',
 }
 
 export type FlashFlag = {
