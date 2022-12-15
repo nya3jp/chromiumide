@@ -28,7 +28,6 @@ const uncoveredDecoration = vscode.window.createTextEditorDecorationType({
 const COVERAGE_TASK_ID = 'Code Coverage';
 
 export class Coverage {
-  private activeEditor?: vscode.TextEditor;
   private output: vscode.OutputChannel;
 
   constructor(
@@ -50,13 +49,11 @@ export class Coverage {
       )
     );
 
-    this.activeEditor = vscode.window.activeTextEditor;
-    void this.updateDecorations();
+    void this.updateDecorations(vscode.window.activeTextEditor);
 
     context.subscriptions.push(
       vscode.window.onDidChangeActiveTextEditor(editor => {
-        this.activeEditor = editor;
-        void this.updateDecorations();
+        void this.updateDecorations(editor);
       })
     );
   }
@@ -97,20 +94,19 @@ export class Coverage {
     );
   }
 
-  private async updateDecorations() {
-    if (!this.activeEditor) {
+  private async updateDecorations(activeEditor?: vscode.TextEditor) {
+    if (!activeEditor) {
       return;
     }
 
     const {covered: coveredRanges, uncovered: uncoveredRanges} =
-      await this.readDocumentCoverage(this.activeEditor.document.fileName);
+      await this.readDocumentCoverage(activeEditor.document.fileName);
 
     if (coveredRanges) {
-      // TODO(ttylenda): consider possible race-condition here (crrev.com/c/3802552).
-      this.activeEditor.setDecorations(coveredDecoration, coveredRanges);
+      activeEditor.setDecorations(coveredDecoration, coveredRanges);
     }
     if (uncoveredRanges) {
-      this.activeEditor.setDecorations(uncoveredDecoration, uncoveredRanges);
+      activeEditor.setDecorations(uncoveredDecoration, uncoveredRanges);
     }
   }
 
