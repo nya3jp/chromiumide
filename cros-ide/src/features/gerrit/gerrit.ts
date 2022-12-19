@@ -37,12 +37,12 @@ export function activate(
 
   new virtualDocument.GerritDocumentProvider().activate(context);
 
-  const controller = vscode.comments.createCommentController(
+  const commentController = vscode.comments.createCommentController(
     'cros-ide-gerrit',
     'CrOS IDE Gerrit'
   );
 
-  context.subscriptions.push(controller);
+  context.subscriptions.push(commentController);
 
   if (underDevelopment.gerrit) {
     // Test auth for Gerrit
@@ -90,7 +90,7 @@ export function activate(
   statusBar.command = focusCommentsPanel;
 
   const gerrit = new Gerrit(
-    controller,
+    commentController,
     outputChannel,
     statusBar,
     statusManager
@@ -100,7 +100,7 @@ export function activate(
 
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(document => {
-      void gerrit.showComments(document.fileName, {noFetch: true});
+      void gerrit.showComments(document.fileName, false);
     }),
     vscode.commands.registerCommand(
       'cros-ide.gerrit.collapseAllCommentThreads',
@@ -139,10 +139,10 @@ export function activate(
 class Gerrit {
   // list of [commit id, threads] pairs
   private partitionedThreads?: [string, ChangeThreads][];
-  private commentThreads: vscode.CommentThread[] = [];
+  private vscodeCommentThreads: vscode.CommentThread[] = [];
 
   constructor(
-    private readonly controller: vscode.CommentController,
+    private readonly commentController: vscode.CommentController,
     private readonly outputChannel: vscode.OutputChannel,
     private readonly statusBar: vscode.StatusBarItem,
     private readonly statusManager: bgTaskStatus.StatusManager
@@ -165,20 +165,21 @@ class Gerrit {
    * Fetches comments on changes in the Git repo which contains `path`
    * (file or directory) and shows them with
    * proper repositioning based on the local diff. It caches the response
-   * from Gerrit and uses it unless opts.fetch is true.
+   * from Gerrit and uses it unless fetch is true.
    */
-  async showComments(path: string, opts?: {noFetch: boolean}) {
+  async showComments(filePath: string, fetch = true) {
     try {
-      const gitDir = commonUtil.findGitDir(path);
+      const gitDir = commonUtil.findGitDir(filePath);
       if (!gitDir) {
         // When settings are changed onDidSaveTextDocument is called with
         // ~/.config/Code/User/settings.json, which is triggers repositioning.
-        this.outputChannel.appendLine('Git directory not found for ' + path);
+        this.outputChannel.appendLine(
+          'Git directory not found for ' + filePath
+        );
         return;
       }
 
-      const doFetch = !opts?.noFetch;
-      if (doFetch) {
+      if (fetch) {
         await this.fetchComments(gitDir);
         this.clearCommentThreads();
       }
@@ -210,20 +211,20 @@ class Gerrit {
         });
       }
 
-      for (const [originalCommitId, changeThreads] of this.partitionedThreads) {
+      for (const [commitId, changeThreads] of this.partitionedThreads) {
         // We still want to show comments that cannot be repositioned correctly.
-        if (localCommitIds.includes(originalCommitId)) {
-          await this.shiftChangeComments(
-            gitDir,
-            originalCommitId,
-            changeThreads
-          );
+        if (localCommitIds.includes(commitId)) {
+          await this.shiftChangeComments(gitDir, commitId, changeThreads);
         }
-        this.displayCommentThreads(this.controller, changeThreads, gitDir);
+        this.displayCommentThreads(
+          this.commentController,
+          changeThreads,
+          gitDir
+        );
       }
       this.updateStatusBar();
       this.statusManager.setStatus(GERRIT, status);
-      if (doFetch && this.commentThreads.length > 0) {
+      if (fetch && this.vscodeCommentThreads.length > 0) {
         this.sendMetrics();
       }
     } catch (err) {
@@ -266,7 +267,7 @@ class Gerrit {
   }
 
   collapseAllCommentThreads() {
-    for (const thread of this.commentThreads) {
+    for (const thread of this.vscodeCommentThreads) {
       thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed;
     }
   }
@@ -294,7 +295,7 @@ class Gerrit {
       category: 'background',
       group: 'gerrit',
       action: 'update comments',
-      value: this.commentThreads.length,
+      value: this.vscodeCommentThreads.length,
     });
   }
 
@@ -361,19 +362,19 @@ class Gerrit {
 
   /** Read gitcookies */
   async readAuthCookie(): Promise<string | undefined> {
-    const path = await auth.getGitcookiesPath(this.outputChannel);
+    const filePath = await auth.getGitcookiesPath(this.outputChannel);
     try {
-      const str = await fs.readFile(path, {encoding: 'utf8'});
+      const str = await fs.readFile(filePath, {encoding: 'utf8'});
       return auth.parseGitcookies(str);
     } catch (err) {
       if ((err as {code?: unknown}).code === 'ENOENT') {
         const msg =
-          'The gitcookies file for Gerrit auth was not found at ' + path;
+          'The gitcookies file for Gerrit auth was not found at ' + filePath;
         this.showErrorMessage(msg);
       } else {
         let msg =
           'Unknown error in reading the gitcookies file for Gerrit auth at ' +
-          path;
+          filePath;
         if (err instanceof Object) msg += ': ' + err.toString();
         this.showErrorMessage(msg);
       }
@@ -404,19 +405,19 @@ class Gerrit {
    */
   async shiftChangeComments(
     gitDir: string,
-    originalCommitId: string,
+    commitId: string,
     changeThreads: ChangeThreads
   ): Promise<void> {
     // If the local branch is rebased after uploading it for review,
     // unrestricted `git diff` will include everything that changed
     // in the entire repo. This can have performance implications.
-    const relevantFiles = Object.getOwnPropertyNames(changeThreads).filter(
-      path => !api.MAGIC_PATHS.includes(path)
+    const filePaths = Object.getOwnPropertyNames(changeThreads).filter(
+      filePath => !api.MAGIC_PATHS.includes(filePath)
     );
     const hunks = await git.readDiffHunks(
       gitDir,
-      originalCommitId,
-      relevantFiles,
+      commitId,
+      filePaths,
       this.outputChannel
     );
     if (hunks instanceof Error) {
@@ -450,8 +451,8 @@ class Gerrit {
   }
 
   clearCommentThreads() {
-    this.commentThreads.forEach(commentThread => commentThread.dispose());
-    this.commentThreads.length = 0;
+    this.vscodeCommentThreads.forEach(commentThread => commentThread.dispose());
+    this.vscodeCommentThreads.length = 0;
   }
 
   private displayCommentThreads(
@@ -484,7 +485,7 @@ class Gerrit {
         }
         const vscodeThread = thread.display(controller, uri);
         if (vscodeThread) {
-          this.commentThreads.push(vscodeThread);
+          this.vscodeCommentThreads.push(vscodeThread);
         }
       });
     }
