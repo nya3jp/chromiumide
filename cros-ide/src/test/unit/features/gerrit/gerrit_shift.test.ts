@@ -31,16 +31,16 @@ type CommentInfoLike = {
   message?: string;
 };
 
-function thread(
+function commentThread(
   data: CommentInfoLike,
-  opts?: {shifted: number}
+  opts?: {newLine?: number}
 ): gerrit.Thread {
   const t = new gerrit.Thread([data as api.CommentInfo], {
     gitSha: 'aa',
     gerritChangeId: 'Ibb',
   });
-  if (opts?.shifted) {
-    t.shift = opts.shifted - data.line!;
+  if (opts?.newLine) {
+    t.shift = opts.newLine - data.line!;
   }
   return t;
 }
@@ -62,41 +62,40 @@ describe('Comment shifting algorithm (hardcoded diff hunks)', () => {
   };
 
   it('updates change comments', () => {
-    const changeComments: gerrit.ChangeThreads = {
+    const changeThreads: gerrit.ChangeThreads = {
       'foo.ts': [
-        thread({message: 'foo'}), // comment on a file
-        thread({range: range(1, 1, 1, 2), line: 1}), // comment on characters
-        thread({line: 1}), // comment on a line
-        thread({line: 3}), // comment on a removed line
-        thread({line: 4}),
-        thread({line: 5}), // comment in a removed hunk
-        thread({line: 7}),
-        thread({line: 8}),
-        // {range: range(3, 1, 6, 2), line: 1}, // comment across multiple hunks.
+        commentThread({message: 'foo'}), // comment on a file
+        commentThread({range: range(1, 1, 1, 2), line: 1}), // comment on characters
+        commentThread({line: 1}), // comment on a line
+        commentThread({line: 3}), // comment on a removed line
+        commentThread({line: 4}),
+        commentThread({line: 5}), // comment in a removed hunk
+        commentThread({line: 7}),
+        commentThread({line: 8}),
+        commentThread({range: range(3, 1, 6, 2), line: 3}), // comment across multiple hunks
       ],
-      'bar.ts': [thread({line: 1})],
+      'bar.ts': [commentThread({line: 1})],
       // TODO(teramon): Add other test cases
     };
 
-    const oc = jasmine.objectContaining;
-    const wantComments = {
+    const wantChangeThreads = {
       'foo.ts': [
-        oc({comments: [oc({message: 'foo'})]}), // comment on a file
-        oc({range: range(2, 1, 2, 2), line: 2}), // comment on characters
-        oc({line: 2}), // comment on a line
-        oc({line: 3}), // comment on a removed line
-        oc({line: 4}),
-        oc({line: 5}), // comment in a removed hunk
-        oc({line: 5}),
-        oc({line: 6}),
-        // {range: range(3, 1, 5, 2), line: 1}, // comment across multiple hunks.
+        commentThread({message: 'foo'}), // comment on a file
+        commentThread({range: range(1, 1, 1, 2), line: 1}, {newLine: 2}), // comment on characters
+        commentThread({line: 1}, {newLine: 2}), // comment on a line
+        commentThread({line: 3}), // comment on a removed line
+        commentThread({line: 4}),
+        commentThread({line: 5}), // comment in a removed hunk
+        commentThread({line: 7}, {newLine: 5}),
+        commentThread({line: 8}, {newLine: 6}),
+        commentThread({range: range(3, 1, 6, 2), line: 3}), // comment across multiple hunks.
       ],
-      'bar.ts': [oc({line: 2})],
+      'bar.ts': [commentThread({line: 1}, {newLine: 2})],
       // TODO(teramon): Add other test cases
     } as unknown as gerrit.ChangeThreads;
 
-    gerrit.updateChangeComments(testHunks, changeComments);
-    expect(changeComments).toEqual(wantComments);
+    gerrit.updateChangeComments(testHunks, changeThreads);
+    expect(changeThreads).toEqual(wantChangeThreads);
   });
 });
 
@@ -139,20 +138,20 @@ describe('Comment shifting algorithm (generated diff hunks)', () => {
     const diffHunks: git.Hunks = await getDiffHunks(left, right);
     const changeThreads: gerrit.ChangeThreads = {
       'left.txt': [
-        thread({line: 1, message: 'one'}),
-        thread({line: 2, message: 'two'}),
-        thread({line: 3, message: 'three'}),
-        thread({line: 4, message: 'four'}),
+        commentThread({line: 1, message: 'one'}),
+        commentThread({line: 2, message: 'two'}),
+        commentThread({line: 3, message: 'three'}),
+        commentThread({line: 4, message: 'four'}),
       ],
     };
 
     gerrit.updateChangeComments(diffHunks, changeThreads);
 
     expect(changeThreads['left.txt']).toEqual([
-      thread({line: 1, message: 'one'}, {shifted: 1}),
-      thread({line: 2, message: 'two'}, {shifted: 3}),
-      thread({line: 3, message: 'three'}, {shifted: 5}),
-      thread({line: 4, message: 'four'}, {shifted: 7}),
+      commentThread({line: 1, message: 'one'}, {newLine: 1}),
+      commentThread({line: 2, message: 'two'}, {newLine: 3}),
+      commentThread({line: 3, message: 'three'}, {newLine: 5}),
+      commentThread({line: 4, message: 'four'}, {newLine: 7}),
     ]);
   });
 });
