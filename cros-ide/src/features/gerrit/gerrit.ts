@@ -62,9 +62,7 @@ export function activate(
           );
           // Judge that the auth has succeeded if the output is a valid JSON
           void vscode.window.showInformationMessage(
-            out && JSON.parse(out.split('\n')[1])
-              ? 'Auth succeeded!'
-              : 'Auth failed!'
+            out && JSON.parse(out) ? 'Auth succeeded!' : 'Auth failed!'
           );
         }
       )
@@ -335,8 +333,7 @@ class Gerrit {
         this.outputChannel.appendLine(`Not found on Gerrit: ${gerritChangeId}`);
         continue;
       }
-      const commentsJson = commentsContent.substring(')]}\n'.length);
-      const changeComments = JSON.parse(commentsJson) as api.ChangeComments;
+      const changeComments = JSON.parse(commentsContent) as api.ChangeComments;
       const combinedChangeThreads = partitionThreads(
         changeComments,
         gitLogInfo
@@ -358,7 +355,8 @@ class Gerrit {
     const url = git.repoIdToGerritUrl(repoId) + '/' + path;
     const options =
       authCookie !== undefined ? {headers: {cookie: authCookie}} : undefined;
-    return https.getOrThrow(url, options);
+    const str = await https.getOrThrow(url, options);
+    return str?.substring(')]}\n'.length);
   }
 
   /** Read gitcookies */
