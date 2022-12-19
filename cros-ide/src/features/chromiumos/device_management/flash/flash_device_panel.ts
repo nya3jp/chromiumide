@@ -5,10 +5,9 @@
 import * as vscode from 'vscode';
 import {ReactPanel} from '../../../../services/react_panel';
 import {BuildInfoService} from '../builds/build_info_service';
-import * as buildModel from '../builds/build_model';
 import {BuildsBrowserState} from './../builds/browser/builds_browser_model';
-import {FlashDeviceService} from './flash_device_service';
 import * as model from './flash_device_model';
+import {FlashDeviceService} from './flash_device_service';
 
 export class FlashDevicePanel extends ReactPanel<model.FlashDeviceViewState> {
   constructor(

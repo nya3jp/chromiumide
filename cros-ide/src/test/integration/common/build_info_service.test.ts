@@ -15,7 +15,7 @@ describe('BuildInfoService', () => {
     await fs.promises.rmdir(cacheDir, {recursive: true});
   });
 
-  describe('loadRawBuildInfos', () => {
+  xdescribe('loadRawBuildInfos', () => {
     it('downloads and loads the builds list', async () => {
       const service = new BuildInfoService(
         new CnsFileCache(new VoidOutputChannel(), cacheDir)
@@ -28,7 +28,7 @@ describe('BuildInfoService', () => {
     }, 30e3);
   });
 
-  describe('loadBuildInfos', () => {
+  xdescribe('loadBuildInfos', () => {
     it("returns each board's build, mostly distinct on signedBuildId and timestamp", async () => {
       const service = new BuildInfoService(
         new CnsFileCache(new VoidOutputChannel(), cacheDir)
