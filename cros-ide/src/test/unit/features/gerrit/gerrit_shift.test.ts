@@ -34,8 +34,8 @@ type CommentInfoLike = {
 function commentThread(
   data: CommentInfoLike,
   opts?: {newLine?: number}
-): gerrit.Thread {
-  const t = new gerrit.Thread([data as api.CommentInfo], {
+): gerrit.CommentThread {
+  const t = new gerrit.CommentThread([data as api.CommentInfo], {
     gitSha: 'aa',
     gerritChangeId: 'Ibb',
   });
@@ -61,8 +61,8 @@ describe('Comment shifting algorithm (hardcoded diff hunks)', () => {
     ],
   };
 
-  it('updates change comments', () => {
-    const changeThreads: gerrit.ChangeThreads = {
+  it('updates comment threads', () => {
+    const commentThreadsMap: gerrit.CommentThreadsMap = {
       'foo.ts': [
         commentThread({message: 'foo'}), // comment on a file
         commentThread({range: range(1, 1, 1, 2), line: 1}), // comment on characters
@@ -78,7 +78,7 @@ describe('Comment shifting algorithm (hardcoded diff hunks)', () => {
       // TODO(teramon): Add other test cases
     };
 
-    const wantChangeThreads = {
+    const wantCommentThreadsMap = {
       'foo.ts': [
         commentThread({message: 'foo'}), // comment on a file
         commentThread({range: range(1, 1, 1, 2), line: 1}, {newLine: 2}), // comment on characters
@@ -92,10 +92,10 @@ describe('Comment shifting algorithm (hardcoded diff hunks)', () => {
       ],
       'bar.ts': [commentThread({line: 1}, {newLine: 2})],
       // TODO(teramon): Add other test cases
-    } as unknown as gerrit.ChangeThreads;
+    } as unknown as gerrit.CommentThreadsMap;
 
-    gerrit.updateChangeComments(testHunks, changeThreads);
-    expect(changeThreads).toEqual(wantChangeThreads);
+    gerrit.updateCommentThreadsMap(testHunks, commentThreadsMap);
+    expect(commentThreadsMap).toEqual(wantCommentThreadsMap);
   });
 });
 
@@ -136,7 +136,7 @@ describe('Comment shifting algorithm (generated diff hunks)', () => {
       `;
 
     const diffHunks: git.Hunks = await getDiffHunks(left, right);
-    const changeThreads: gerrit.ChangeThreads = {
+    const changeThreads: gerrit.CommentThreadsMap = {
       'left.txt': [
         commentThread({line: 1, message: 'one'}),
         commentThread({line: 2, message: 'two'}),
@@ -145,7 +145,7 @@ describe('Comment shifting algorithm (generated diff hunks)', () => {
       ],
     };
 
-    gerrit.updateChangeComments(diffHunks, changeThreads);
+    gerrit.updateCommentThreadsMap(diffHunks, changeThreads);
 
     expect(changeThreads['left.txt']).toEqual([
       commentThread({line: 1, message: 'one'}, {newLine: 1}),

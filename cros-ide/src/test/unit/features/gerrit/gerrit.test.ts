@@ -12,9 +12,9 @@ import * as metrics from '../../../../features/metrics/metrics';
 import * as bgTaskStatus from '../../../../ui/bg_task_status';
 import * as testing from '../../../testing';
 
-const {formatGerritTimestamp, Gerrit, partitionThreads} = TEST_ONLY;
+const {formatGerritTimestamp, Gerrit, partitionCommentThreads} = TEST_ONLY;
 
-describe('partitionThreads', () => {
+describe('partitionCommentThreads', () => {
   type CommentInfoLike = Pick<
     api.CommentInfo,
     'id' | 'updated' | 'in_reply_to'
@@ -72,7 +72,7 @@ describe('partitionThreads', () => {
     };
 
     expect(
-      partitionThreads(input, {
+      partitionCommentThreads(input, {
         gitSha: 'aa',
         gerritChangeId: 'Ibb',
       })
@@ -110,7 +110,7 @@ describe('formatGerritTimestaps', () => {
 });
 
 /** Build Gerrit API response from typed input. */
-function apiString(changeComments: api.ChangeComments): string {
+function apiString(changeComments: api.CommentInfosMap): string {
   return ')]}\n' + JSON.stringify(changeComments);
 }
 
@@ -135,7 +135,7 @@ const COMMENT_INFO = Object.freeze({
 });
 
 // Based on crrev.com/c/3951631
-const SIMPLE_CHANGE_COMMENTS = (commitId1: string): api.ChangeComments => {
+const SIMPLE_COMMENT_INFOS_MAP = (commitId1: string): api.CommentInfosMap => {
   return {
     'cryptohome/cryptohome.cc': [
       {
@@ -151,7 +151,7 @@ const SIMPLE_CHANGE_COMMENTS = (commitId1: string): api.ChangeComments => {
 
 // Based on crrev.com/c/3980425
 // For testing chains of changes
-const SECOND_COMMIT_IN_CHAIN = (commitId: string): api.ChangeComments => {
+const SECOND_COMMIT_IN_CHAIN = (commitId: string): api.CommentInfosMap => {
   return {
     'cryptohome/cryptohome.cc': [
       {
@@ -168,10 +168,10 @@ const SECOND_COMMIT_IN_CHAIN = (commitId: string): api.ChangeComments => {
 // Based on crrev.com/c/3954724, important bits are:
 //   "Comment on termios" on line 15 (1-base) of the first patch set
 //   "Comment on unistd" on line 18 (1-base) of the second patch set, resolved
-const TWO_PATCHSETS_CHANGE_COMMENTS = (
+const TWO_PATCHSETS_COMMENT_INFOS_MAP = (
   commitId1: string,
   commitId2: string
-): api.ChangeComments => {
+): api.CommentInfosMap => {
   return {
     'cryptohome/cryptohome.cc': [
       {
@@ -273,7 +273,7 @@ describe('Gerrit', () => {
         'https://chromium-review.googlesource.com/changes/I23f50ecfe44ee28972aa640e1fa82ceabcc706a8/comments',
         AUTH_OPTIONS
       )
-      .and.resolveTo(apiString(SIMPLE_CHANGE_COMMENTS(commitId)));
+      .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId)));
 
     await expectAsync(
       gerrit.showComments(abs('cryptohome/cryptohome.cc'))
@@ -500,7 +500,7 @@ describe('Gerrit', () => {
         AUTH_OPTIONS
       )
       .and.resolveTo(
-        apiString(TWO_PATCHSETS_CHANGE_COMMENTS(commitId1, commitId2))
+        apiString(TWO_PATCHSETS_COMMENT_INFOS_MAP(commitId1, commitId2))
       );
 
     await expectAsync(gerrit.showComments(fileName)).toBeResolved();
@@ -594,7 +594,7 @@ describe('Gerrit', () => {
         'https://chromium-review.googlesource.com/changes/I23f50ecfe44ee28972aa640e1fa82ceabcc706a8/comments',
         AUTH_OPTIONS
       )
-      .and.resolveTo(apiString(SIMPLE_CHANGE_COMMENTS(commitId1)))
+      .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId1)))
       .withArgs(
         'https://chromium-review.googlesource.com/changes/Iecc86ab5691709978e6b171795c95e538aec1a47/comments',
         AUTH_OPTIONS
@@ -669,7 +669,7 @@ describe('Gerrit', () => {
         'https://chromium-review.googlesource.com/changes/I23f50ecfe44ee28972aa640e1fa82ceabcc706a8/comments',
         AUTH_OPTIONS
       )
-      .and.resolveTo(apiString(SIMPLE_CHANGE_COMMENTS(commitId)));
+      .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId)));
 
     await expectAsync(
       gerrit.showComments(abs('cryptohome/cryptohome.cc'))
@@ -758,7 +758,7 @@ describe('Gerrit', () => {
         'https://chrome-internal-review.googlesource.com/changes/I23f50ecfe44ee28972aa640e1fa82ceabcc706a8/comments',
         AUTH_OPTIONS
       )
-      .and.resolveTo(apiString(SIMPLE_CHANGE_COMMENTS(commitId)));
+      .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId)));
 
     await expectAsync(
       gerrit.showComments(abs('cryptohome/cryptohome.cc'))
@@ -828,7 +828,7 @@ describe('Gerrit', () => {
       )
       .and.resolveTo(
         apiString(
-          TWO_PATCHSETS_CHANGE_COMMENTS(
+          TWO_PATCHSETS_COMMENT_INFOS_MAP(
             commitId,
             '1111111111111111111111111111111111111111'
           )

@@ -138,7 +138,7 @@ export function activate(
 
 class Gerrit {
   // list of [commit id, threads] pairs
-  private partitionedThreads?: [string, ChangeThreads][];
+  private partitionedThreads?: [string, CommentThreadsMap][];
   private vscodeCommentThreads: vscode.CommentThread[] = [];
 
   constructor(
@@ -149,10 +149,10 @@ class Gerrit {
   ) {}
 
   /** Generator for iterating over all Threads. */
-  *threads(): Generator<Thread> {
+  *threads(): Generator<CommentThread> {
     if (this.partitionedThreads) {
-      for (const [, changeThreads] of this.partitionedThreads) {
-        for (const [, threads] of Object.entries(changeThreads)) {
+      for (const [, commentThreadsMap] of this.partitionedThreads) {
+        for (const [, threads] of Object.entries(commentThreadsMap)) {
           for (const thread of threads) {
             yield thread;
           }
@@ -211,14 +211,14 @@ class Gerrit {
         });
       }
 
-      for (const [commitId, changeThreads] of this.partitionedThreads) {
+      for (const [commitId, commentThreadsMap] of this.partitionedThreads) {
         // We still want to show comments that cannot be repositioned correctly.
         if (localCommitIds.includes(commitId)) {
-          await this.shiftChangeComments(gitDir, commitId, changeThreads);
+          await this.shiftChangeComments(gitDir, commitId, commentThreadsMap);
         }
         this.displayCommentThreads(
           this.commentController,
-          changeThreads,
+          commentThreadsMap,
           gitDir
         );
       }
@@ -324,7 +324,7 @@ class Gerrit {
       return;
     }
 
-    const partitionedThreads: [string, ChangeThreads][] = [];
+    const partitionedThreads: [string, CommentThreadsMap][] = [];
 
     for (const gitLogInfo of gitLogInfos) {
       const gerritChangeId = gitLogInfo.gerritChangeId;
@@ -334,12 +334,12 @@ class Gerrit {
         this.outputChannel.appendLine(`Not found on Gerrit: ${gerritChangeId}`);
         continue;
       }
-      const changeComments = JSON.parse(commentsContent) as api.ChangeComments;
-      const combinedChangeThreads = partitionThreads(
+      const changeComments = JSON.parse(commentsContent) as api.CommentInfosMap;
+      const combinedCommentThreadsMap = partitionCommentThreads(
         changeComments,
         gitLogInfo
       );
-      for (const item of partitionByCommitId(combinedChangeThreads)) {
+      for (const item of partitionByCommitId(combinedCommentThreadsMap)) {
         partitionedThreads.push(item);
       }
     }
@@ -399,19 +399,19 @@ class Gerrit {
   }
 
   /**
-   * Updates line numbers in `changeThreads`, which are assumed to be made
+   * Updates line numbers in `commentThreadsMap`, which are assumed to be made
    * on the `originalCommitId`, so they can be placed in the right lines on the files
    * in the working tree.
    */
   async shiftChangeComments(
     gitDir: string,
     commitId: string,
-    changeThreads: ChangeThreads
+    commentThreadsMap: CommentThreadsMap
   ): Promise<void> {
     // If the local branch is rebased after uploading it for review,
     // unrestricted `git diff` will include everything that changed
     // in the entire repo. This can have performance implications.
-    const filePaths = Object.getOwnPropertyNames(changeThreads).filter(
+    const filePaths = Object.getOwnPropertyNames(commentThreadsMap).filter(
       filePath => !api.MAGIC_PATHS.includes(filePath)
     );
     const hunks = await git.readDiffHunks(
@@ -426,7 +426,7 @@ class Gerrit {
       );
       return;
     }
-    updateChangeComments(hunks, changeThreads);
+    updateCommentThreadsMap(hunks, commentThreadsMap);
   }
 
   /**
@@ -457,10 +457,10 @@ class Gerrit {
 
   private displayCommentThreads(
     controller: vscode.CommentController,
-    changeThreads: ChangeThreads,
+    commentThreadsMap: CommentThreadsMap,
     gitDir: string
   ) {
-    for (const [filepath, threads] of Object.entries(changeThreads)) {
+    for (const [filepath, threads] of Object.entries(commentThreadsMap)) {
       threads.forEach(thread => {
         let uri;
         if (filepath === '/COMMIT_MSG') {
@@ -495,7 +495,7 @@ class Gerrit {
 function partitionCommentArray(
   apiComments: readonly api.CommentInfo[],
   gitLogInfo: git.GitLogInfo
-): Thread[] {
+): CommentThread[] {
   // Copy the input to avoid modifying data received from Gerrit API.
   const comments = [...apiComments];
 
@@ -503,7 +503,7 @@ function partitionCommentArray(
   comments.sort((c1, c2) => c1.updated.localeCompare(c2.updated));
 
   const threadIndex = new Map<string, number>();
-  const threads: Thread[] = [];
+  const threads: CommentThread[] = [];
 
   for (const c of comments) {
     // Idx is undefined for the first comment in a thread,
@@ -514,7 +514,7 @@ function partitionCommentArray(
       threads[idx].comments.push(c);
     } else {
       // push() returns the new length of the modiified array
-      idx = threads.push(new Thread([c], gitLogInfo)) - 1;
+      idx = threads.push(new CommentThread([c], gitLogInfo)) - 1;
     }
     threadIndex.set(c.id, idx);
   }
@@ -526,21 +526,21 @@ function partitionCommentArray(
  * For each filePath break comments in to threads. That is, turn a comment array
  * into an array of arrays, which represent threads
  */
-function partitionThreads(
-  changeComments: api.ChangeComments,
+function partitionCommentThreads(
+  commentInfosMap: api.CommentInfosMap,
   gitLogInfo: git.GitLogInfo
-): ChangeThreads {
-  const changeThreads: ChangeThreads = {};
-  for (const [filePath, comments] of Object.entries(changeComments)) {
-    changeThreads[filePath] = partitionCommentArray(comments, gitLogInfo);
+): CommentThreadsMap {
+  const commentThreadsMap: CommentThreadsMap = {};
+  for (const [filePath, comments] of Object.entries(commentInfosMap)) {
+    commentThreadsMap[filePath] = partitionCommentArray(comments, gitLogInfo);
   }
-  return changeThreads;
+  return commentThreadsMap;
 }
 
 function partitionByCommitId(
-  changeThread: ChangeThreads
-): [string, ChangeThreads][] {
-  return helpers.splitPathArrayMap(changeThread, (thread: Thread) =>
+  changeThread: CommentThreadsMap
+): [string, CommentThreadsMap][] {
+  return helpers.splitPathArrayMap(changeThread, (thread: CommentThread) =>
     thread.commitId()
   );
 }
@@ -551,11 +551,11 @@ function partitionByCommitId(
  * Thread position is determined by its first comment,
  * so only the first comment is updated. The updates are in-place.
  */
-export function updateChangeComments(
+export function updateCommentThreadsMap(
   hunksAllFiles: git.Hunks,
-  changeComments: ChangeThreads
+  commentThreadsMap: CommentThreadsMap
 ) {
-  for (const [filePath, threads] of Object.entries(changeComments)) {
+  for (const [filePath, threads] of Object.entries(commentThreadsMap)) {
     const hunks = hunksAllFiles[filePath] || [];
     for (const thread of threads) {
       thread.shift = 0;
@@ -596,7 +596,7 @@ export function updateChangeComments(
  * True if a thread starts after the hunk ends. Such threads should be moved
  * by the size change introduced by the hunk.
  */
-function threadFollowsHunk(thread: Thread, hunk: git.Hunk) {
+function threadFollowsHunk(thread: CommentThread, hunk: git.Hunk) {
   if (!thread.originalLine) {
     return false;
   }
@@ -617,7 +617,7 @@ function threadFollowsHunk(thread: Thread, hunk: git.Hunk) {
  * minimum (inclusive) and maximum (exclusive).
  */
 function threadWithinRange(
-  thread: Thread,
+  thread: CommentThread,
   minimum: number,
   maximum: number
 ): boolean {
@@ -628,7 +628,7 @@ function threadWithinRange(
   );
 }
 
-export class Thread {
+export class CommentThread {
   /**
    * Update required to reposition the thread from the original location
    * to the corresponding line in the working tree. Only lines are shifted,
@@ -699,8 +699,8 @@ export class Thread {
  * Like ChangeComments, but the comments are partitioned into threads
  * represented as arrays of comments.
  */
-export type ChangeThreads = {
-  [filePath: string]: Thread[];
+export type CommentThreadsMap = {
+  [filePath: string]: CommentThread[];
 };
 
 /**
@@ -748,7 +748,7 @@ function toVscodeComment(c: api.CommentInfo): vscode.Comment {
   };
 }
 
-function getVscodeRange(thread: Thread): vscode.Range {
+function getVscodeRange(thread: CommentThread): vscode.Range {
   const range = thread.range;
   if (range !== undefined) {
     // VSCode is 0-base, whereas Gerrit has 1-based lines and 0-based columns.
@@ -772,7 +772,7 @@ function getVscodeRange(thread: Thread): vscode.Range {
 
 function createCommentThread(
   controller: vscode.CommentController,
-  thread: Thread,
+  thread: CommentThread,
   dataUri: vscode.Uri
 ): vscode.CommentThread {
   const vscodeThread = controller.createCommentThread(
@@ -795,5 +795,5 @@ function createCommentThread(
 export const TEST_ONLY = {
   formatGerritTimestamp,
   Gerrit,
-  partitionThreads,
+  partitionCommentThreads,
 };

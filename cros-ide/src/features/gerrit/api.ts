@@ -7,7 +7,7 @@
  *
  * https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-change-comments
  */
-export type ChangeComments = {
+export type CommentInfosMap = {
   readonly [filePath: string]: readonly CommentInfo[];
 };
 
