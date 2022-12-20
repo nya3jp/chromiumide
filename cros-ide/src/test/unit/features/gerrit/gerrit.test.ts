@@ -110,8 +110,8 @@ describe('formatGerritTimestaps', () => {
 });
 
 /** Build Gerrit API response from typed input. */
-function apiString(changeComments: api.CommentInfosMap): string {
-  return ')]}\n' + JSON.stringify(changeComments);
+function apiString(data: Object): string {
+  return ')]}\n' + JSON.stringify(data);
 }
 
 const AUTHOR = Object.freeze({
@@ -202,6 +202,10 @@ const AUTH_COOKIE =
   'o=git-ymat.google.com=0123abc,o=git-ymat.google.com=4567def';
 const AUTH_OPTIONS = {headers: {cookie: AUTH_COOKIE}};
 
+const CHROMIUM_GERRIT = 'https://chromium-review.googlesource.com';
+const CHROME_INTERNAL_GERRIT =
+  'https://chrome-internal-review.googlesource.com';
+
 describe('Gerrit', () => {
   const tempDir = testing.tempDir();
 
@@ -224,8 +228,8 @@ describe('Gerrit', () => {
 
     // Without it we get an error setting fields on an undefined object,
     // which causes flakiness.
-    commentController.createCommentThread.and.returnValue(
-      {} as vscode.CommentThread
+    commentController.createCommentThread.and.callFake(
+      () => ({} as vscode.CommentThread)
     );
 
     const statusBarItem = vscode.window.createStatusBarItem();
@@ -257,9 +261,8 @@ describe('Gerrit', () => {
       'cryptohome/cryptohome.cc': 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
     });
     await git.addAll();
-    const commitId = await git.commit(
-      'Second\nChange-Id: I23f50ecfe44ee28972aa640e1fa82ceabcc706a8'
-    );
+    const changeId = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
+    const commitId = await git.commit(`Second\nChange-Id: ${changeId}`);
 
     const gerrit = new Gerrit(
       state.commentController,
@@ -269,10 +272,7 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
-      .withArgs(
-        'https://chromium-review.googlesource.com/changes/I23f50ecfe44ee28972aa640e1fa82ceabcc706a8/comments',
-        AUTH_OPTIONS
-      )
+      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
       .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId)));
 
     await expectAsync(
@@ -298,7 +298,6 @@ describe('Gerrit', () => {
       action: 'update comments',
       value: 1,
     });
-
     expect(state.statusManager.setStatus).not.toHaveBeenCalled();
   });
 
@@ -355,11 +354,12 @@ describe('Gerrit', () => {
       'cryptohome/crypto.h': 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
     });
     await git.addAll();
+    const changeId = 'Iba73f448e0da2a814f7303d1456049bb3554676e';
     const reviewCommitId = await git.commit(
-      'Under review\nChange-Id: Iba73f448e0da2a814f7303d1456049bb3554676e'
+      `Under review\nChange-Id: ${changeId}`
     );
     const amendedCommitId = await git.commit(
-      'Under review with local amend\nChange-Id: Iba73f448e0da2a814f7303d1456049bb3554676e',
+      `Under review with local amend\nChange-Id: ${changeId}`,
       {amend: true}
     );
 
@@ -371,10 +371,7 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
-      .withArgs(
-        'https://chromium-review.googlesource.com/changes/Iba73f448e0da2a814f7303d1456049bb3554676e/comments',
-        AUTH_OPTIONS
-      )
+      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
       .and.resolveTo(apiString(SPECIAL_COMMENT_TYPES(reviewCommitId)));
 
     await expectAsync(
@@ -402,9 +399,7 @@ describe('Gerrit', () => {
     );
 
     expect(callData[1].args[0]).toEqual(
-      vscode.Uri.parse(
-        `gerrit://${git.root}/PATCHSET_LEVEL?Iba73f448e0da2a814f7303d1456049bb3554676e`
-      )
+      vscode.Uri.parse(`gerrit://${git.root}/PATCHSET_LEVEL?${changeId}`)
     );
     // Patchset level comments should always be shown on the first line.
     expect(callData[1].args[1].start.line).toEqual(0);
@@ -458,8 +453,9 @@ describe('Gerrit', () => {
     await git.checkout('cros/main', {createBranch: true});
     await git.checkout('main');
 
-    // First review patchset.
     const changeId = 'I6adb56bd6f1998dde6b24af26881095292ac2620';
+
+    // First review patchset.
     await testing.putFiles(git.root, {
       'cryptohome/cryptohome.cc':
         'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\n' +
@@ -560,8 +556,9 @@ describe('Gerrit', () => {
           Line 5`,
     });
     await git.addAll();
+    const changeId1 = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
     const commitId1 = await git.commit(
-      'First uploaded\nChange-Id: I23f50ecfe44ee28972aa640e1fa82ceabcc706a8'
+      `First uploaded\nChange-Id: ${changeId1}`
     );
 
     // Second commit in a chain.
@@ -575,8 +572,9 @@ describe('Gerrit', () => {
           Line 5`,
     });
     await git.addAll();
+    const changeId2 = 'Iecc86ab5691709978e6b171795c95e538aec1a47';
     const commitId2 = await git.commit(
-      'Second uploaded\nChange-Id: Iecc86ab5691709978e6b171795c95e538aec1a47'
+      `Second uploaded\nChange-Id: ${changeId2}`
     );
 
     const gerrit = new Gerrit(
@@ -588,12 +586,12 @@ describe('Gerrit', () => {
 
     spyOn(https, 'getOrThrow')
       .withArgs(
-        'https://chromium-review.googlesource.com/changes/I23f50ecfe44ee28972aa640e1fa82ceabcc706a8/comments',
+        `${CHROMIUM_GERRIT}/changes/${changeId1}/comments`,
         AUTH_OPTIONS
       )
       .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId1)))
       .withArgs(
-        'https://chromium-review.googlesource.com/changes/Iecc86ab5691709978e6b171795c95e538aec1a47/comments',
+        `${CHROMIUM_GERRIT}/changes/${changeId2}/comments`,
         AUTH_OPTIONS
       )
       .and.resolveTo(apiString(SECOND_COMMIT_IN_CHAIN(commitId2)));
@@ -647,9 +645,8 @@ describe('Gerrit', () => {
       'cryptohome/cryptohome.cc': 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
     });
     await git.addAll();
-    const commitId = await git.commit(
-      'Under review\nChange-Id: I23f50ecfe44ee28972aa640e1fa82ceabcc706a8'
-    );
+    const changeId = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
+    const commitId = await git.commit(`Under review\nChange-Id: ${changeId}`);
     await testing.putFiles(git.root, {
       'cryptohome/cryptohome.cc': 'Line 4\nLine 5\n',
     });
@@ -662,10 +659,7 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
-      .withArgs(
-        'https://chromium-review.googlesource.com/changes/I23f50ecfe44ee28972aa640e1fa82ceabcc706a8/comments',
-        AUTH_OPTIONS
-      )
+      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
       .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId)));
 
     await expectAsync(
@@ -691,9 +685,8 @@ describe('Gerrit', () => {
     await git.commit('First');
     await git.checkout('cros/main', {createBranch: true});
     await git.checkout('main');
-    await git.commit(
-      'Second\nChange-Id: Iaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-    );
+    const changeId = 'Iaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    await git.commit(`Second\nChange-Id: ${changeId}`);
 
     const gerrit = new Gerrit(
       state.commentController,
@@ -703,10 +696,7 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
-      .withArgs(
-        'https://chromium-review.googlesource.com/changes/Iaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/comments',
-        AUTH_OPTIONS
-      )
+      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
       .and.resolveTo(undefined);
 
     await expectAsync(
@@ -714,12 +704,9 @@ describe('Gerrit', () => {
     ).toBeResolved();
 
     expect(state.commentController.createCommentThread).not.toHaveBeenCalled();
-
     expect(state.statusBarItem.show).not.toHaveBeenCalled();
     expect(state.statusBarItem.hide).toHaveBeenCalled();
-
     expect(metrics.send).not.toHaveBeenCalled();
-
     expect(state.statusManager.setStatus).not.toHaveBeenCalled();
   });
 
@@ -736,9 +723,8 @@ describe('Gerrit', () => {
       'cryptohome/cryptohome.cc': 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
     });
     await git.addAll();
-    const commitId = await git.commit(
-      'Second\nChange-Id: I23f50ecfe44ee28972aa640e1fa82ceabcc706a8'
-    );
+    const changeId = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
+    const commitId = await git.commit(`Second\nChange-Id: ${changeId}`);
 
     const gerrit = new Gerrit(
       state.commentController,
@@ -749,7 +735,7 @@ describe('Gerrit', () => {
 
     spyOn(https, 'getOrThrow')
       .withArgs(
-        'https://chrome-internal-review.googlesource.com/changes/I23f50ecfe44ee28972aa640e1fa82ceabcc706a8/comments',
+        `${CHROME_INTERNAL_GERRIT}/changes/${changeId}/comments`,
         AUTH_OPTIONS
       )
       .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId)));
@@ -777,7 +763,6 @@ describe('Gerrit', () => {
       action: 'update comments',
       value: 1,
     });
-
     expect(state.statusManager.setStatus).not.toHaveBeenCalled();
   });
 
@@ -801,9 +786,9 @@ describe('Gerrit', () => {
     await git.checkout('cros/main', {createBranch: true});
     await git.checkout('main');
     await git.addAll();
-    const commitId = await git.commit(
-      'Under review\nChange-Id: Iaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa12345'
-    );
+    const changeId = 'Iaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa12345';
+    const commitId1 = await git.commit(`Under review\nChange-Id: ${changeId}`);
+    const commitId2 = '1111111111111111111111111111111111111111';
 
     const gerrit = new Gerrit(
       state.commentController,
@@ -813,17 +798,9 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
-      .withArgs(
-        'https://chromium-review.googlesource.com/changes/Iaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa12345/comments',
-        AUTH_OPTIONS
-      )
+      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
       .and.resolveTo(
-        apiString(
-          TWO_PATCHSETS_COMMENT_INFOS_MAP(
-            commitId,
-            '1111111111111111111111111111111111111111'
-          )
-        )
+        apiString(TWO_PATCHSETS_COMMENT_INFOS_MAP(commitId1, commitId2))
       );
 
     await expectAsync(
@@ -867,7 +844,6 @@ describe('Gerrit', () => {
       action: 'update comments',
       value: 2,
     });
-
     expect(state.statusManager.setStatus).toHaveBeenCalledOnceWith(
       'Gerrit',
       bgTaskStatus.TaskStatus.ERROR
