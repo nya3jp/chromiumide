@@ -187,16 +187,10 @@ class Gerrit {
         return;
       }
 
-      // TODO(b:216048068): Refactor how we handle errors.
-      let status = bgTaskStatus.TaskStatus.OK;
-
       const localCommitIds = await this.filterLocalCommitIds(
         this.partitionedThreads.map(commitThreads => commitThreads[0]),
         gitDir
       );
-      if (localCommitIds.length !== this.partitionedThreads.length) {
-        status = bgTaskStatus.TaskStatus.ERROR;
-      }
 
       for (const [commitId, commentThreadsMap] of this.partitionedThreads) {
         // We still want to show comments that cannot be repositioned correctly.
@@ -210,7 +204,6 @@ class Gerrit {
         );
       }
       this.updateStatusBar();
-      this.statusManager.setStatus(GERRIT, status);
       if (fetch && this.vscodeCommentThreads.length > 0) {
         this.sendMetrics();
       }
@@ -387,14 +380,11 @@ class Gerrit {
       } else if (exists) {
         local.push(commitId);
       } else {
-        this.outputChannel.appendLine(
-          `The patchset ${commitId} was not available locally. This happens ` +
-            'when some patchsets were uploaded to Gerrit from a different chroot.'
-        );
-        metrics.send({
-          category: 'error',
-          group: 'gerrit',
-          description: 'commit not available locally',
+        this.showErrorMessage({
+          log:
+            `The patchset ${commitId} was not available locally. This happens ` +
+            'when some patchsets were uploaded to Gerrit from a different chroot.',
+          metrics: 'commit not available locally',
         });
       }
     }

@@ -299,10 +299,7 @@ describe('Gerrit', () => {
       value: 1,
     });
 
-    expect(state.statusManager.setStatus).toHaveBeenCalledOnceWith(
-      'Gerrit',
-      bgTaskStatus.TaskStatus.OK
-    );
+    expect(state.statusManager.setStatus).not.toHaveBeenCalled();
   });
 
   it('handles special comment types (line, file, commit msg, patchset)', async () => {
@@ -723,10 +720,7 @@ describe('Gerrit', () => {
 
     expect(metrics.send).not.toHaveBeenCalled();
 
-    expect(state.statusManager.setStatus).toHaveBeenCalledOnceWith(
-      'Gerrit',
-      bgTaskStatus.TaskStatus.OK
-    );
+    expect(state.statusManager.setStatus).not.toHaveBeenCalled();
   });
 
   it('displays a comment for an internal repo', async () => {
@@ -784,10 +778,7 @@ describe('Gerrit', () => {
       value: 1,
     });
 
-    expect(state.statusManager.setStatus).toHaveBeenCalledOnceWith(
-      'Gerrit',
-      bgTaskStatus.TaskStatus.OK
-    );
+    expect(state.statusManager.setStatus).not.toHaveBeenCalled();
   });
 
   it('does not throw errors when repositioning is triggered outside a Git repo', async () => {
