@@ -25,9 +25,9 @@ export type PathMap<T> = {
  * See the unit tests for another example.
  */
 export function splitPathArrayMap<T, Key>(
-  pathArrayMap: PathMap<T[]>,
+  pathArrayMap: PathMap<readonly T[]>,
   groupBy: (arg: T) => Key
-): [Key, PathMap<T[]>][] {
+): Map<Key, PathMap<T[]>> {
   const res = new Map<Key, PathMap<T[]>>();
   for (const [filePath, xs] of Object.entries(pathArrayMap)) {
     for (const x of xs) {
@@ -44,5 +44,5 @@ export function splitPathArrayMap<T, Key>(
       }
     }
   }
-  return [...res.entries()];
+  return res;
 }

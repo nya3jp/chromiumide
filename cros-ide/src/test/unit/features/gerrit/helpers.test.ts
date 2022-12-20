@@ -15,7 +15,7 @@ describe('splitPathArrayMap', () => {
       'b.cc': [2, 3, 3],
     };
     const identity = (n: number) => n;
-    const want: [number, TestArrayMap][] = [
+    const want = new Map<number, TestArrayMap>([
       [
         1,
         {
@@ -35,7 +35,7 @@ describe('splitPathArrayMap', () => {
           'b.cc': [3, 3],
         },
       ],
-    ];
+    ]);
     expect(helpers.splitPathArrayMap(input, identity)).toEqual(want);
   });
 
@@ -45,11 +45,11 @@ describe('splitPathArrayMap', () => {
       'b.cc': [2, 4, 5],
     };
     const div2 = (n: number) => Math.floor(n / 2);
-    const want: [number, TestArrayMap][] = [
+    const want = new Map<number, TestArrayMap>([
       [0, {'a.cc': [1, 1]}],
       [1, {'a.cc': [2], 'b.cc': [2]}],
       [2, {'b.cc': [4, 5]}],
-    ];
+    ]);
     expect(helpers.splitPathArrayMap(input, div2)).toEqual(want);
   });
 });

@@ -551,9 +551,10 @@ function partitionCommentThreads(
 function partitionByCommitId(
   changeThread: CommentThreadsMap
 ): [string, CommentThreadsMap][] {
-  return helpers.splitPathArrayMap(changeThread, (thread: CommentThread) =>
+  const map = helpers.splitPathArrayMap(changeThread, (thread: CommentThread) =>
     thread.commitId()
   );
+  return [...map.entries()];
 }
 
 /**
