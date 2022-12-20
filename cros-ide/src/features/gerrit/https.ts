@@ -5,7 +5,7 @@
 import * as https from 'https';
 
 /**
- * Fetches raw data from Gerrit API over https.
+ * Fetches a raw string from https.
  *
  * Returns the response if it is successful or undefined on 404 error.
  * Everything else throws an error.

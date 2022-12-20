@@ -347,7 +347,10 @@ class Gerrit {
     this.partitionedThreads = partitionedThreads;
   }
 
-  /** Get access wrapper */
+  /**
+   * Gets a raw string from Gerrit REST API with an auth cookie,
+   * returning undefined on 404 error
+   */
   async getOrThrow(
     repoId: git.RepoId,
     path: string,
@@ -360,7 +363,7 @@ class Gerrit {
     return str?.substring(')]}\n'.length);
   }
 
-  /** Read gitcookies */
+  /** Reads gitcookies or returns undefined. */
   async readAuthCookie(): Promise<string | undefined> {
     const filePath = await auth.getGitcookiesPath(this.outputChannel);
     try {
