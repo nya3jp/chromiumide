@@ -83,6 +83,7 @@ const optionsGA = {
 // Exhaustive list of feature groups.
 type FeatureGroup =
   | 'codesearch'
+  | 'coverage'
   | 'cppxrefs'
   | 'debugging'
   | 'device'

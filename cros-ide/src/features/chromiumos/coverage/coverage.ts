@@ -9,6 +9,7 @@ import * as glob from 'glob';
 import * as services from '../../../services';
 import * as config from '../../../services/config';
 import * as bgTaskStatus from '../../../ui/bg_task_status';
+import * as metrics from '../../metrics/metrics';
 import {Package} from './../boards_packages';
 import {llvmToLineFormat} from './llvm_json_parser';
 import {CoverageJson, LlvmFileCoverage} from './types';
@@ -41,11 +42,27 @@ export class Coverage {
     context.subscriptions.push(
       vscode.commands.registerCommand(
         'cros-ide.coverage.generate',
-        (pkg: Package) => this.generateCoverage(pkg)
+        (pkg: Package) => {
+          void this.generateCoverage(pkg);
+          metrics.send({
+            category: 'interactive',
+            group: 'coverage',
+            action: 'generate coverage',
+            label: `${pkg.board}:${pkg.name}`,
+          });
+        }
       ),
       vscode.commands.registerCommand(
         'cros-ide.coverage.showReport',
-        (pkg: Package) => this.showReport(pkg)
+        (pkg: Package) => {
+          void this.showReport(pkg);
+          metrics.send({
+            category: 'interactive',
+            group: 'coverage',
+            action: 'show coverage',
+            label: `${pkg.board}:${pkg.name}`,
+          });
+        }
       )
     );
 
@@ -102,11 +119,24 @@ export class Coverage {
     const {covered: coveredRanges, uncovered: uncoveredRanges} =
       await this.readDocumentCoverage(activeEditor.document.fileName);
 
+    let sendMetrics = false;
+
     if (coveredRanges) {
       activeEditor.setDecorations(coveredDecoration, coveredRanges);
+      sendMetrics = true;
     }
     if (uncoveredRanges) {
       activeEditor.setDecorations(uncoveredDecoration, uncoveredRanges);
+      sendMetrics = true;
+    }
+
+    if (sendMetrics) {
+      metrics.send({
+        category: 'background',
+        group: 'coverage',
+        action: 'coverage shown',
+        // TODO(b:214322618): send how many lines are marked
+      });
     }
   }
 
