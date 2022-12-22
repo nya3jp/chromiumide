@@ -27,6 +27,7 @@ function range(
 }
 
 type CommentInfoLike = {
+  author?: api.AccountInfo;
   line?: number;
   range?: api.CommentRange;
   message?: string;
@@ -36,10 +37,10 @@ function commentThread(
   data: CommentInfoLike,
   opts?: {newLine?: number}
 ): gerrit.CommentThread {
-  const t = new gerrit.CommentThread([data as api.CommentInfo], {
-    localCommitId: 'aa',
-    changeId: 'Ibb',
-  });
+  const revision = undefined as unknown as gerrit.Revision;
+  data.author = {_account_id: 12345};
+  const commentInfo = data as api.CommentInfo;
+  const t = new gerrit.CommentThread(revision, [commentInfo]);
   if (opts?.newLine) {
     t.overwriteShiftForTesting(opts.newLine - data.line!);
   }

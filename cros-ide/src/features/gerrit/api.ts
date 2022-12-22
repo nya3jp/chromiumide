@@ -3,6 +3,40 @@
 // found in the LICENSE file.
 
 /**
+ * Response from Gerrit 'Get Change' API
+ *
+ * https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info
+ * https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
+ */
+export type ChangeInfo = {
+  readonly change_id: string;
+  readonly _number: number;
+  readonly revisions?: CommitIdToRevisionInfo;
+  readonly owner: AccountInfo;
+  readonly created: string;
+  readonly updated: string;
+};
+
+/**
+ * The revisions field of a response from
+ * Gerrit 'Get Change' API (called with the ALL_REVISIONS flag)
+ */
+export type CommitIdToRevisionInfo = {
+  readonly [commitId: string]: RevisionInfo;
+};
+
+/**
+ * One revision of a change uploaded to Gerrit, aka a patch set
+ *
+ * https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-info
+ */
+export type RevisionInfo = {
+  readonly _number: number | 'edit';
+  readonly uploader: AccountInfo;
+  readonly created: string;
+};
+
+/**
  * Response from Gerrit 'List Change Comments' API
  *
  * https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-change-comments

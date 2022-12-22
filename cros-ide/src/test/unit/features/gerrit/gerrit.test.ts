@@ -12,73 +12,7 @@ import * as metrics from '../../../../features/metrics/metrics';
 import * as bgTaskStatus from '../../../../ui/bg_task_status';
 import * as testing from '../../../testing';
 
-const {formatGerritTimestamp, Gerrit, partitionCommentThreads} = TEST_ONLY;
-
-describe('partitionCommentThreads', () => {
-  type CommentInfoLike = Pick<
-    api.CommentInfo,
-    'id' | 'updated' | 'in_reply_to'
-  >;
-
-  it('breaks threads', () => {
-    const zeroTime = ' 00:00:00.000000000';
-    const commentInfos: CommentInfoLike[] = [
-      {
-        id: 'reply_1_1',
-        in_reply_to: 'thread_1',
-        updated: '2022-09-10' + zeroTime,
-      },
-      {
-        id: 'reply_1_2',
-        in_reply_to: 'reply_1_1',
-        updated: '2022-09-20' + zeroTime,
-      },
-      {
-        id: 'thread_1',
-        updated: '2022-09-01' + zeroTime,
-      },
-
-      {id: 'thread_2', updated: '2022-09-05' + zeroTime},
-      {id: 'thread_3', updated: '2022-09-07' + zeroTime},
-      {
-        id: 'reply_3_1',
-        in_reply_to: 'thread_3',
-        updated: '2022-09-08' + zeroTime,
-      },
-      {
-        id: 'reply_to_nonexisting',
-        in_reply_to: 'does_not_exist',
-        updated: '2022-09-30' + zeroTime,
-      },
-    ];
-    const input = {
-      'file/path.cc': commentInfos.map(c => c as api.CommentInfo),
-    };
-
-    const oc = jasmine.objectContaining;
-    const want = {
-      'file/path.cc': [
-        oc({
-          commentInfos: [
-            oc({id: 'thread_1'}),
-            oc({id: 'reply_1_1'}),
-            oc({id: 'reply_1_2'}),
-          ],
-        }),
-        oc({commentInfos: [oc({id: 'thread_2'})]}),
-        oc({commentInfos: [oc({id: 'thread_3'}), oc({id: 'reply_3_1'})]}),
-        oc({commentInfos: [oc({id: 'reply_to_nonexisting'})]}),
-      ],
-    };
-
-    expect(
-      partitionCommentThreads(input, {
-        localCommitId: 'aa',
-        changeId: 'Ibb',
-      })
-    ).toEqual(want);
-  });
-});
+const {formatGerritTimestamp, Gerrit} = TEST_ONLY;
 
 describe('formatGerritTimestaps', () => {
   it("formats today's date as hours and minutes", () => {
@@ -125,6 +59,12 @@ const AUTHOR = Object.freeze({
     },
   ],
 });
+
+function CHANGE_INFO(changeId: string, commitIds: string[]): api.ChangeInfo {
+  const revisions: {[commitId: string]: Object} = {};
+  for (const commitId of commitIds) revisions[commitId] = {};
+  return {change_id: changeId, revisions} as api.ChangeInfo;
+}
 
 const COMMENT_INFO = Object.freeze({
   author: AUTHOR,
@@ -276,11 +216,16 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}?o=ALL_REVISIONS`,
+        AUTH_OPTIONS
+      )
+      .and.resolveTo(apiString(CHANGE_INFO(changeId, [commitId])))
       .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
       .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId)));
 
     await expectAsync(
-      gerrit.showComments(abs('cryptohome/cryptohome.cc'))
+      gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
     ).toBeResolved();
 
     expect(state.commentController.createCommentThread).toHaveBeenCalledTimes(
@@ -375,11 +320,16 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}?o=ALL_REVISIONS`,
+        AUTH_OPTIONS
+      )
+      .and.resolveTo(apiString(CHANGE_INFO(changeId, [reviewCommitId])))
       .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
       .and.resolveTo(apiString(SPECIAL_COMMENT_TYPES(reviewCommitId)));
 
     await expectAsync(
-      gerrit.showComments(abs('cryptohome/crypto.h'))
+      gerrit.showChanges(abs('cryptohome/crypto.h'))
     ).toBeResolved();
 
     expect(state.commentController.createCommentThread).toHaveBeenCalledTimes(
@@ -493,14 +443,16 @@ describe('Gerrit', () => {
 
     spyOn(https, 'getOrThrow')
       .withArgs(
-        `https://chromium-review.googlesource.com/changes/${changeId}/comments`,
+        `${CHROMIUM_GERRIT}/changes/${changeId}?o=ALL_REVISIONS`,
         AUTH_OPTIONS
       )
+      .and.resolveTo(apiString(CHANGE_INFO(changeId, [commitId1, commitId2])))
+      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
       .and.resolveTo(
         apiString(TWO_PATCHSETS_COMMENT_INFOS_MAP(commitId1, commitId2))
       );
 
-    await expectAsync(gerrit.showComments(fileName)).toBeResolved();
+    await expectAsync(gerrit.showChanges(fileName)).toBeResolved();
 
     expect(state.commentController.createCommentThread).toHaveBeenCalledTimes(
       2
@@ -590,10 +542,20 @@ describe('Gerrit', () => {
 
     spyOn(https, 'getOrThrow')
       .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId1}?o=ALL_REVISIONS`,
+        AUTH_OPTIONS
+      )
+      .and.resolveTo(apiString(CHANGE_INFO(changeId1, [commitId1])))
+      .withArgs(
         `${CHROMIUM_GERRIT}/changes/${changeId1}/comments`,
         AUTH_OPTIONS
       )
       .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId1)))
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId2}?o=ALL_REVISIONS`,
+        AUTH_OPTIONS
+      )
+      .and.resolveTo(apiString(CHANGE_INFO(changeId2, [commitId2])))
       .withArgs(
         `${CHROMIUM_GERRIT}/changes/${changeId2}/comments`,
         AUTH_OPTIONS
@@ -601,7 +563,7 @@ describe('Gerrit', () => {
       .and.resolveTo(apiString(SECOND_COMMIT_IN_CHAIN(commitId2)));
 
     await expectAsync(
-      gerrit.showComments(abs('cryptohome/cryptohome.cc'))
+      gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
     ).toBeResolved();
 
     expect(state.commentController.createCommentThread).toHaveBeenCalledTimes(
@@ -663,11 +625,16 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}?o=ALL_REVISIONS`,
+        AUTH_OPTIONS
+      )
+      .and.resolveTo(apiString(CHANGE_INFO(changeId, [commitId])))
       .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
       .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId)));
 
     await expectAsync(
-      gerrit.showComments(abs('cryptohome/cryptohome.cc'))
+      gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
     ).toBeResolved();
 
     expect(state.commentController.createCommentThread).toHaveBeenCalledTimes(
@@ -700,11 +667,16 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}?o=ALL_REVISIONS`,
+        AUTH_OPTIONS
+      )
+      .and.resolveTo(undefined)
       .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
       .and.resolveTo(undefined);
 
     await expectAsync(
-      gerrit.showComments(abs('cryptohome/cryptohome.cc'))
+      gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
     ).toBeResolved();
 
     expect(state.commentController.createCommentThread).not.toHaveBeenCalled();
@@ -739,13 +711,18 @@ describe('Gerrit', () => {
 
     spyOn(https, 'getOrThrow')
       .withArgs(
+        `${CHROME_INTERNAL_GERRIT}/changes/${changeId}?o=ALL_REVISIONS`,
+        AUTH_OPTIONS
+      )
+      .and.resolveTo(apiString(CHANGE_INFO(changeId, [commitId])))
+      .withArgs(
         `${CHROME_INTERNAL_GERRIT}/changes/${changeId}/comments`,
         AUTH_OPTIONS
       )
       .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId)));
 
     await expectAsync(
-      gerrit.showComments(abs('cryptohome/cryptohome.cc'))
+      gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
     ).toBeResolved();
 
     expect(state.commentController.createCommentThread).toHaveBeenCalledTimes(
@@ -778,7 +755,7 @@ describe('Gerrit', () => {
       state.statusManager
     );
 
-    await expectAsync(gerrit.showComments(tempDir.path)).toBeResolved();
+    await expectAsync(gerrit.showChanges(tempDir.path)).toBeResolved();
 
     expect(state.statusManager.setStatus).not.toHaveBeenCalled();
   });
@@ -802,13 +779,18 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}?o=ALL_REVISIONS`,
+        AUTH_OPTIONS
+      )
+      .and.resolveTo(apiString(CHANGE_INFO(changeId, [commitId1, commitId2])))
       .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
       .and.resolveTo(
         apiString(TWO_PATCHSETS_COMMENT_INFOS_MAP(commitId1, commitId2))
       );
 
     await expectAsync(
-      gerrit.showComments(abs('cryptohome/cryptohome.cc'))
+      gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
     ).toBeResolved();
 
     expect(state.commentController.createCommentThread).toHaveBeenCalledTimes(

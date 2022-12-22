@@ -100,7 +100,7 @@ export function activate(
 
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(document => {
-      void gerrit.showComments(document.fileName, false);
+      void gerrit.showChanges(document.fileName, false);
     }),
     vscode.commands.registerCommand(
       'cros-ide.gerrit.collapseAllCommentThreads',
@@ -130,15 +130,14 @@ export function activate(
       //    on "head_1 -> undefined -> head_1" sequence.
       if (event.head && event.head !== gitHead) {
         gitHead = event.head;
-        await gerrit.showComments(event.gitDir);
+        await gerrit.showChanges(event.gitDir);
       }
     })
   );
 }
 
 class Gerrit {
-  // list of [commit id, threads] pairs
-  private partitionedCommentThreads?: [string, FilePathToCommentThreads][];
+  private changes?: Change[];
 
   constructor(
     private readonly commentController: vscode.CommentController,
@@ -149,59 +148,59 @@ class Gerrit {
 
   /** Generator for iterating over all Threads. */
   *commentThreads(): Generator<CommentThread> {
-    for (const [, commentThreadsMap] of this.partitionedCommentThreads ?? []) {
-      for (const commentThreads of Object.values(commentThreadsMap)) {
-        for (const commentThread of commentThreads) {
-          yield commentThread;
+    for (const {revisions} of this.changes ?? []) {
+      for (const {commentThreadsMap} of Object.values(revisions)) {
+        for (const commentThreads of Object.values(commentThreadsMap)) {
+          for (const commentThread of commentThreads) {
+            yield commentThread;
+          }
         }
       }
     }
   }
 
   /**
-   * Fetches comments on changes in the Git repo which contains
+   * Fetches the changes and their comments in the Git repo which contains
    * `filePath` (file or directory) and shows them with
    * proper repositioning based on the local diff. It caches the response
    * from Gerrit and uses it unless fetch is true.
    */
-  async showComments(filePath: string, fetch = true): Promise<void> {
+  async showChanges(filePath: string, fetch = true): Promise<void> {
     try {
       const gitDir = await this.findGitDir(filePath);
       if (!gitDir) return;
       if (fetch) {
-        await this.fetchComments(gitDir);
+        await this.fetchChangesOrThrow(gitDir);
         this.clearCommentThreadsFromVscode();
       }
-      if (!this.partitionedCommentThreads) {
+      if (!this.changes) {
+        this.outputChannel.appendLine('No changes found');
         return;
       }
-
-      const localCommitIds = await this.filterLocalCommitIds(
-        this.partitionedCommentThreads.map(commitThreads => commitThreads[0]),
-        gitDir
-      );
-
       let nCommentThreads = 0;
-      for (const [commitId, commentThreadsMap] of this
-        .partitionedCommentThreads) {
-        if (localCommitIds.includes(commitId)) {
-          await this.shiftCommentThreadsMap(
-            gitDir,
-            commitId,
-            commentThreadsMap
-          );
-        }
-        // We still want to show comments that cannot be repositioned correctly.
-        for (const [filePath, commentThreads] of Object.entries(
-          commentThreadsMap
-        )) {
-          for (const commentThread of commentThreads) {
-            commentThread.displayForVscode(
-              this.commentController,
+      for (const {revisions} of this.changes) {
+        for (const revision of Object.values(revisions)) {
+          const {commitId, commentThreadsMap} = revision;
+          const commitExists = await this.checkCommitExists(commitId, gitDir);
+          if (commitExists) {
+            await this.shiftCommentThreadsMap(
               gitDir,
-              filePath
+              commitId,
+              commentThreadsMap
             );
-            nCommentThreads++;
+          }
+          // We still want to show comments that cannot be repositioned correctly
+          for (const [filePath, commentThreads] of Object.entries(
+            commentThreadsMap
+          )) {
+            for (const commentThread of commentThreads) {
+              commentThread.displayForVscode(
+                this.commentController,
+                gitDir,
+                filePath
+              );
+              nCommentThreads++;
+            }
           }
         }
       }
@@ -216,8 +215,8 @@ class Gerrit {
       }
     } catch (err) {
       this.showErrorMessage({
-        log: `Failed to fetch Gerrit comments: ${err}`,
-        metrics: 'Failed to fetch Gerrit comments (top-level error)',
+        log: `Failed to show Gerrit changes: ${err}`,
+        metrics: 'Failed to show Gerrit changes (top-level error)',
       });
       return;
     }
@@ -290,38 +289,57 @@ class Gerrit {
   /**
    * Retrieves data from Gerrit API and applies basic transformations
    * to partition it into threads and by commit id. The data is then
-   * stored in `this.partitionedCommentThreads`.
+   * stored in `this.changes`.
+   * It can throw an error from HTTPS access by `this.getOrThrow`.
    */
-  private async fetchComments(gitDir: string): Promise<void> {
+  private async fetchChangesOrThrow(gitDir: string): Promise<void> {
     const authCookie = await this.readAuthCookie();
     const repoId = await this.getRepoId(gitDir);
     if (repoId === undefined) return;
     const gitLogInfos = await this.readGitLog(gitDir, repoId);
     if (gitLogInfos.length === 0) return;
 
-    const partitionedCommentThreads: [string, FilePathToCommentThreads][] = [];
+    const changes: Change[] = [];
+    for (const {localCommitId, changeId} of gitLogInfos) {
+      // Fetch ChangeInfo
+      const changeContent = await this.getOrThrow(
+        repoId,
+        `changes/${changeId}?o=ALL_REVISIONS`,
+        authCookie
+      );
+      if (!changeContent) {
+        this.outputChannel.appendLine(
+          `Not found on Gerrit: Change ${changeId}`
+        );
+        continue;
+      }
+      const changeInfo = JSON.parse(changeContent) as api.ChangeInfo;
 
-    for (const gitLogInfo of gitLogInfos) {
-      const changeId = gitLogInfo.changeId;
-      const path = `changes/${changeId}/comments`;
-      const commentsContent = await this.getOrThrow(repoId, path, authCookie);
+      // Fetch comments
+      const commentsContent = await this.getOrThrow(
+        repoId,
+        `changes/${changeId}/comments`,
+        authCookie
+      );
       if (!commentsContent) {
-        this.outputChannel.appendLine(`Not found on Gerrit: ${changeId}`);
+        this.outputChannel.appendLine(
+          `Comments for ${changeId} could not be fetched from Gerrit`
+        );
         continue;
       }
       const commentInfosMap = JSON.parse(
         commentsContent
       ) as api.FilePathToCommentInfos;
-      const combinedCommentThreadsMap = partitionCommentThreads(
-        commentInfosMap,
-        gitLogInfo
-      );
-      for (const item of partitionByCommitId(combinedCommentThreadsMap)) {
-        partitionedCommentThreads.push(item);
-      }
-    }
 
-    this.partitionedCommentThreads = partitionedCommentThreads;
+      const change = new Change(
+        localCommitId,
+        repoId,
+        changeInfo,
+        commentInfosMap
+      );
+      changes.push(change);
+    }
+    this.changes = changes;
   }
 
   /**
@@ -382,19 +400,6 @@ class Gerrit {
     }
   }
 
-  /** Returns Git commit ids which are available in the local repo. */
-  private async filterLocalCommitIds(
-    allCommitIds: string[],
-    gitDir: string
-  ): Promise<string[]> {
-    const local = [];
-    for (const commitId of allCommitIds) {
-      const commitExists = await this.checkCommitExists(commitId, gitDir);
-      if (commitExists) local.push(commitId);
-    }
-    return local;
-  }
-
   /**
    * Returns true if it check that the commit exists locally,
    * or returns false otherwise showing an error message
@@ -428,7 +433,7 @@ class Gerrit {
 
   /**
    * Updates line numbers in `commentThreadsMap`, which are assumed to be made
-   * on the `originalCommitId`, so they can be placed in the right lines on the files
+   * on `commitId`, so they can be placed in the right lines on the files
    * in the working tree.
    */
   private async shiftCommentThreadsMap(
@@ -498,63 +503,36 @@ class Gerrit {
   }
 }
 
-function partitionCommentArray(
-  apiCommentInfos: readonly api.CommentInfo[],
-  gitLogInfo: git.GitLogInfo
-): CommentThread[] {
-  // Copy the input to avoid modifying data received from Gerrit API.
-  const commentInfos = [...apiCommentInfos];
-
-  // Sort the input to make sure we see ids before they are used in in_reply_to.
-  commentInfos.sort((c1, c2) => c1.updated.localeCompare(c2.updated));
-
-  const idxMap = new Map<string, number>();
-  const commentThreads: CommentThread[] = [];
-
-  for (const commentInfo of commentInfos) {
-    // Idx is undefined for the first comment in a thread,
-    // and for a reply to a comment we haven't seen.
-    // The second case should not happen.
-    const inReplyTo = commentInfo.in_reply_to;
-    let idx = inReplyTo ? idxMap.get(inReplyTo) : undefined;
-    if (idx === undefined) {
-      idx = commentThreads.length;
-      commentThreads.push(new CommentThread([commentInfo], gitLogInfo));
-    } else {
-      commentThreads[idx].commentInfos.push(commentInfo);
-    }
-    idxMap.set(commentInfo.id, idx);
-  }
-
-  return commentThreads;
-}
-
 /**
- * For each filePath break comments in to comment threads. That is, turn a comment array
- * into an array of arrays, which represent comment threads
+ * Gerrit change
  */
-function partitionCommentThreads(
-  commentInfosMap: api.FilePathToCommentInfos,
-  gitLogInfo: git.GitLogInfo
-): FilePathToCommentThreads {
-  const commentThreadsMap: FilePathToCommentThreads = {};
-  for (const [filePath, commentInfos] of Object.entries(commentInfosMap)) {
-    commentThreadsMap[filePath] = partitionCommentArray(
-      commentInfos,
-      gitLogInfo
-    );
+class Change {
+  readonly revisions: CommitIdToRevision;
+  constructor(
+    readonly localCommitId: string,
+    readonly repoId: git.RepoId,
+    readonly changeInfo: api.ChangeInfo,
+    readonly commentInfosMap: api.FilePathToCommentInfos
+  ) {
+    const revisions = changeInfo.revisions ?? {};
+    const splitFilePathToCommentInfos: Map<string, api.FilePathToCommentInfos> =
+      helpers.splitPathArrayMap(commentInfosMap, c => c.commit_id!);
+    this.revisions = {};
+    for (const [commitId, revisionInfo] of Object.entries(revisions)) {
+      const revisionFilePathToCommentInfos =
+        splitFilePathToCommentInfos.get(commitId) ?? {};
+      this.revisions[commitId] = new Revision(
+        this,
+        commitId,
+        revisionInfo,
+        revisionFilePathToCommentInfos
+      );
+    }
   }
-  return commentThreadsMap;
-}
 
-function partitionByCommitId(
-  commentThreadsMap: FilePathToCommentThreads
-): [string, FilePathToCommentThreads][] {
-  const map = helpers.splitPathArrayMap(
-    commentThreadsMap,
-    (t: CommentThread) => t.commitId
-  );
-  return [...map.entries()];
+  get changeId(): string {
+    return this.changeInfo.change_id;
+  }
 }
 
 /**
@@ -568,6 +546,57 @@ function shiftCommentThreadsByHunks(
     const hunks = hunksAllFiles[filePath] ?? [];
     for (const commentThread of commentThreads) {
       commentThread.setShift(hunks, filePath);
+    }
+  }
+}
+
+/**
+ * Map from the commit id to Revision
+ */
+type CommitIdToRevision = {
+  [commitId: string]: Revision;
+};
+
+/**
+ * Revision (patchset) of Gerrit
+ */
+export class Revision {
+  readonly commentThreadsMap: FilePathToCommentThreads;
+  constructor(
+    readonly change: Change,
+    readonly commitId: string,
+    readonly revisionInfo: api.RevisionInfo,
+    readonly commentInfosMap: api.FilePathToCommentInfos
+  ) {
+    this.commentThreadsMap = {};
+    for (const [filePath, apiCommentInfos] of Object.entries(commentInfosMap)) {
+      // Copy the input to avoid modifying data received from Gerrit API.
+      const commentInfos = [...apiCommentInfos];
+      // Sort the input to make sure we see ids before they are used in in_reply_to.
+      commentInfos.sort((c1, c2) => c1.updated.localeCompare(c2.updated));
+      // Get a map from the head comment id to the CommentInfo array array
+      const splitCommentInfos: api.CommentInfo[][] = [];
+      const idxMap = new Map<string, number>();
+      for (const commentInfo of commentInfos) {
+        const inReplyTo = commentInfo.in_reply_to;
+        // idx is undefined for the first comment in a thread,
+        // and for a reply to a comment we haven't seen.
+        // The second case should not happen.
+        let idx = inReplyTo ? idxMap.get(inReplyTo) : undefined;
+        if (idx === undefined) {
+          idx = splitCommentInfos.length;
+          splitCommentInfos.push([commentInfo]);
+        } else {
+          splitCommentInfos[idx].push(commentInfo);
+        }
+        idxMap.set(commentInfo.id, idx);
+      }
+      // Construct the CommentThread array
+      const commentThreads = [];
+      for (const commentInfos of splitCommentInfos) {
+        commentThreads.push(new CommentThread(this, commentInfos));
+      }
+      this.commentThreadsMap[filePath] = commentThreads;
     }
   }
 }
@@ -589,7 +618,8 @@ export type FilePathToCommentThreads = {
  * 3. To clear the comment thread from VSCode, call clearFromVscode
  */
 export class CommentThread {
-  private vscodeCommentThread?: vscode.CommentThread;
+  readonly comments: Comment[];
+  private vscodeCommentThread?: VscodeCommentThread;
   /**
    * Line shift for repositioning the comment thread from the original
    * location to the corresponding line in the working tree.
@@ -597,21 +627,28 @@ export class CommentThread {
    */
   private shift = 0;
 
-  constructor(
-    readonly commentInfos: api.CommentInfo[],
-    readonly gitLogInfo: git.GitLogInfo
-  ) {}
-
-  get firstCommentInfo(): api.CommentInfo {
-    return this.commentInfos[0];
+  constructor(readonly revision: Revision, commentInfos: api.CommentInfo[]) {
+    this.comments = [];
+    for (const commentInfo of commentInfos) {
+      const comment = new Comment(this, commentInfo);
+      this.comments.push(comment);
+    }
   }
-  get lastCommentInfo(): api.CommentInfo {
-    return this.commentInfos[this.commentInfos.length - 1];
+
+  get change(): Change {
+    return this.revision.change;
+  }
+
+  get firstComment(): Comment {
+    return this.comments[0];
+  }
+  get lastComment(): Comment {
+    return this.comments[this.comments.length - 1];
   }
 
   /** Original line */
   get originalLine(): number | undefined {
-    return this.firstCommentInfo.line;
+    return this.firstComment.commentInfo.line;
   }
 
   /** Shifted line */
@@ -623,7 +660,7 @@ export class CommentThread {
 
   /** Shifted range */
   get range(): api.CommentRange | undefined {
-    const r = this.firstCommentInfo.range;
+    const r = this.firstComment.commentInfo.range;
     if (r === undefined) return undefined;
     return {
       start_line: r.start_line + this.shift,
@@ -635,14 +672,14 @@ export class CommentThread {
 
   get commitId(): string {
     // TODO(b:216048068): make sure we have the commit_id
-    return this.firstCommentInfo.commit_id!;
+    return this.firstComment.commentInfo.commit_id!;
   }
 
   /** A thread is unresolved if its last comment is unresolved. */
   get unresolved(): boolean {
     // Unresolved can be undefined according to the API documentation,
     // but Gerrit always sent it on the changes the we inspected.
-    return this.lastCommentInfo.unresolved!;
+    return this.lastComment.commentInfo.unresolved!;
   }
 
   /**
@@ -737,8 +774,9 @@ export class CommentThread {
     const vscodeCommentThread = controller.createCommentThread(
       dataUri,
       this.getVscodeRange(),
-      this.commentInfos.map(commentInfo => toVscodeComment(commentInfo))
-    );
+      this.comments.map(comment => toVscodeComment(comment))
+    ) as VscodeCommentThread;
+    vscodeCommentThread.gerritCommentThread = this; // Remember the comment thread
     vscodeCommentThread.canReply = false;
     // TODO(b:216048068): We should indicate resolved/unresolved with UI style.
     if (this.unresolved) {
@@ -755,11 +793,11 @@ export class CommentThread {
     if (filePath === '/COMMIT_MSG') {
       return gitDocument.commitMessageUri(
         gitDir,
-        this.gitLogInfo.localCommitId,
+        this.change.localCommitId,
         'gerrit commit msg'
       );
     } else if (filePath === '/PATCHSET_LEVEL') {
-      return virtualDocument.patchSetUri(gitDir, this.gitLogInfo.changeId);
+      return virtualDocument.patchSetUri(gitDir, this.change.changeId);
     } else {
       return vscode.Uri.file(path.join(gitDir, filePath));
     }
@@ -802,10 +840,47 @@ export class CommentThread {
   }
 }
 
+/** vscode.CommentThread extended with a reference to CommentThread */
+interface VscodeCommentThread extends vscode.CommentThread {
+  /**
+   * Reference to the comment thread, which we can use in
+   * event callbacks on the VS Code comment thread
+   */
+  gerritCommentThread: CommentThread;
+}
+
+/** Gerrit comment */
+class Comment {
+  constructor(
+    readonly commentThread: CommentThread,
+    readonly commentInfo: api.CommentInfo
+  ) {}
+
+  get change(): Change {
+    return this.commentThread.change;
+  }
+  get authorId(): number {
+    return this.commentInfo.author._account_id;
+  }
+  get commentId(): string {
+    return this.commentInfo.id;
+  }
+}
+
+/** vscode.Comment extended with a reference to Comment */
+interface VscodeComment extends vscode.Comment {
+  /**
+   * Reference to the comment, which we can use in
+   * event callbacks on the VS Code comment
+   */
+  readonly gerritComment: Comment;
+}
+
 /**
- * Turns api.CommentInfo into vscode.Comment.
+ * Turns Comment into VscodeComment.
  */
-function toVscodeComment(c: api.CommentInfo): vscode.Comment {
+function toVscodeComment(comment: Comment): VscodeComment {
+  const c = comment.commentInfo;
   return {
     author: {
       name: api.accountName(c.author),
@@ -813,6 +888,7 @@ function toVscodeComment(c: api.CommentInfo): vscode.Comment {
     label: formatGerritTimestamp(c.updated),
     body: new vscode.MarkdownString(c.message),
     mode: vscode.CommentMode.Preview,
+    gerritComment: comment,
   };
 }
 
@@ -850,6 +926,5 @@ function formatGerritTimestamp(timestamp: string): string {
 export const TEST_ONLY = {
   formatGerritTimestamp,
   Gerrit,
-  partitionCommentThreads,
   shiftCommentThreadsByHunks,
 };
