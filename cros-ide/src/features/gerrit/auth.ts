@@ -46,5 +46,7 @@ export function parseGitcookies(gitcookies: string): string {
     cookies.push(fields[5] + '=' + fields[6]);
   }
   // Return a comma-separated string
-  return cookies.join(',');
+  // We reverse the order of the entries to
+  // have newer entries come earlier.
+  return cookies.reverse().join(',');
 }

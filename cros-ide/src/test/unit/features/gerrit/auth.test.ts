@@ -12,6 +12,6 @@ describe('parseGitcookies', () => {
           '# example.com\tFALSE\t/\tTRUE\t2147483647\tkey2\tbar456\n' +
           'example.com\tFALSE\t/\tTRUE\t2147483647\tkey3\tbaz789\n'
       )
-    ).toBe('key1=foo123,key3=baz789');
+    ).toBe('key3=baz789,key1=foo123');
   });
 });

@@ -143,7 +143,7 @@ const GITCOOKIES_PATH = path.join(
   '../../../../../src/test/testdata/gerrit/gitcookies'
 );
 const AUTH_COOKIE =
-  'o=git-ymat.google.com=0123abc,o=git-ymat.google.com=4567def';
+  'o=git-ymat.google.com=4567def,o=git-ymat.google.com=0123abc';
 const AUTH_OPTIONS = {headers: {cookie: AUTH_COOKIE}};
 
 const CHROMIUM_GERRIT = 'https://chromium-review.googlesource.com';
