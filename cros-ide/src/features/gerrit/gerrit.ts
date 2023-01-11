@@ -188,7 +188,7 @@ class Gerrit {
     private readonly statusManager: bgTaskStatus.StatusManager
   ) {}
 
-  /** Generator for iterating over all Threads. */
+  /** Generator for iterating over all comment threads. */
   *commentThreads(): Generator<CommentThread> {
     for (const {revisions} of this.changes ?? []) {
       for (const {commentThreadsMap} of Object.values(revisions)) {
@@ -212,8 +212,10 @@ class Gerrit {
       const gitDir = await this.findGitDir(filePath);
       if (!gitDir) return;
       if (fetch) {
-        await this.fetchChangesOrThrow(gitDir);
+        const changes = await this.fetchChangesOrThrow(gitDir);
+        if (changes === undefined) return;
         this.clearCommentThreadsFromVscode();
+        this.changes = changes;
       }
       if (!this.changes) {
         this.outputChannel.appendLine('No changes found');
@@ -329,12 +331,13 @@ class Gerrit {
   }
 
   /**
-   * Retrieves data from Gerrit API and applies basic transformations
-   * to partition it into threads and by commit id. The data is then
-   * stored in `this.changes`.
+   * Retrieves the changes from Gerrit Rest API.
+   * It can return `undefined` when changes were not obtained.
    * It can throw an error from HTTPS access by `api.getOrThrow`.
    */
-  private async fetchChangesOrThrow(gitDir: string): Promise<void> {
+  private async fetchChangesOrThrow(
+    gitDir: string
+  ): Promise<Change[] | undefined> {
     const repoId = await this.getRepoId(gitDir);
     if (repoId === undefined) return;
     const authCookie = await this.readAuthCookie(repoId);
@@ -412,7 +415,7 @@ class Gerrit {
       );
       changes.push(change);
     }
-    this.changes = changes;
+    return changes;
   }
 
   /**
@@ -821,6 +824,7 @@ export class CommentThread {
     if (this.vscodeCommentThread) {
       // Recompute the range
       this.vscodeCommentThread.range = this.getVscodeRange();
+      return;
     }
     this.createVscodeCommentThread(controller, gitDir, filePath);
   }
