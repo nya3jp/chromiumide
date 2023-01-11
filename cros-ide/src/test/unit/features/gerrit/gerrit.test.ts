@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as api from '../../../../features/gerrit/api';
 import * as auth from '../../../../features/gerrit/auth';
+import * as git from '../../../../features/gerrit/git';
 import {TEST_ONLY} from '../../../../features/gerrit/gerrit';
 import * as https from '../../../../features/gerrit/https';
 import * as metrics from '../../../../features/metrics/metrics';
@@ -160,9 +161,21 @@ const GITCOOKIES_PATH = path.join(
   __dirname,
   '../../../../../src/test/testdata/gerrit/gitcookies'
 );
-const AUTH_COOKIE =
-  'o=git-ymat.google.com=4567def,o=git-ymat.google.com=0123abc';
-const AUTH_OPTIONS = {headers: {cookie: AUTH_COOKIE}};
+
+function COOKIE(repoId: git.RepoId): string {
+  return `o=git-ymat.google.com=${
+    repoId === 'cros' ? 'chromium-newtoken' : 'chrome-internal-newtoken'
+  }`;
+}
+function OPTIONS(repoId: git.RepoId) {
+  return {
+    headers: {
+      cookie: COOKIE(repoId),
+    },
+  };
+}
+const CHROMIUM_OPTIONS = OPTIONS('cros');
+const CHROME_INTERNAL_OPTIONS = OPTIONS('cros-internal');
 
 const CHROMIUM_GERRIT = 'https://chromium-review.googlesource.com';
 const CHROME_INTERNAL_GERRIT =
@@ -234,16 +247,22 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
-      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, AUTH_OPTIONS)
+      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, CHROMIUM_OPTIONS)
       .and.resolveTo(undefined)
       .withArgs(
         `${CHROMIUM_GERRIT}/changes/${changeId}?o=ALL_REVISIONS`,
-        AUTH_OPTIONS
+        CHROMIUM_OPTIONS
       )
       .and.resolveTo(apiString(CHANGE_INFO(changeId, [commitId])))
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}/comments`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId)))
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/drafts`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}/drafts`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(undefined);
 
     await expectAsync(
@@ -296,16 +315,22 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
-      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, AUTH_OPTIONS)
+      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, CHROMIUM_OPTIONS)
       .and.resolveTo(apiString(AUTHOR))
       .withArgs(
         `${CHROMIUM_GERRIT}/changes/${changeId}?o=ALL_REVISIONS`,
-        AUTH_OPTIONS
+        CHROMIUM_OPTIONS
       )
       .and.resolveTo(apiString(CHANGE_INFO(changeId, [commitId])))
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}/comments`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId)))
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/drafts`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}/drafts`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(apiString(SIMPLE_DRAFT_COMMENT_INFOS_MAP(commitId)));
 
     await expectAsync(
@@ -408,16 +433,22 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
-      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, AUTH_OPTIONS)
+      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, CHROMIUM_OPTIONS)
       .and.resolveTo(undefined)
       .withArgs(
         `${CHROMIUM_GERRIT}/changes/${changeId}?o=ALL_REVISIONS`,
-        AUTH_OPTIONS
+        CHROMIUM_OPTIONS
       )
       .and.resolveTo(apiString(CHANGE_INFO(changeId, [reviewCommitId])))
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}/comments`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(apiString(SPECIAL_COMMENT_TYPES(reviewCommitId)))
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/drafts`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}/drafts`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(undefined);
 
     await expectAsync(
@@ -534,18 +565,24 @@ describe('Gerrit', () => {
     const fileName = abs('cryptohome/cryptohome.cc');
 
     spyOn(https, 'getOrThrow')
-      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, AUTH_OPTIONS)
+      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, CHROMIUM_OPTIONS)
       .and.resolveTo(undefined)
       .withArgs(
         `${CHROMIUM_GERRIT}/changes/${changeId}?o=ALL_REVISIONS`,
-        AUTH_OPTIONS
+        CHROMIUM_OPTIONS
       )
       .and.resolveTo(apiString(CHANGE_INFO(changeId, [commitId1, commitId2])))
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}/comments`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(
         apiString(TWO_PATCHSETS_COMMENT_INFOS_MAP(commitId1, commitId2))
       )
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/drafts`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}/drafts`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(undefined);
 
     await expectAsync(gerrit.showChanges(fileName)).toBeResolved();
@@ -637,31 +674,37 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
-      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, AUTH_OPTIONS)
+      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, CHROMIUM_OPTIONS)
       .and.resolveTo(undefined)
       .withArgs(
         `${CHROMIUM_GERRIT}/changes/${changeId1}?o=ALL_REVISIONS`,
-        AUTH_OPTIONS
+        CHROMIUM_OPTIONS
       )
       .and.resolveTo(apiString(CHANGE_INFO(changeId1, [commitId1])))
       .withArgs(
         `${CHROMIUM_GERRIT}/changes/${changeId1}/comments`,
-        AUTH_OPTIONS
+        CHROMIUM_OPTIONS
       )
       .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId1)))
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId1}/drafts`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId1}/drafts`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(undefined)
       .withArgs(
         `${CHROMIUM_GERRIT}/changes/${changeId2}?o=ALL_REVISIONS`,
-        AUTH_OPTIONS
+        CHROMIUM_OPTIONS
       )
       .and.resolveTo(apiString(CHANGE_INFO(changeId2, [commitId2])))
       .withArgs(
         `${CHROMIUM_GERRIT}/changes/${changeId2}/comments`,
-        AUTH_OPTIONS
+        CHROMIUM_OPTIONS
       )
       .and.resolveTo(apiString(SECOND_COMMIT_IN_CHAIN(commitId2)))
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId2}/drafts`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId2}/drafts`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(undefined);
 
     await expectAsync(
@@ -727,16 +770,22 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
-      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, AUTH_OPTIONS)
+      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, CHROMIUM_OPTIONS)
       .and.resolveTo(undefined)
       .withArgs(
         `${CHROMIUM_GERRIT}/changes/${changeId}?o=ALL_REVISIONS`,
-        AUTH_OPTIONS
+        CHROMIUM_OPTIONS
       )
       .and.resolveTo(apiString(CHANGE_INFO(changeId, [commitId])))
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}/comments`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId)))
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/drafts`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}/drafts`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(undefined);
 
     await expectAsync(
@@ -773,16 +822,22 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
-      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, AUTH_OPTIONS)
+      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, CHROMIUM_OPTIONS)
       .and.resolveTo(undefined)
       .withArgs(
         `${CHROMIUM_GERRIT}/changes/${changeId}?o=ALL_REVISIONS`,
-        AUTH_OPTIONS
+        CHROMIUM_OPTIONS
       )
       .and.resolveTo(undefined)
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}/comments`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(undefined)
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/drafts`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}/drafts`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(undefined);
 
     await expectAsync(
@@ -820,21 +875,24 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
-      .withArgs(`${CHROME_INTERNAL_GERRIT}/accounts/me`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROME_INTERNAL_GERRIT}/accounts/me`,
+        CHROME_INTERNAL_OPTIONS
+      )
       .and.resolveTo(undefined)
       .withArgs(
         `${CHROME_INTERNAL_GERRIT}/changes/${changeId}?o=ALL_REVISIONS`,
-        AUTH_OPTIONS
+        CHROME_INTERNAL_OPTIONS
       )
       .and.resolveTo(apiString(CHANGE_INFO(changeId, [commitId])))
       .withArgs(
         `${CHROME_INTERNAL_GERRIT}/changes/${changeId}/comments`,
-        AUTH_OPTIONS
+        CHROME_INTERNAL_OPTIONS
       )
       .and.resolveTo(apiString(SIMPLE_COMMENT_INFOS_MAP(commitId)))
       .withArgs(
         `${CHROME_INTERNAL_GERRIT}/changes/${changeId}/drafts`,
-        AUTH_OPTIONS
+        CHROME_INTERNAL_OPTIONS
       )
       .and.resolveTo(undefined);
 
@@ -896,18 +954,24 @@ describe('Gerrit', () => {
     );
 
     spyOn(https, 'getOrThrow')
-      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, AUTH_OPTIONS)
+      .withArgs(`${CHROMIUM_GERRIT}/accounts/me`, CHROMIUM_OPTIONS)
       .and.resolveTo(undefined)
       .withArgs(
         `${CHROMIUM_GERRIT}/changes/${changeId}?o=ALL_REVISIONS`,
-        AUTH_OPTIONS
+        CHROMIUM_OPTIONS
       )
       .and.resolveTo(apiString(CHANGE_INFO(changeId, [commitId1, commitId2])))
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/comments`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}/comments`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(
         apiString(TWO_PATCHSETS_COMMENT_INFOS_MAP(commitId1, commitId2))
       )
-      .withArgs(`${CHROMIUM_GERRIT}/changes/${changeId}/drafts`, AUTH_OPTIONS)
+      .withArgs(
+        `${CHROMIUM_GERRIT}/changes/${changeId}/drafts`,
+        CHROMIUM_OPTIONS
+      )
       .and.resolveTo(undefined);
 
     await expectAsync(

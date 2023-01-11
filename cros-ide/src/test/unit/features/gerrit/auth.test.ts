@@ -4,14 +4,17 @@
 
 import * as auth from '../../../../features/gerrit/auth';
 
-describe('parseGitcookies', () => {
+describe('parseAuthGitcookies', () => {
   it('can parse a gitcookies', () => {
     expect(
-      auth.parseGitcookies(
-        'example.com\tFALSE\t/\tTRUE\t2147483647\tkey1\tfoo123\n' +
-          '# example.com\tFALSE\t/\tTRUE\t2147483647\tkey2\tbar456\n' +
-          'example.com\tFALSE\t/\tTRUE\t2147483647\tkey3\tbaz789\n'
+      auth.parseAuthGitcookies(
+        'cros',
+        'example.com\tFALSE\t/\tTRUE\t2147483647\to\tdifferentdomain\n' +
+          '# chromium-review.googlesource.com\tFALSE\t/\tTRUE\t2147483647\to\tcommentedout\n' +
+          'chromium-review.googlesource.com\tFALSE\t/\tTRUE\t2147483647\tabc\twrongkey\n' +
+          'chromium-review.googlesource.com\tFALSE\t/\tTRUE\t2147483647\to\toldtoken\n' +
+          'chromium-review.googlesource.com\tFALSE\t/\tTRUE\t2147483647\to\tnewtoken\n'
       )
-    ).toBe('key3=baz789,key1=foo123');
+    ).toBe('o=newtoken');
   });
 });

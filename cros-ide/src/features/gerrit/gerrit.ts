@@ -49,7 +49,7 @@ export function activate(
       vscode.commands.registerCommand(
         'cros-ide.gerrit.internal.testAuth',
         async () => {
-          const authCookie = await gerrit.readAuthCookie();
+          const authCookie = await gerrit.readAuthCookie('cros-internal');
           // Fetch from some internal Gerrit change
           const out = await api.fetchOrThrow(
             'cros-internal',
@@ -281,7 +281,7 @@ class Gerrit {
    * Executes git remote to get RepoId or returns undefined
    * showing an error message if the id is not found.
    */
-  private async getRepoId(gitDir: string): Promise<git.RepoId | undefined> {
+  async getRepoId(gitDir: string): Promise<git.RepoId | undefined> {
     const repoId = await git.getRepoId(gitDir, this.outputChannel);
     if (repoId instanceof git.UnknownRepoError) {
       this.showErrorMessage({
@@ -335,9 +335,9 @@ class Gerrit {
    * It can throw an error from HTTPS access by `api.getOrThrow`.
    */
   private async fetchChangesOrThrow(gitDir: string): Promise<void> {
-    const authCookie = await this.readAuthCookie();
     const repoId = await this.getRepoId(gitDir);
     if (repoId === undefined) return;
+    const authCookie = await this.readAuthCookie(repoId);
     const gitLogInfos = await this.readGitLog(gitDir, repoId);
     if (gitLogInfos.length === 0) return;
 
@@ -436,11 +436,11 @@ class Gerrit {
   }
 
   /** Reads gitcookies or returns undefined. */
-  async readAuthCookie(): Promise<string | undefined> {
+  async readAuthCookie(repoId: git.RepoId): Promise<string | undefined> {
     const filePath = await auth.getGitcookiesPath(this.outputChannel);
     try {
       const str = await fs.readFile(filePath, {encoding: 'utf8'});
-      return auth.parseGitcookies(str);
+      return auth.parseAuthGitcookies(repoId, str);
     } catch (err) {
       if ((err as {code?: unknown}).code === 'ENOENT') {
         const msg =
