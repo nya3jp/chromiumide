@@ -36,17 +36,19 @@ export class SyslogSession {
 
   static async create(
     hostname: string,
+    remoteSyslogPath: string,
     context: vscode.ExtensionContext,
     output: vscode.OutputChannel
   ): Promise<SyslogSession> {
     const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), '/'));
     const session = new SyslogSession();
-    await session.create(hostname, context, output, tempDir);
+    await session.create(hostname, remoteSyslogPath, context, output, tempDir);
     return session;
   }
 
   private async create(
     hostname: string,
+    remoteSyslogPath: string,
     context: vscode.ExtensionContext,
     output: vscode.OutputChannel,
     tempDir: string
@@ -57,59 +59,6 @@ export class SyslogSession {
         void fs.promises.rm(tempDir, {recursive: true, force: true});
       })
     );
-
-    // Ask the remote system log to open.
-    // Based on https://chromium.googlesource.com/chromiumos/docs/+/HEAD/logging.md#locations.
-    type RemoteSyslogPickItem = vscode.QuickPickItem & {path?: string};
-    const remoteSyslogPickItems: RemoteSyslogPickItem[] = [
-      {
-        label: '$(file) /var/log/messages',
-        description: 'General system logs.',
-        path: '/var/log/messages',
-      },
-      {
-        label: '$(file) /var/log/net.log',
-        description: 'Network-related logs.',
-        path: '/var/log/net.log',
-      },
-      {
-        label: '$(file) /var/log/boot.log',
-        description: 'Boot messages.',
-        path: '/var/log/boot.log',
-      },
-      {
-        label: '$(file) /var/log/secure.log',
-        description: 'Logs with authpriv facility.',
-        path: '/var/log/secure.log',
-      },
-      {
-        label: '$(file) /var/log/upstart.log',
-        description: 'Upstart logs.',
-        path: '/var/log/upstart.log',
-      },
-      {
-        label: 'Enter a custom file path...',
-      },
-    ];
-    const remoteSyslogPicked = await vscode.window.showQuickPick(
-      remoteSyslogPickItems,
-      {
-        title: 'System Log Select',
-        placeHolder: "Select the remote device's system log to open.",
-      }
-    );
-    if (!remoteSyslogPicked) return;
-    let remoteSyslogPath = remoteSyslogPicked.path;
-    if (!remoteSyslogPath) {
-      remoteSyslogPath = await vscode.window.showInputBox({
-        title: 'System Log Select: Custom',
-        prompt:
-          "Enter the file path of the remote device's system log to open. " +
-          "The log should be in CrOS's standard log format.",
-        value: '/var/log/messages',
-      });
-      if (!remoteSyslogPath) return;
-    }
 
     const localSyslogPath = path.join(tempDir, SYSLOG_FILE);
 
