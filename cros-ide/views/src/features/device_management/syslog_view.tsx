@@ -4,13 +4,21 @@
 
 import {
   Input,
+  Table,
+  TableHead,
+  TableBody,
   TableRow,
   TableCell,
-  Table,
   SxProps,
-  TableHead,
 } from '@mui/material';
-import {useCallback, useEffect, useState, ChangeEventHandler} from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useState,
+  ChangeEventHandler,
+} from 'react';
+import {TableVirtuoso} from 'react-virtuoso';
 import * as ReactPanelHelper from '../../react/common/react_panel_helper';
 import {
   SyslogViewContext,
@@ -97,8 +105,12 @@ function SyslogView(props: {ctx: SyslogViewContext}): JSX.Element {
     >
       <h1 style={{fontSize: 15}}>{remoteSyslogPath}</h1>
       <div>
-        <span style={{marginRight: 7}}>Message includes:</span>
-        <Input value={filter.includes} onChange={handleIncludes} />
+        Message includes:
+        <Input
+          sx={{marginLeft: 0.7}}
+          value={filter.includes}
+          onChange={handleIncludes}
+        />
       </div>
       <SyslogTable filter={filter} />
     </div>
@@ -107,9 +119,7 @@ function SyslogView(props: {ctx: SyslogViewContext}): JSX.Element {
 
 /** The table for the syslog. */
 function SyslogTable(props: {filter: SyslogFilter}): JSX.Element {
-  const {
-    filter: {includes},
-  } = props;
+  const {filter} = props;
   const [entries, setEntries] = useState<SyslogEntry[]>([]);
   // Send an update request every 1 second.
   useEffect(() => {
@@ -131,43 +141,64 @@ function SyslogTable(props: {filter: SyslogFilter}): JSX.Element {
     window.addEventListener('message', handleMsg);
     return () => window.removeEventListener('message', handleMsg);
   }, [handleMsg]);
-  const filteredEntries = entries.filter(
-    ({message}) => !includes || message.includes(includes)
-  );
   return (
-    <div style={{marginTop: 10, overflow: 'auto', overflowWrap: 'break-word'}}>
-      <Table
-        stickyHeader
-        width="100%"
-        padding="none"
-        sx={{tableLayout: 'fixed'}}
-      >
-        <colgroup>
-          <col width="210" />
-          <col width="70" />
-          <col width="140" />
-          <col />
-        </colgroup>
-        <TableHead>
-          <TableRow>
-            {['Timestamp', 'Severity', 'Process', 'Message'].map(label => (
-              <TableCell
-                sx={{
-                  backgroundColor: 'var(--vscode-editor-background)',
-                  color: 'var(--vscode-editor-foreground)',
-                }}
-              >
-                {label}
-              </TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
-        {filteredEntries.map(entry => (
-          <SyslogRow key={entry.lineNum} entry={entry} />
-        ))}
-      </Table>
-    </div>
+    <TableVirtuoso
+      style={{marginTop: 10}}
+      data={entries.filter(entry => matchesFilter(entry, filter))}
+      components={{
+        Table: props => {
+          const {children, ...propsRest} = props;
+          return (
+            <Table
+              padding="none"
+              sx={{
+                tableLayout: 'fixed',
+                overflow: 'auto',
+                overflowWrap: 'break-word',
+              }}
+              {...propsRest}
+            >
+              <colgroup>
+                <col width="210" />
+                <col width="70" />
+                <col width="140" />
+                <col />
+              </colgroup>
+              {children}
+            </Table>
+          );
+        },
+        TableHead,
+        TableRow,
+        TableBody: forwardRef((props, ref) => (
+          <TableBody {...props} ref={ref} />
+        )),
+      }}
+      fixedHeaderContent={() => (
+        <TableRow>
+          {['Timestamp', 'Severity', 'Process', 'Message'].map(label => (
+            <TableCell
+              sx={{
+                backgroundColor: 'var(--vscode-editor-background)',
+                color: 'var(--vscode-editor-foreground)',
+              }}
+            >
+              {label}
+            </TableCell>
+          ))}
+        </TableRow>
+      )}
+      itemContent={(i, entry) => <SyslogRow entry={entry} />}
+      computeItemKey={(i, entry) => entry.lineNum}
+    />
   );
+}
+
+/** Check if the syslog entry matches the filter. */
+function matchesFilter(entry: SyslogEntry, filter: SyslogFilter): boolean {
+  const {message} = entry;
+  const {includes} = filter;
+  return !includes || message.includes(includes);
 }
 
 /** The row for each syslog entry. */
@@ -177,13 +208,13 @@ function SyslogRow(props: {entry: SyslogEntry}): JSX.Element {
   } = props;
   const sx = sxSyslogEntry(severity);
   return (
-    <TableRow>
+    <>
       {[timestamp, severity, process, message].map((s, i) => (
         <TableCell sx={sx}>
           <div style={{paddingRight: i === 3 ? 0 : 5}}>{s}</div>
         </TableCell>
       ))}
-    </TableRow>
+    </>
   );
 }
 

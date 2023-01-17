@@ -878,6 +878,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hotkeys": "^2.0.0",
+    "react-virtuoso":"^4.0.3",
     "semver": "^7.3.7",
     "source-map-support": "^0.5.21",
     "ssh-config": "^4.1.6",
