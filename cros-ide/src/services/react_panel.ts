@@ -19,7 +19,7 @@ export abstract class ReactPanel<TInitialData> {
 
   protected readonly panel: vscode.WebviewPanel;
 
-  private readonly disposables: vscode.Disposable[] = [];
+  protected readonly disposables: vscode.Disposable[] = [];
 
   /**
    * ReactPanel constructor.
