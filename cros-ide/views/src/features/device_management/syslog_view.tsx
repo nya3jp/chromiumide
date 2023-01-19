@@ -9,12 +9,13 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  SxProps,
 } from '@mui/material';
+import {createTheme, SxProps, ThemeProvider} from '@mui/material/styles';
 import {
   forwardRef,
   useCallback,
   useEffect,
+  useMemo,
   useState,
   ChangeEventHandler,
 } from 'react';
@@ -28,8 +29,17 @@ import {
   SyslogViewFrontendMessage,
 } from '../../../../src/features/chromiumos/device_management/syslog/model';
 
+// VS Code CSS variable constants.
+const TEXT_COLOR = 'var(--vscode-editor-foreground)';
+const BACKGROUND_COLOR = 'var(--vscode-editor-background)';
+const INFO_COLOR = 'var(--vscode-editorInfo-foreground)';
+const WARNING_COLOR = 'var(--vscode-editorWarning-foreground)';
+const ERROR_COLOR = 'var(--vscode-editorError-foreground)';
+
+// Acquire the VS Code webview instance.
 const vscodeApi = acquireVsCodeApi<SyslogViewPersistentState>();
 
+// Create the panel.
 ReactPanelHelper.receiveInitialData<SyslogViewContext>(vscodeApi).then(ctx => {
   ReactPanelHelper.createAndRenderRoot(<SyslogView ctx={ctx} />);
 });
@@ -77,7 +87,18 @@ function SyslogView(props: {ctx: SyslogViewContext}): JSX.Element {
   const {
     ctx: {remoteSyslogPath},
   } = props;
-  // Manage the filter
+  // Create MUI theme.
+  const muiTheme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          text: {primary: TEXT_COLOR},
+          background: {default: BACKGROUND_COLOR},
+        },
+      }),
+    []
+  );
+  // Manage the filter.
   const [filter, setFilter] = useState<SyslogFilter>(
     getPersistentState().filter
   );
@@ -90,30 +111,31 @@ function SyslogView(props: {ctx: SyslogViewContext}): JSX.Element {
     [filter]
   );
   return (
-    <div
-      style={{
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: 10,
-        display: 'flex',
-        flexDirection: 'column',
-        color: 'var(--vscode-editor-foreground)',
-      }}
-    >
-      <h1 style={{fontSize: 15}}>{remoteSyslogPath}</h1>
-      <div>
-        Message includes:
-        <Input
-          sx={{marginLeft: 0.7}}
-          value={filter.includes}
-          onChange={handleIncludes}
-        />
+    <ThemeProvider theme={muiTheme}>
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: 10,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <h1 style={{fontSize: 15}}>{remoteSyslogPath}</h1>
+        <div>
+          Message includes:
+          <Input
+            sx={{marginLeft: 0.7}}
+            value={filter.includes}
+            onChange={handleIncludes}
+          />
+        </div>
+        <SyslogTable filter={filter} />
       </div>
-      <SyslogTable filter={filter} />
-    </div>
+    </ThemeProvider>
   );
 }
 
@@ -175,16 +197,9 @@ function SyslogTable(props: {filter: SyslogFilter}): JSX.Element {
         )),
       }}
       fixedHeaderContent={() => (
-        <TableRow>
+        <TableRow sx={{backgroundColor: BACKGROUND_COLOR}}>
           {['Timestamp', 'Severity', 'Process', 'Message'].map(label => (
-            <TableCell
-              sx={{
-                backgroundColor: 'var(--vscode-editor-background)',
-                color: 'var(--vscode-editor-foreground)',
-              }}
-            >
-              {label}
-            </TableCell>
+            <TableCell>{label}</TableCell>
           ))}
         </TableRow>
       )}
@@ -218,37 +233,22 @@ function SyslogRow(props: {entry: SyslogEntry}): JSX.Element {
   );
 }
 
-/** Calculate the style for the syslog table row, based on the severity. */
+/** Calculate the color for the syslog table row, based on the severity. */
 function sxSyslogEntry(severity?: SyslogSeverity): SxProps {
   switch (severity) {
     case 'DEBUG':
     case 'INFO':
-      return {
-        color: 'var(--vscode-editor-foreground)',
-        opacity: 0.5,
-      };
+      return {opacity: 0.8};
     case 'NOTICE':
-      return {
-        color: 'var(--vscode-editorInfo-foreground)',
-        backgroundColor: 'var(--vscode-editorInfo-background)',
-      };
+      return {color: INFO_COLOR};
     case 'WARNING':
-      return {
-        color: 'var(--vscode-editorWarning-foreground)',
-        backgroundColor: 'var(--vscode-editorWarning-background)',
-      };
+      return {color: WARNING_COLOR};
     case 'ERR':
     case 'ALERT':
     case 'EMERG':
     case 'CRIT':
-      return {
-        color: 'var(--vscode-editorError-foreground)',
-        backgroundColor: 'var(--vscode-editorError-background)',
-      };
+      return {color: ERROR_COLOR};
     default:
-      // Fallback
-      return {
-        color: 'var(--vscode-editor-foreground)',
-      };
+      return {};
   }
 }
