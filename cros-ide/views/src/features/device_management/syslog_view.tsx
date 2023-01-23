@@ -24,6 +24,7 @@ import {
   useMemo,
   useState,
   ChangeEventHandler,
+  CSSProperties,
 } from 'react';
 import {TableVirtuoso} from 'react-virtuoso';
 import * as ReactPanelHelper from '../../react/common/react_panel_helper';
@@ -241,6 +242,16 @@ function RegexIcon(): JSX.Element {
   return <i className="codicon codicon-regex" />;
 }
 
+/**
+ * Gets the style for the div of a table cell of the i-th column.
+ */
+function tableCellStyle(i: number): CSSProperties {
+  return {
+    textAlign: i === 0 ? 'right' : 'left',
+    paddingLeft: i === 0 ? 0 : i === 1 ? 15 : 5,
+  };
+}
+
 /** The table for the syslog. */
 function SyslogTable(props: {filter: SyslogFilter}): JSX.Element {
   const {filter} = props;
@@ -283,7 +294,8 @@ function SyslogTable(props: {filter: SyslogFilter}): JSX.Element {
               {...propsRest}
             >
               <colgroup>
-                <col width="210" />
+                <col width="45" />
+                <col width="220" />
                 <col width="70" />
                 <col width="140" />
                 <col />
@@ -300,9 +312,13 @@ function SyslogTable(props: {filter: SyslogFilter}): JSX.Element {
       }}
       fixedHeaderContent={() => (
         <TableRow sx={{backgroundColor: BACKGROUND_COLOR}}>
-          {['Timestamp', 'Severity', 'Process', 'Message'].map(label => (
-            <TableCell>{label}</TableCell>
-          ))}
+          {['#', 'Timestamp', 'Severity', 'Process', 'Message'].map(
+            (label, i) => (
+              <TableCell>
+                <div style={tableCellStyle(i)}>{label}</div>
+              </TableCell>
+            )
+          )}
         </TableRow>
       )}
       itemContent={(i, entry) => <SyslogRow entry={entry} />}
@@ -330,14 +346,15 @@ function matchesTextFilter(text: string, textFilter: TextFilter): boolean {
 /** The row for each syslog entry. */
 function SyslogRow(props: {entry: SyslogEntry}): JSX.Element {
   const {
-    entry: {timestamp, severity, process, message},
+    entry: {lineNum, timestamp, severity, process, message},
   } = props;
   const sx = sxSyslogEntry(severity);
+  // The line number is 1-based.
   return (
     <>
-      {[timestamp, severity, process, message].map((s, i) => (
+      {[lineNum + 1, timestamp, severity, process, message].map((s, i) => (
         <TableCell sx={sx}>
-          <div style={{paddingRight: i === 3 ? 0 : 5}}>{s}</div>
+          <div style={tableCellStyle(i)}>{s}</div>
         </TableCell>
       ))}
     </>
