@@ -180,13 +180,19 @@ async function openExternal(repoId: git.RepoId, path: string): Promise<void> {
 
 class Gerrit {
   private changes?: Change[];
+  private errorMessageRouter: ErrorMessageRouter;
 
   constructor(
     private readonly commentController: vscode.CommentController,
     private readonly outputChannel: vscode.OutputChannel,
     private readonly statusBar: vscode.StatusBarItem,
-    private readonly statusManager: bgTaskStatus.StatusManager
-  ) {}
+    statusManager: bgTaskStatus.StatusManager
+  ) {
+    this.errorMessageRouter = new ErrorMessageRouter(
+      outputChannel,
+      statusManager
+    );
+  }
 
   /** Generator for iterating over all comment threads. */
   *commentThreads(): Generator<CommentThread> {
@@ -258,7 +264,7 @@ class Gerrit {
         });
       }
     } catch (err) {
-      this.showErrorMessage({
+      this.errorMessageRouter.show({
         log: `Failed to show Gerrit changes: ${err}`,
         metrics: 'Failed to show Gerrit changes (top-level error)',
       });
@@ -286,16 +292,18 @@ class Gerrit {
   async getRepoId(gitDir: string): Promise<git.RepoId | undefined> {
     const repoId = await git.getRepoId(gitDir, this.outputChannel);
     if (repoId instanceof git.UnknownRepoError) {
-      this.showErrorMessage({
+      this.errorMessageRouter.show({
         log:
           'Unknown remote repo detected: ' +
-          `id ${repoId.repoId}, url ${repoId.repoUrl}`,
-        metrics: 'unknown git remote result',
+          `id ${repoId.repoId}, url ${repoId.repoUrl}.\n` +
+          'Gerrit comments in this repo are not supported.',
+        metrics: '(warning) unknown git remote result',
+        noErrorStatus: true,
       });
       return;
     }
     if (repoId instanceof Error) {
-      this.showErrorMessage({
+      this.errorMessageRouter.show({
         log: `'git remote' failed: ${repoId.message}`,
         metrics: 'git remote failed',
       });
@@ -425,7 +433,7 @@ class Gerrit {
   private async readGitLog(gitDir: string): Promise<git.GitLogInfo[]> {
     const gitLogInfos = await git.readGitLog(gitDir, this.outputChannel);
     if (gitLogInfos instanceof Error) {
-      this.showErrorMessage({
+      this.errorMessageRouter.show({
         log: `Failed to get commits in ${gitDir}`,
         metrics: 'readGitLog failed to get commits',
       });
@@ -444,13 +452,13 @@ class Gerrit {
       if ((err as {code?: unknown}).code === 'ENOENT') {
         const msg =
           'The gitcookies file for Gerrit auth was not found at ' + filePath;
-        this.showErrorMessage(msg);
+        this.errorMessageRouter.show(msg);
       } else {
         let msg =
           'Unknown error in reading the gitcookies file for Gerrit auth at ' +
           filePath;
         if (err instanceof Object) msg += ': ' + err.toString();
-        this.showErrorMessage(msg);
+        this.errorMessageRouter.show(msg);
       }
     }
   }
@@ -469,14 +477,14 @@ class Gerrit {
       this.outputChannel
     );
     if (commitExists instanceof Error) {
-      this.showErrorMessage({
+      this.errorMessageRouter.show({
         log: `Local availability check failed for the patchset ${commitId}.`,
         metrics: 'Local commit availability check failed',
       });
       return false;
     }
     if (!commitExists) {
-      this.showErrorMessage({
+      this.errorMessageRouter.show({
         log:
           `The patchset ${commitId} was not available locally. This happens ` +
           'when some patchsets were uploaded to Gerrit from a different chroot.',
@@ -519,7 +527,7 @@ class Gerrit {
       this.outputChannel
     );
     if (hunksMap instanceof Error) {
-      this.showErrorMessage({
+      this.errorMessageRouter.show({
         log: 'Failed to get git diff to reposition Gerrit comments',
         metrics: 'Failed to get git diff to reposition Gerrit comments',
       });
@@ -528,30 +536,49 @@ class Gerrit {
     return hunksMap;
   }
 
+  clearCommentThreadsFromVscode(): void {
+    for (const commentThread of this.commentThreads()) {
+      commentThread.clearFromVscode();
+    }
+  }
+}
+
+/**
+ * Helper for showing error messages, sending metrics,
+ * and updating the IDE status.
+ *
+ * It used to be a method in Gerrit class, but it was extracted
+ * for testability.
+ */
+class ErrorMessageRouter {
+  constructor(
+    private readonly outputChannel: vscode.OutputChannel,
+    private readonly statusManager: bgTaskStatus.StatusManager
+  ) {}
+
   /**
-   * Show `message.log` in the IDE, set task status to error,
+   * Show `message.log` in the IDE, set task status to error
+   * (unless disabled with `noErrorStatus`),
    * and send `message.metrics` via metrics if it is set.
    *
    * If `message` is a string, it is used both in the log and metrics.
    */
-  showErrorMessage(message: string | {log: string; metrics?: string}): void {
-    const m: {log: string; metrics?: string} =
+  show(
+    message: string | {log: string; metrics?: string; noErrorStatus?: boolean}
+  ): void {
+    const m: {log: string; metrics?: string; noErrorStatus?: boolean} =
       typeof message === 'string' ? {log: message, metrics: message} : message;
 
     this.outputChannel.appendLine(m.log);
-    this.statusManager.setStatus(GERRIT, bgTaskStatus.TaskStatus.ERROR);
+    if (!m.noErrorStatus) {
+      this.statusManager.setStatus(GERRIT, bgTaskStatus.TaskStatus.ERROR);
+    }
     if (m.metrics) {
       metrics.send({
         category: 'error',
         group: 'gerrit',
         description: m.metrics,
       });
-    }
-  }
-
-  clearCommentThreadsFromVscode(): void {
-    for (const commentThread of this.commentThreads()) {
-      commentThread.clearFromVscode();
     }
   }
 }
@@ -984,6 +1011,7 @@ function formatGerritTimestamp(timestamp: string): string {
 }
 
 export const TEST_ONLY = {
+  ErrorMessageRouter,
   formatGerritTimestamp,
   Gerrit,
   shiftCommentThreadsByHunks,

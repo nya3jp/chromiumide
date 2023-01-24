@@ -13,7 +13,7 @@ import * as metrics from '../../../../features/metrics/metrics';
 import * as bgTaskStatus from '../../../../ui/bg_task_status';
 import * as testing from '../../../testing';
 
-const {formatGerritTimestamp, Gerrit} = TEST_ONLY;
+const {ErrorMessageRouter, formatGerritTimestamp, Gerrit} = TEST_ONLY;
 
 describe('formatGerritTimestaps', () => {
   it("formats today's date as hours and minutes", () => {
@@ -41,6 +41,84 @@ describe('formatGerritTimestaps', () => {
   it('does not crash on malformed input', () => {
     const badTimestamp = 'last Monday';
     expect(formatGerritTimestamp(badTimestamp)).toEqual(badTimestamp);
+  });
+});
+
+describe('ErrorMessageRouter', () => {
+  const state = testing.cleanState(() => {
+    const outputChannel = jasmine.createSpyObj<vscode.OutputChannel>(
+      'outputChannel',
+      ['appendLine']
+    );
+    const statusManager = jasmine.createSpyObj<bgTaskStatus.StatusManager>(
+      'statusManager',
+      ['setStatus']
+    );
+    const errorMessageRouter = new ErrorMessageRouter(
+      outputChannel,
+      statusManager
+    );
+    return {
+      outputChannel,
+      statusManager,
+      errorMessageRouter,
+    };
+  });
+
+  beforeEach(() => {
+    spyOn(metrics, 'send');
+  });
+
+  it('shows a simple message', () => {
+    state.errorMessageRouter.show('simple message');
+    expect(state.outputChannel.appendLine).toHaveBeenCalledOnceWith(
+      'simple message'
+    );
+    expect(metrics.send).toHaveBeenCalledOnceWith({
+      category: 'error',
+      group: 'gerrit',
+      description: 'simple message',
+    });
+    expect(state.statusManager.setStatus).toHaveBeenCalledOnceWith(
+      'Gerrit',
+      bgTaskStatus.TaskStatus.ERROR
+    );
+  });
+
+  it('shows a message with custom metrics', () => {
+    state.errorMessageRouter.show({
+      log: 'log message',
+      metrics: 'metrics message',
+    });
+    expect(state.outputChannel.appendLine).toHaveBeenCalledOnceWith(
+      'log message'
+    );
+    expect(metrics.send).toHaveBeenCalledOnceWith({
+      category: 'error',
+      group: 'gerrit',
+      description: 'metrics message',
+    });
+    expect(state.statusManager.setStatus).toHaveBeenCalledOnceWith(
+      'Gerrit',
+      bgTaskStatus.TaskStatus.ERROR
+    );
+  });
+
+  it('shows a message supressing status change', () => {
+    state.errorMessageRouter.show({
+      log: 'log message',
+      metrics: 'metrics message',
+      noErrorStatus: true,
+    });
+    expect(state.outputChannel.appendLine).toHaveBeenCalledOnceWith(
+      'log message'
+    );
+    expect(metrics.send).toHaveBeenCalledOnceWith({
+      category: 'error',
+      group: 'gerrit',
+      description: 'metrics message',
+    });
+    expect(state.statusManager.setStatus).not.toHaveBeenCalled();
   });
 });
 
