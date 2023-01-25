@@ -1009,4 +1009,48 @@ describe('Gerrit', () => {
     });
     expect(state.statusManager.setStatus).not.toHaveBeenCalled();
   });
+
+  it('reports unexpected errors', async () => {
+    const git = new testing.Git(tempDir.path);
+    await git.init();
+    await git.commit('First');
+    await git.setupCrosBranches();
+    await testing.putFiles(git.root, {
+      'cryptohome/cryptohome.cc': 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
+    });
+    await git.addAll();
+    const changeId = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
+    const commitId = await git.commit(`Second\nChange-Id: ${changeId}`);
+
+    state.commentController.createCommentThread.and.throwError(
+      new Error('test error')
+    );
+
+    const gerrit = new Gerrit(
+      state.commentController,
+      vscode.window.createOutputChannel('gerrit'),
+      state.statusBarItem,
+      state.statusManager
+    );
+
+    setupGerritHttps().withChange({
+      id: changeId,
+      info: CHANGE_INFO(changeId, [commitId]),
+      comments: SIMPLE_COMMENT_INFOS_MAP(commitId),
+    });
+
+    await expectAsync(
+      gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
+    ).toBeResolved();
+
+    expect(state.statusManager.setStatus).toHaveBeenCalledOnceWith(
+      'Gerrit',
+      bgTaskStatus.TaskStatus.ERROR
+    );
+    expect(metrics.send).toHaveBeenCalledWith({
+      category: 'error',
+      group: 'gerrit',
+      description: 'Failed to show Gerrit changes (top-level error)',
+    });
+  });
 });
