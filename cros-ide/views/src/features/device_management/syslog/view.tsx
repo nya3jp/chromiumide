@@ -27,14 +27,20 @@ import {
   CSSProperties,
 } from 'react';
 import {TableVirtuoso, TableVirtuosoProps} from 'react-virtuoso';
-import * as ReactPanelHelper from '../../react/common/react_panel_helper';
+import * as ReactPanelHelper from '../../../react/common/react_panel_helper';
 import {
   SyslogViewContext,
   SyslogEntry,
   SyslogSeverity,
   SyslogViewBackendMessage,
   SyslogViewFrontendMessage,
-} from '../../../../src/features/chromiumos/device_management/syslog/model';
+} from '../../../../../src/features/chromiumos/device_management/syslog/model';
+import {
+  initialTextFilter,
+  matchesSyslogFilter,
+  SyslogFilter,
+  TextFilter,
+} from './viewmodel';
 
 // VS Code CSS variable constants.
 const TEXT_COLOR = 'var(--vscode-editor-foreground)';
@@ -50,35 +56,6 @@ const vscodeApi = acquireVsCodeApi();
 ReactPanelHelper.receiveInitialData<SyslogViewContext>(vscodeApi).then(ctx => {
   ReactPanelHelper.createAndRenderRoot(<SyslogView ctx={ctx} />);
 });
-
-/**
- * Filter on a syslog entry.
- * It means the conjunction of the conditions.
- *
- * TODO(ymat): Also support the disjunction.
- */
-type SyslogFilter = {
-  onProcess: TextFilter;
-  onMessage: TextFilter;
-};
-
-/** Filter on a text, possibly using a regex. */
-type TextFilter = {
-  /** The thing expected to be included in the message. */
-  includes: string;
-  /** Whether the string `includes` is a regex or a plain string. */
-  byRegex: boolean;
-  /**
-   * The cached regex object.
-   * Is set only if `byRegex` is true and `includes` is a valid regular expression.
-   */
-  regex?: RegExp;
-};
-
-/** Initial text filter. */
-function initialTextFilter(): TextFilter {
-  return {includes: '', byRegex: false, regex: undefined};
-}
 
 /**
  * Posts a message to the backend.
@@ -234,16 +211,6 @@ function RegexIcon(): JSX.Element {
   return <i className="codicon codicon-regex" />;
 }
 
-/**
- * Gets the style for the div of a table cell of the i-th column.
- */
-function tableCellStyle(i: number): CSSProperties {
-  return {
-    textAlign: i === 0 ? 'right' : 'left',
-    paddingLeft: i === 0 ? 0 : i === 1 ? 15 : 5,
-  };
-}
-
 /** The table for the syslog. */
 function SyslogTable(props: {filter: SyslogFilter}): JSX.Element {
   const {filter} = props;
@@ -270,7 +237,7 @@ function SyslogTable(props: {filter: SyslogFilter}): JSX.Element {
   }, [handleMsg]);
   return (
     <SyslogTableBody
-      entries={entries.filter(entry => matchesFilter(entry, filter))}
+      entries={entries.filter(entry => matchesSyslogFilter(entry, filter))}
     />
   );
 }
@@ -331,22 +298,6 @@ function SyslogTableBody(props: {entries: SyslogEntry[]}) {
   return <TableVirtuoso data={entries} {...virtuosoProps} />;
 }
 
-/** Checks if the syslog entry matches the filter. */
-function matchesFilter(entry: SyslogEntry, filter: SyslogFilter): boolean {
-  const {process, message} = entry;
-  const {onProcess, onMessage} = filter;
-  return (
-    matchesTextFilter(process ?? '', onProcess) &&
-    matchesTextFilter(message, onMessage)
-  );
-}
-
-/** Checks if a text matches the text filter. */
-function matchesTextFilter(text: string, textFilter: TextFilter): boolean {
-  const {includes, byRegex, regex} = textFilter;
-  return !byRegex ? text.includes(includes) : !regex || regex.test(text);
-}
-
 /** The row for each syslog entry. */
 function SyslogRow(props: {entry: SyslogEntry}): JSX.Element {
   const {
@@ -383,6 +334,14 @@ function sxSyslogEntry(severity?: SyslogSeverity): SxProps {
     default:
       return {};
   }
+}
+
+/** Gets the style for the div of a table cell of the i-th column. */
+function tableCellStyle(i: number): CSSProperties {
+  return {
+    textAlign: i === 0 ? 'right' : 'left',
+    paddingLeft: i === 0 ? 0 : i === 1 ? 15 : 5,
+  };
 }
 
 /** Custom tooltip, with the distance between the top reduced. */
