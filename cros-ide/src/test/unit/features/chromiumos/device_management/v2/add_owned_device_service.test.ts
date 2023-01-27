@@ -8,9 +8,9 @@ import {OwnedDeviceRepository} from '../../../../../../features/chromiumos/devic
 import {
   DutNetworkType,
   DutConnectionConfig,
-} from '../../../../../../features/chromiumos/device_management/owned/add_owned_device_model';
-import {VoidOutputChannel} from './../../../../../testing/fakes/output_channel';
-import {AddOwnedDeviceService} from './../../../../../../features/chromiumos/device_management/owned/add_owned_device_service';
+} from '../../../../../../features/chromiumos/device_management/v2/add_owned_device_model';
+import {VoidOutputChannel} from '../../../../../testing/fakes/output_channel';
+import {AddOwnedDeviceService} from '../../../../../../features/chromiumos/device_management/v2/add_owned_device_service';
 
 describe('AddOwnedDeviceService', () => {
   describe('addHostToSshConfig', () => {

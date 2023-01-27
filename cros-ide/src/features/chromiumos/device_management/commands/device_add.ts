@@ -4,9 +4,7 @@
 
 import * as os from 'os';
 import * as metrics from '../../../metrics/metrics';
-import {AddOwnedDeviceService} from '../owned/add_owned_device_service';
-import {AddOwnedDeviceViewContext} from '../owned/add_owned_device_model';
-import {AddOwnedDevicePanel} from '../owned/add_owned_device_panel';
+import * as v2 from '../v2';
 import * as sshConfig from '../ssh_config';
 import * as sshUtil from '../ssh_util';
 import {CommandContext, promptNewHostname} from './common';
@@ -20,25 +18,30 @@ export async function addDevice(context: CommandContext): Promise<void> {
   });
 
   if (underDevelopment.deviceManagementV2.get()) {
-    new AddOwnedDevicePanel(
-      context.extensionContext.extensionUri,
-      new AddOwnedDeviceService(
-        sshConfig.defaultConfigPath,
-        '/etc/hosts',
-        sshUtil.getTestingRsaPath(context.extensionContext.extensionUri),
-        context.output,
-        context.deviceRepository.owned
-      ),
-      new AddOwnedDeviceViewContext(os.userInfo().username)
-    );
-  } else {
-    const hostname = await promptNewHostname(
-      'Add New Device',
-      context.deviceRepository.owned
-    );
-    if (!hostname) {
-      return;
-    }
-    await context.deviceRepository.owned.addDevice(hostname);
+    setupV2(context);
+    return;
   }
+
+  const hostname = await promptNewHostname(
+    'Add New Device',
+    context.deviceRepository.owned
+  );
+  if (!hostname) {
+    return;
+  }
+  await context.deviceRepository.owned.addDevice(hostname);
+}
+
+function setupV2(context: CommandContext) {
+  new v2.AddOwnedDevicePanel(
+    context.extensionContext.extensionUri,
+    new v2.AddOwnedDeviceService(
+      sshConfig.defaultConfigPath,
+      '/etc/hosts',
+      sshUtil.getTestingRsaPath(context.extensionContext.extensionUri),
+      context.output,
+      context.deviceRepository.owned
+    ),
+    new v2.AddOwnedDeviceViewContext(os.userInfo().username)
+  );
 }

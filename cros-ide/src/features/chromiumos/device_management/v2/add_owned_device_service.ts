@@ -6,9 +6,9 @@ import {OutputChannel} from 'vscode';
 import {OwnedDeviceRepository} from '../device_repository';
 import {buildSshArgs, SshConfigHostEntry} from '../ssh_util';
 import * as sshConfig from '../ssh_config';
-import {DeviceClient} from './../device_client';
+import {DeviceClient} from '../device_client';
 import {DutConnectionConfig, DutNetworkType} from './add_owned_device_model';
-import * as addExistingHostsCommand from './../commands/add_existing_hosts';
+import * as addExistingHostsCommand from '../commands/add_existing_hosts';
 
 export class AddOwnedDeviceService {
   constructor(
