@@ -84,7 +84,8 @@
         "command": "cros-ide.deviceManagement.browseChromeOsBuilds",
         "category": "CrOS",
         "title": "Browse ChromeOS Builds",
-        "icon": "$(list-flat)"
+        "icon": "$(list-flat)",
+        "enablement": "config.cros-ide.underDevelopment.deviceManagementV2"
       },
       {
         "command": "cros-ide.deviceManagement.connectToDeviceForScreen",
@@ -373,7 +374,7 @@
       "view/title": [
         {
           "command": "cros-ide.deviceManagement.browseChromeOsBuilds",
-          "when": "view == devices",
+          "when": "view == devices && config.cros-ide.underDevelopment.deviceManagementV2",
           "group": "navigation"
         },
         {
