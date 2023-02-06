@@ -332,7 +332,8 @@
       "comments/commentThread/title": [
         {
           "command": "cros-ide.gerrit.browseCommentThread",
-          "group": "inline@1"
+          "group": "inline@1",
+          "when": "commentThread =~ /<public>/"
         },
         {
           "command": "cros-ide.gerrit.browseCommentThreadAuthor",
@@ -346,7 +347,8 @@
       "comments/comment/title": [
         {
           "command": "cros-ide.gerrit.browseComment",
-          "group": "inline@1"
+          "group": "inline@1",
+          "when": "comment =~ /<public>/"
         },
         {
           "command": "cros-ide.gerrit.browseCommentAuthor",

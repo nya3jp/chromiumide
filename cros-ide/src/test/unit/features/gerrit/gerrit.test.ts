@@ -400,6 +400,7 @@ describe('Gerrit', () => {
     expect(callData.args[2][0].body).toEqual(
       new vscode.MarkdownString('Unresolved comment on the added line.')
     );
+    expect(callData.args[2][0].contextValue).toEqual('<public>');
 
     expect(state.statusBarItem.show).toHaveBeenCalled();
     expect(state.statusBarItem.hide).not.toHaveBeenCalled();
@@ -456,9 +457,11 @@ describe('Gerrit', () => {
     expect(callData.args[2][0].body).toEqual(
       new vscode.MarkdownString('Unresolved comment on the added line.')
     );
+    expect(callData.args[2][0].contextValue).toEqual('<public>');
     expect(callData.args[2][1].body).toEqual(
       new vscode.MarkdownString('Draft reply.')
     );
+    expect(callData.args[2][1].contextValue).toEqual('<draft>');
 
     expect(state.statusBarItem.show).toHaveBeenCalled();
     expect(state.statusBarItem.hide).not.toHaveBeenCalled();

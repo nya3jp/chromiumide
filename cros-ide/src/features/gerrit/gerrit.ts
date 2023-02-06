@@ -887,7 +887,10 @@ export class CommentThread {
     } else {
       vscodeCommentThread.label = `Patchset ${revisionNumber} / Resolved`;
     }
-    this.vscodeCommentThread = vscodeCommentThread;
+    // A comment thread's context is based off the first comment.
+    vscodeCommentThread.contextValue = getCommentContextValue(
+      this.comments?.[0]?.commentInfo
+    );
   }
 
   private getDataUri(gitDir: string, filePath: string): vscode.Uri {
@@ -987,9 +990,28 @@ function toVscodeComment(comment: Comment): VscodeComment {
     label: (c.isPublic ? '' : 'Draft / ') + formatGerritTimestamp(c.updated),
     body: new vscode.MarkdownString(c.message),
     mode: vscode.CommentMode.Preview,
-    contextValue: c.isPublic ? '<public>' : '<draft>',
+    contextValue: getCommentContextValue(c),
     gerritComment: comment,
   };
+}
+
+/**
+ * Determines the contextValue that can be assigned to a comment, or comment
+ * thread in order to drive ui related functionality. These are referenced
+ * within `when` clauses of the package.json file.
+ */
+function getCommentContextValue(c: api.CommentInfo | null | undefined): string {
+  // Used to indicate a comment is public and can be linked to.
+  const publicComment = '<public>';
+
+  // Used to indicate a comment is a draft, and can't be linked to.
+  const draftComment = '<draft>';
+
+  if (c === null || c === undefined) {
+    return draftComment;
+  }
+
+  return c.isPublic ? publicComment : draftComment;
 }
 
 /**
