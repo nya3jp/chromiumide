@@ -655,8 +655,8 @@
         },
         "cros-ide.underDevelopment.systemLogViewer": {
           "type": "boolean",
-          "description": "Enable display system log viewer (incomplete)",
-          "default": false
+          "description": "Enable system log viewer",
+          "default": true
         },
         "cros-ide.underDevelopment.tast": {
           "type": "boolean",
