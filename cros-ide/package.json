@@ -37,6 +37,7 @@
     "onCommand:cros-ide.deviceManagement.copyHostname",
     "onCommand:cros-ide.deviceManagement.runTastTests",
     "onCommand:cros-ide.refreshBoardsPackages",
+    "onCommand:cros-ide.gerrit.refreshComments",
     "onCommand:cros-ide.codeSearchOpenCurrentFile",
     "onCommand:cros-ide.codeSearchCopyCurrentFile",
     "onCommand:cros-ide.codeSearchSearchForSelection",
@@ -243,6 +244,12 @@
         "enablement": "config.cros-ide.underDevelopment.gerrit"
       },
       {
+        "command": "cros-ide.gerrit.refreshComments",
+        "category": "CrOS",
+        "title": "Refresh Comments",
+        "icon": "$(refresh)"
+      },
+      {
         "command": "cros-ide.gerrit.collapseAllCommentThreads",
         "category": "CrOS",
         "title": "Collapse All Comment Threads",
@@ -382,6 +389,11 @@
         {
           "command": "cros-ide.refreshBoardsPackages",
           "when": "view == boards-packages",
+          "group": "navigation"
+        },
+        {
+          "command": "cros-ide.gerrit.refreshComments",
+          "when": "view == workbench.panel.comments",
           "group": "navigation"
         },
         {

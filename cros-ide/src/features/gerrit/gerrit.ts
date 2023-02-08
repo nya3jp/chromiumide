@@ -123,6 +123,7 @@ export function activate(
         });
       }
     ),
+    // TODO(b/268655627): Instrument this command to send metrics.
     vscode.commands.registerCommand(
       'cros-ide.gerrit.browseCommentThread',
       async ({
@@ -133,6 +134,7 @@ export function activate(
       }: VscodeCommentThread) =>
         openExternal(repoId, `c/${changeNumber}/comment/${commentId}`)
     ),
+    // TODO(b/268655627): Instrument this command to send metrics.
     vscode.commands.registerCommand(
       'cros-ide.gerrit.browseCommentThreadAuthor',
       async ({
@@ -142,6 +144,7 @@ export function activate(
         },
       }: VscodeCommentThread) => openExternal(repoId, `dashboard/${authorId}`)
     ),
+    // TODO(b/268655627): Instrument this command to send metrics.
     vscode.commands.registerCommand(
       'cros-ide.gerrit.browseComment',
       async ({
@@ -152,6 +155,7 @@ export function activate(
       }: VscodeComment) =>
         openExternal(repoId, `c/${changeNumber}/comment/${commentId}`)
     ),
+    // TODO(b/268655627): Instrument this command to send metrics.
     vscode.commands.registerCommand(
       'cros-ide.gerrit.browseCommentAuthor',
       async ({
@@ -160,6 +164,18 @@ export function activate(
           authorId,
         },
       }: VscodeComment) => openExternal(repoId, `dashboard/${authorId}`)
+    ),
+    // TODO(b/268655627): Instrument this command to send metrics.
+    vscode.commands.registerCommand(
+      'cros-ide.gerrit.refreshComments',
+      async () => {
+        // Refresh all git directories that are being tracked by the IDE.
+        const showChangePromises: Promise<void>[] = [];
+        for (const curGitDir of gitDirsWatcher.visibleGitDirs) {
+          showChangePromises.push(gerrit.showChanges(curGitDir));
+        }
+        await Promise.all(showChangePromises);
+      }
     ),
     gitDirsWatcher.onDidChangeHead(async event => {
       // 1. Check !event.head to avoid closing comments
@@ -189,7 +205,8 @@ function redactPII(input: string): string {
 }
 
 class Gerrit {
-  private changes?: Change[];
+  // Map git file paths to their associated changes.
+  private changes: Map<string, Change[]> = new Map<string, Change[]>();
   private errorMessageRouter: ErrorMessageRouter;
 
   constructor(
@@ -204,13 +221,21 @@ class Gerrit {
     );
   }
 
-  /** Generator for iterating over all comment threads. */
-  *commentThreads(): Generator<CommentThread> {
-    for (const {revisions} of this.changes ?? []) {
-      for (const {commentThreadsMap} of Object.values(revisions)) {
-        for (const commentThreads of Object.values(commentThreadsMap)) {
-          for (const commentThread of commentThreads) {
-            yield commentThread;
+  /**
+   * Generator for iterating over threads associated with an optional path.
+   * When filePath is not set, changes associated with all file paths will
+   * be returned.
+   */
+  *commentThreads(filePath?: string): Generator<CommentThread> {
+    for (const [curFilePath, curChanges] of this.changes.entries()) {
+      if (filePath === undefined || curFilePath === filePath) {
+        for (const {revisions} of curChanges) {
+          for (const {commentThreadsMap} of Object.values(revisions)) {
+            for (const commentThreads of Object.values(commentThreadsMap)) {
+              for (const commentThread of commentThreads) {
+                yield commentThread;
+              }
+            }
           }
         }
       }
@@ -222,23 +247,27 @@ class Gerrit {
    * `filePath` (file or directory) and shows them with
    * proper repositioning based on the local diff. It caches the response
    * from Gerrit and uses it unless fetch is true.
+   * TODO(davidwelling): Optimize UI experience by merging in changes rather than doing a replace, and accepting filePath as an array.
    */
   async showChanges(filePath: string, fetch = true): Promise<void> {
     try {
       const gitDir = await this.findGitDir(filePath);
       if (!gitDir) return;
       if (fetch) {
+        // Clear existing comments.
+        this.clearCommentThreadsFromVscode(filePath);
+        this.changes.delete(filePath);
+
+        // Save off the new changes if they were found.
         const changes = await this.fetchChangesOrThrow(gitDir);
-        if (changes === undefined) return;
-        this.clearCommentThreadsFromVscode();
-        this.changes = changes;
-      }
-      if (!this.changes) {
-        this.outputChannel.appendLine('No changes found');
-        return;
+        if (changes === undefined) {
+          this.outputChannel.appendLine('No changes found');
+          return;
+        }
+        this.changes.set(filePath, changes);
       }
       let nCommentThreads = 0;
-      for (const {revisions} of this.changes) {
+      for (const {revisions} of this.changes.get(filePath) ?? []) {
         for (const revision of Object.values(revisions)) {
           const {commitId, commentThreadsMap} = revision;
           const commitExists = await this.checkCommitExists(commitId, gitDir);
@@ -549,8 +578,8 @@ class Gerrit {
     return hunksMap;
   }
 
-  clearCommentThreadsFromVscode(): void {
-    for (const commentThread of this.commentThreads()) {
+  clearCommentThreadsFromVscode(filePath: string): void {
+    for (const commentThread of this.commentThreads(filePath)) {
       commentThread.clearFromVscode();
     }
   }
@@ -891,6 +920,7 @@ export class CommentThread {
     vscodeCommentThread.contextValue = getCommentContextValue(
       this.comments?.[0]?.commentInfo
     );
+    this.vscodeCommentThread = vscodeCommentThread;
   }
 
   private getDataUri(gitDir: string, filePath: string): vscode.Uri {
