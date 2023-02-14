@@ -150,6 +150,8 @@ async function postMetricsActivate(
 /**
  * Registers a handler to activate chromiumos features when the workspace
  * contains chromiumos source code.
+ *
+ * TODO(oka): Remove this class, using ChromiumosServiceModule instead.
  */
 class ChromiumosActivation implements vscode.Disposable {
   private readonly watcher = new services.ProductWatcher('chromiumos');

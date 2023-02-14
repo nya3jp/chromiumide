@@ -31,11 +31,34 @@ export function tempDir(): {path: string} {
   return state;
 }
 
+const PUBLIC_MANIFEST = `[core]
+\trepositoryformatversion = 0
+\tfilemode = true
+[filter "lfs"]
+\tsmudge = git-lfs smudge --skip -- %f
+\tprocess = git-lfs filter-process --skip
+[remote "origin"]
+\turl = https://chromium.googlesource.com/chromiumos/manifest
+\tfetch = +refs/heads/*:refs/remotes/origin/*
+[manifest]
+\tplatform = auto
+[branch "default"]
+\tremote = origin
+\tmerge = refs/heads/main
+`;
+
+async function repoInit(root: string) {
+  await putFiles(root, {
+    '.repo/manifests.git/config': PUBLIC_MANIFEST,
+  });
+}
+
 /**
  * Builds fake chroot environment under tempDir, and returns the path to the
  * fake chroot (`${tempDir}/chroot`).
  */
 export async function buildFakeChroot(tempDir: string): Promise<Chroot> {
+  await repoInit(tempDir);
   await putFiles(tempDir, {'chroot/etc/cros_chroot_version': '42'});
   return path.join(tempDir, 'chroot') as Chroot;
 }
