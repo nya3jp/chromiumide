@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.8.0 (February 2023)
+
+- Gerrit integration
+  - Internal repositories are supported
+  - Draft comments are now visible from the IDE
+  - Links to Gerrit pages are added on comment threads
+- Log viewer for test devices
+
 ## 0.6.0 (December 2022)
 
 - Gerrit integration (readonly)
