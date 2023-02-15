@@ -520,10 +520,19 @@ export function parseCrosLintShell(
     /[0-9]+:[0-9]+:[0-9]+: WARNING:([^\n:]+):(([0-9]+):)? (.*)/gm;
   while ((match = stderrLineRE.exec(stderr)) !== null) {
     const file = match[1];
-    // Some warnings does not have a line number. Line #1 is filled as a placeholder.
-    // TODO(b/268282249): Point to the last line of the file when it is more appropriate.
-    const line = match[3] ? Number(match[3]) : 1;
     const message = match[4];
+    let line: number;
+    if (match[3]) {
+      line = Number(match[3]);
+    } else if (
+      // See //chromite/lint/linters/whitespace.py
+      message === 'delete trailing blank lines' ||
+      message === 'file needs a trailing newline'
+    ) {
+      line = document.lineCount;
+    } else {
+      line = 1;
+    }
     if (sameFile(document.uri.fsPath, file)) {
       diagnostics.push(createDiagnostic(message, 'CrOS lint', line));
     }
