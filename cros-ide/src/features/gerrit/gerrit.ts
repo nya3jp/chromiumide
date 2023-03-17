@@ -247,8 +247,16 @@ class Gerrit {
    * from Gerrit and uses it unless fetch is true.
    * TODO(davidwelling): Optimize UI experience by merging in changes rather than doing a replace, and accepting filePath as an array.
    */
-  async showChanges(filePath: string, fetch = true): Promise<void> {
+  async showChanges(
+    filePath: string,
+    fetch = true,
+    internalErrorForTesting?: Error
+  ): Promise<void> {
     try {
+      if (internalErrorForTesting) {
+        throw internalErrorForTesting;
+      }
+
       const gitDir = await this.findGitDir(filePath);
       if (!gitDir) return;
       if (fetch) {

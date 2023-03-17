@@ -14,6 +14,7 @@ import * as metrics from '../../../../features/metrics/metrics';
 import * as bgTaskStatus from '../../../../ui/bg_task_status';
 import {TaskStatus} from '../../../../ui/bg_task_status';
 import * as testing from '../../../testing';
+import {FakeCommentController} from '../../../testing/fakes/comment_controller';
 
 const {Gerrit} = TEST_ONLY;
 
@@ -170,19 +171,6 @@ describe('Gerrit', () => {
   });
 
   const state = testing.cleanState(() => {
-    // We verify that the comments were shown by verifying interactions
-    // with commentController.
-    const commentController = jasmine.createSpyObj<vscode.CommentController>(
-      'commentController',
-      ['createCommentThread']
-    );
-
-    // Without it we get an error setting fields on an undefined object,
-    // which causes flakiness.
-    commentController.createCommentThread.and.callFake(
-      () => ({} as vscode.CommentThread)
-    );
-
     const statusBarItem = vscode.window.createStatusBarItem();
     spyOn(statusBarItem, 'hide');
     spyOn(statusBarItem, 'show');
@@ -193,10 +181,15 @@ describe('Gerrit', () => {
     );
 
     return {
-      commentController,
       statusBarItem,
       statusManager,
     };
+  });
+
+  const subscriptions: vscode.Disposable[] = [];
+  afterEach(() => {
+    vscode.Disposable.from(...subscriptions.reverse()).dispose();
+    subscriptions.length = 0;
   });
 
   type GerritHttpsSetupOpts = {accountsMe?: string; internal?: boolean};
@@ -268,8 +261,9 @@ describe('Gerrit', () => {
     const changeId = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
     const commitId = await git.commit(`Second\nChange-Id: ${changeId}`);
 
+    const commentController = new FakeCommentController();
     const gerrit = new Gerrit(
-      state.commentController,
+      commentController,
       vscode.window.createOutputChannel('gerrit'),
       state.statusBarItem,
       state.statusManager
@@ -285,16 +279,14 @@ describe('Gerrit', () => {
       gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
     ).toBeResolved();
 
-    expect(state.commentController.createCommentThread).toHaveBeenCalledTimes(
-      1
-    );
-    const callData = state.commentController.createCommentThread.calls.first();
-    expect(callData.args[0].fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
-    expect(callData.args[1].start.line).toEqual(2);
-    expect(callData.args[2][0].body).toEqual(
+    const threads = commentController.threads;
+    expect(threads.length).toEqual(1);
+    expect(threads[0].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    expect(threads[0].range.start.line).toEqual(2);
+    expect(threads[0].comments[0].body).toEqual(
       new vscode.MarkdownString('Unresolved comment on the added line.')
     );
-    expect(callData.args[2][0].contextValue).toEqual('<public>');
+    expect(threads[0].comments[0].contextValue).toEqual('<public>');
 
     expect(state.statusBarItem.show).toHaveBeenCalled();
     expect(state.statusBarItem.hide).not.toHaveBeenCalled();
@@ -323,8 +315,9 @@ describe('Gerrit', () => {
     const changeId = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
     const commitId = await git.commit(`Second\nChange-Id: ${changeId}`);
 
+    const commentController = new FakeCommentController();
     const gerrit = new Gerrit(
-      state.commentController,
+      commentController,
       vscode.window.createOutputChannel('gerrit'),
       state.statusBarItem,
       state.statusManager
@@ -341,21 +334,18 @@ describe('Gerrit', () => {
       gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
     ).toBeResolved();
 
-    expect(state.commentController.createCommentThread).toHaveBeenCalledTimes(
-      1
-    );
-    const callData = state.commentController.createCommentThread.calls.first();
-    expect(callData.args[0].fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
-    expect(callData.args[1].start.line).toEqual(2);
-    expect(callData.args[2].length).toEqual(2);
-    expect(callData.args[2][0].body).toEqual(
+    const threads = commentController.threads;
+    expect(threads.length).toEqual(1);
+    expect(threads[0].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    expect(threads[0].range.start.line).toEqual(2);
+    const comments = threads[0].comments;
+    expect(comments.length).toEqual(2);
+    expect(comments[0].body).toEqual(
       new vscode.MarkdownString('Unresolved comment on the added line.')
     );
-    expect(callData.args[2][0].contextValue).toEqual('<public>');
-    expect(callData.args[2][1].body).toEqual(
-      new vscode.MarkdownString('Draft reply.')
-    );
-    expect(callData.args[2][1].contextValue).toEqual('<draft>');
+    expect(comments[0].contextValue).toEqual('<public>');
+    expect(comments[1].body).toEqual(new vscode.MarkdownString('Draft reply.'));
+    expect(comments[1].contextValue).toEqual('<draft>');
 
     expect(state.statusBarItem.show).toHaveBeenCalled();
     expect(state.statusBarItem.hide).not.toHaveBeenCalled();
@@ -430,8 +420,9 @@ describe('Gerrit', () => {
       {amend: true}
     );
 
+    const commentController = new FakeCommentController();
     const gerrit = new Gerrit(
-      state.commentController,
+      commentController,
       vscode.window.createOutputChannel('gerrit'),
       state.statusBarItem,
       new bgTaskStatus.TEST_ONLY.StatusManagerImpl()
@@ -447,47 +438,43 @@ describe('Gerrit', () => {
       gerrit.showChanges(abs('cryptohome/crypto.h'))
     ).toBeResolved();
 
-    expect(state.commentController.createCommentThread).toHaveBeenCalledTimes(
-      4
-    );
+    const threads = threadsSortedByFirstCommentBody(commentController);
+    expect(threads.length).toEqual(4);
 
-    // Order of calls is irrelevant, but since our algorithm is deterministic,
-    // we can rely on it for simplicity.
-    const callData = state.commentController.createCommentThread.calls.all();
-
-    expect(callData[0].args[0]).toEqual(
+    expect(threads[0].uri).toEqual(
       vscode.Uri.parse(
         `gitmsg://${git.root}/COMMIT MESSAGE?${amendedCommitId}#gerrit commit msg`
       )
     );
+
     // Gerrit returns line 7, but our virtual documents don't have some headers,
     // so we shift the message by 6 lines and convert it to 0-based.
-    expect(callData[0].args[1].start.line).toEqual(0);
-    expect(callData[0].args[2][0].body).toEqual(
+    expect(threads[0].range.start.line).toEqual(0);
+    expect(threads[0].comments[0].body).toEqual(
       new vscode.MarkdownString('Commit message comment')
     );
 
-    expect(callData[1].args[0]).toEqual(
-      vscode.Uri.parse(`gerrit://${git.root}/PATCHSET_LEVEL?${changeId}`)
-    );
-    // Patchset level comments should always be shown on the first line.
-    expect(callData[1].args[1].start.line).toEqual(0);
-    expect(callData[1].args[2][0].body).toEqual(
-      new vscode.MarkdownString('Patchset level comment.')
-    );
-
-    expect(callData[2].args[0].fsPath).toEqual(abs('cryptohome/crypto.h'));
+    expect(threads[1].uri.fsPath).toEqual(abs('cryptohome/crypto.h'));
     // File comments should always be shown on the first line.
-    expect(callData[2].args[1].start.line).toEqual(0);
-    expect(callData[2].args[2][0].body).toEqual(
+    expect(threads[1].range.start.line).toEqual(0);
+    expect(threads[1].comments[0].body).toEqual(
       new vscode.MarkdownString('File comment.')
     );
 
-    expect(callData[3].args[0].fsPath).toEqual(abs('cryptohome/crypto.h'));
+    expect(threads[2].uri.fsPath).toEqual(abs('cryptohome/crypto.h'));
     // No shift, but we convert 1-based to 0-based.
-    expect(callData[3].args[1].start.line).toEqual(10);
-    expect(callData[3].args[2][0].body).toEqual(
+    expect(threads[2].range.start.line).toEqual(10);
+    expect(threads[2].comments[0].body).toEqual(
       new vscode.MarkdownString('Line comment.')
+    );
+
+    expect(threads[3].uri).toEqual(
+      vscode.Uri.parse(`gerrit://${git.root}/PATCHSET_LEVEL?${changeId}`)
+    );
+    // Patchset level comments should always be shown on the first line.
+    expect(threads[3].range.start.line).toEqual(0);
+    expect(threads[3].comments[0].body).toEqual(
+      new vscode.MarkdownString('Patchset level comment.')
     );
 
     expect(state.statusBarItem.show).toHaveBeenCalled();
@@ -546,8 +533,9 @@ describe('Gerrit', () => {
       all: true,
     });
 
+    const commentController = new FakeCommentController();
     const gerrit = new Gerrit(
-      state.commentController,
+      commentController,
       vscode.window.createOutputChannel('gerrit'),
       state.statusBarItem,
       new bgTaskStatus.TEST_ONLY.StatusManagerImpl()
@@ -563,26 +551,22 @@ describe('Gerrit', () => {
 
     await expectAsync(gerrit.showChanges(fileName)).toBeResolved();
 
-    expect(state.commentController.createCommentThread).toHaveBeenCalledTimes(
-      2
-    );
-    // Order of calls is irrelevant, but since our algorithm is deterministic,
-    // we can rely on it for simplicity.
-    const callData = state.commentController.createCommentThread.calls.all();
+    const threads = threadsSortedByFirstCommentBody(commentController);
+    expect(threads.length).toEqual(2);
 
-    expect(callData[0].args[0].fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    expect(threads[0].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
     // The original comment is on line 15. It is shifted by 2 lines (+2)
     // and represented in zero-based (-1).
-    expect(callData[0].args[1].start.line).toEqual(16);
-    expect(callData[0].args[2][0].body).toEqual(
+    expect(threads[0].range.start.line).toEqual(16);
+    expect(threads[0].comments[0].body).toEqual(
       new vscode.MarkdownString('Comment on termios')
     );
 
-    expect(callData[1].args[0].fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    expect(threads[1].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
     // The comment on the second patchset stays on line 18,
     // but we convert 1-based number to 0-based.
-    expect(callData[1].args[1].start.line).toEqual(17);
-    expect(callData[1].args[2][0].body).toEqual(
+    expect(threads[1].range.start.line).toEqual(17);
+    expect(threads[1].comments[0].body).toEqual(
       new vscode.MarkdownString('Comment on unistd')
     );
 
@@ -641,8 +625,9 @@ describe('Gerrit', () => {
       `Second uploaded\nChange-Id: ${changeId2}`
     );
 
+    const commentController = new FakeCommentController();
     const gerrit = new Gerrit(
-      state.commentController,
+      commentController,
       vscode.window.createOutputChannel('gerrit'),
       state.statusBarItem,
       new bgTaskStatus.TEST_ONLY.StatusManagerImpl()
@@ -664,27 +649,25 @@ describe('Gerrit', () => {
       gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
     ).toBeResolved();
 
-    expect(state.commentController.createCommentThread).toHaveBeenCalledTimes(
-      2
-    );
-    const calls = state.commentController.createCommentThread.calls.all();
+    const threads = threadsSortedByFirstCommentBody(commentController);
+    expect(threads.length).toEqual(2);
 
-    expect(calls[0].args[0].fsPath).toMatch(/cryptohome\/cryptohome.cc/);
+    expect(threads[0].uri.fsPath).toMatch(/cryptohome\/cryptohome.cc/);
     // The comment in the second Gerrit change is on line 6,
     // but we convert 1-based number (Gerrit) to 0-based (VScode).
     // There are no local modification that require shifting the comment.
-    expect(calls[0].args[1].start.line).toEqual(5);
-    expect(calls[0].args[2][0].body).toEqual(
+    expect(threads[0].range.start.line).toEqual(5);
+    expect(threads[0].comments[0].body).toEqual(
       new vscode.MarkdownString('Comment on the second change')
     );
 
-    expect(calls[1].args[0].fsPath).toMatch(/cryptohome\/cryptohome.cc/);
+    expect(threads[1].uri.fsPath).toMatch(/cryptohome\/cryptohome.cc/);
     // The comment in the second Gerrit change is on line 3,
     // but we convert 1-based number (Gerrit) to 0-based (VScode).
     // The second Gerrit change affects lines below this change,
     // so shifting is not needed.
-    expect(calls[1].args[1].start.line).toEqual(2);
-    expect(calls[1].args[2][0].body).toEqual(
+    expect(threads[1].range.start.line).toEqual(2);
+    expect(threads[1].comments[0].body).toEqual(
       new vscode.MarkdownString('Unresolved comment on the added line.')
     );
 
@@ -714,8 +697,9 @@ describe('Gerrit', () => {
       'cryptohome/cryptohome.cc': 'Line 4\nLine 5\n',
     });
 
+    const commentController = new FakeCommentController();
     const gerrit = new Gerrit(
-      state.commentController,
+      commentController,
       vscode.window.createOutputChannel('gerrit'),
       state.statusBarItem,
       state.statusManager
@@ -731,15 +715,13 @@ describe('Gerrit', () => {
       gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
     ).toBeResolved();
 
-    expect(state.commentController.createCommentThread).toHaveBeenCalledTimes(
-      1
-    );
-    const callData = state.commentController.createCommentThread.calls.first();
-    expect(callData.args[0].fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    const threads = threadsSortedByFirstCommentBody(commentController);
+    expect(threads.length).toEqual(1);
+    expect(threads[0].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
     // The comment was on line 3 (1-based) and the first three lines were deleted.
     // It should be placed on line 0 (0-based).
-    expect(callData.args[1].start.line).toEqual(0);
-    expect(callData.args[2][0].body).toEqual(
+    expect(threads[0].range.start.line).toEqual(0);
+    expect(threads[0].comments[0].body).toEqual(
       new vscode.MarkdownString('Unresolved comment on the added line.')
     );
   });
@@ -752,8 +734,9 @@ describe('Gerrit', () => {
     const changeId = 'Iaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     await git.commit(`Second\nChange-Id: ${changeId}`);
 
+    const commentController = new FakeCommentController();
     const gerrit = new Gerrit(
-      state.commentController,
+      commentController,
       vscode.window.createOutputChannel('gerrit'),
       state.statusBarItem,
       state.statusManager
@@ -767,7 +750,8 @@ describe('Gerrit', () => {
       gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
     ).toBeResolved();
 
-    expect(state.commentController.createCommentThread).not.toHaveBeenCalled();
+    expect(commentController.threads.length).toEqual(0);
+
     expect(state.statusBarItem.show).not.toHaveBeenCalled();
     expect(state.statusBarItem.hide).toHaveBeenCalled();
     expect(metrics.send).not.toHaveBeenCalled();
@@ -789,8 +773,9 @@ describe('Gerrit', () => {
     const changeId = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
     const commitId = await git.commit(`Second\nChange-Id: ${changeId}`);
 
+    const commentController = new FakeCommentController();
     const gerrit = new Gerrit(
-      state.commentController,
+      commentController,
       vscode.window.createOutputChannel('gerrit'),
       state.statusBarItem,
       state.statusManager
@@ -806,13 +791,11 @@ describe('Gerrit', () => {
       gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
     ).toBeResolved();
 
-    expect(state.commentController.createCommentThread).toHaveBeenCalledTimes(
-      1
-    );
-    const callData = state.commentController.createCommentThread.calls.first();
-    expect(callData.args[0].fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
-    expect(callData.args[1].start.line).toEqual(2);
-    expect(callData.args[2][0].body).toEqual(
+    const threads = threadsSortedByFirstCommentBody(commentController);
+    expect(threads.length).toEqual(1);
+    expect(threads[0].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    expect(threads[0].range.start.line).toEqual(2);
+    expect(threads[0].comments[0].body).toEqual(
       new vscode.MarkdownString('Unresolved comment on the added line.')
     );
 
@@ -830,7 +813,7 @@ describe('Gerrit', () => {
 
   it('does not throw errors when repositioning is triggered outside a Git repo', async () => {
     const gerrit = new Gerrit(
-      state.commentController,
+      new FakeCommentController(),
       vscode.window.createOutputChannel('gerrit'),
       state.statusBarItem,
       state.statusManager
@@ -851,8 +834,9 @@ describe('Gerrit', () => {
     const commitId1 = await git.commit(`Under review\nChange-Id: ${changeId}`);
     const commitId2 = '1111111111111111111111111111111111111111';
 
+    const commentController = new FakeCommentController();
     const gerrit = new Gerrit(
-      state.commentController,
+      commentController,
       vscode.window.createOutputChannel('gerrit'),
       state.statusBarItem,
       state.statusManager
@@ -868,21 +852,19 @@ describe('Gerrit', () => {
       gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
     ).toBeResolved();
 
-    expect(state.commentController.createCommentThread).toHaveBeenCalledTimes(
-      2
-    );
-    const callData = state.commentController.createCommentThread.calls.all();
+    const threads = threadsSortedByFirstCommentBody(commentController);
+    expect(threads.length).toEqual(2);
 
-    expect(callData[0].args[0].fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    expect(threads[0].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
     // The comment is on line 15 and there are no local changes.
-    expect(callData[0].args[1].start.line).toEqual(14);
-    expect(callData[0].args[2][0].body).toEqual(
+    expect(threads[0].range.start.line).toEqual(14);
+    expect(threads[0].comments[0].body).toEqual(
       new vscode.MarkdownString('Comment on termios')
     );
 
-    expect(callData[1].args[0].fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
-    expect(callData[1].args[1].start.line).toEqual(17);
-    expect(callData[1].args[2][0].body).toEqual(
+    expect(threads[1].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    expect(threads[1].range.start.line).toEqual(17);
+    expect(threads[1].comments[0].body).toEqual(
       new vscode.MarkdownString('Comment on unistd')
     );
 
@@ -909,39 +891,21 @@ describe('Gerrit', () => {
   });
 
   it('reports unexpected errors', async () => {
-    const git = new testing.Git(tempDir.path);
-    await git.init();
-    await git.commit('First');
-    await git.setupCrosBranches();
-    await testing.putFiles(git.root, {
-      'cryptohome/cryptohome.cc': 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
-    });
-    await git.addAll();
-    const changeId = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
-    const commitId = await git.commit(`Second\nChange-Id: ${changeId}`);
-
     const user = os.userInfo().username;
-    state.commentController.createCommentThread.and.throwError(
-      new Error(
-        `${user} saw a test error while editing /home/${user}/hello/world.php`
-      )
+
+    const internalError = new Error(
+      `${user} saw a test error while editing /home/${user}/hello/world.php`
     );
 
     const gerrit = new Gerrit(
-      state.commentController,
+      new FakeCommentController(),
       vscode.window.createOutputChannel('gerrit'),
       state.statusBarItem,
       state.statusManager
     );
 
-    setupGerritHttps().withChange({
-      id: changeId,
-      info: CHANGE_INFO(changeId, [commitId]),
-      comments: SIMPLE_COMMENT_INFOS_MAP(commitId),
-    });
-
     await expectAsync(
-      gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
+      gerrit.showChanges(abs('cryptohome/cryptohome.cc'), true, internalError)
     ).toBeResolved();
 
     expect(state.statusManager.setStatus).toHaveBeenCalledOnceWith(
@@ -957,3 +921,13 @@ describe('Gerrit', () => {
     });
   });
 });
+
+function threadsSortedByFirstCommentBody(
+  commentController: FakeCommentController
+): readonly vscode.CommentThread[] {
+  return [...commentController.threads].sort((a, b) =>
+    (a.comments[0].body as vscode.MarkdownString).value.localeCompare(
+      (b.comments[0].body as vscode.MarkdownString).value
+    )
+  );
+}
