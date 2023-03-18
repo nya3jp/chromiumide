@@ -23,10 +23,12 @@ export function patchSetUri(dir: string, id: string) {
 
 /** Virtual document for attaching Gerrit patchset level comments. */
 export class GerritDocumentProvider
-  implements vscode.TextDocumentContentProvider
+  implements vscode.TextDocumentContentProvider, vscode.Disposable
 {
-  activate(context: vscode.ExtensionContext) {
-    context.subscriptions.push(
+  private subscriptions: vscode.Disposable[] = [];
+
+  activate() {
+    this.subscriptions.push(
       vscode.workspace.registerTextDocumentContentProvider(SCHEME, this)
     );
   }
@@ -40,5 +42,9 @@ export class GerritDocumentProvider
       label: 'gerrit patchset level',
     });
     return `Patchset level comments on Change-Id: ${uri.query}`;
+  }
+
+  dispose() {
+    vscode.Disposable.from(...this.subscriptions.reverse()).dispose();
   }
 }

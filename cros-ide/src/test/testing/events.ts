@@ -16,7 +16,10 @@ export class EventReader<T> implements vscode.Disposable {
   private readonly queue: T[] = [];
   private waiter?: (x: T) => void;
 
-  constructor(event: vscode.Event<T>) {
+  constructor(event: vscode.Event<T>, subscriptions?: vscode.Disposable[]) {
+    if (subscriptions) {
+      subscriptions.push(this);
+    }
     this.subscriptions.push(
       event(x => {
         this.queue.push(x);

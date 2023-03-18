@@ -20,24 +20,31 @@ import * as auth from './auth';
 import * as virtualDocument from './virtual_document';
 import {ErrorMessageRouter, GERRIT} from './sink';
 
+const onDidHandleEventForTestingEmitter = new vscode.EventEmitter<void>();
+// Notifies completion of async event handling for testing.
+export const onDidHandleEventForTesting =
+  onDidHandleEventForTestingEmitter.event;
+
 export function activate(
-  context: vscode.ExtensionContext,
   statusManager: bgTaskStatus.StatusManager,
-  _gitDocumentProvider: gitDocument.GitDocumentProvider,
-  gitDirsWatcher: services.GitDirsWatcher
-) {
+  gitDirsWatcher: services.GitDirsWatcher,
+  internalErrorForTesting?: Error
+): vscode.Disposable {
+  const subscriptions: vscode.Disposable[] = [];
+
   const outputChannel = vscode.window.createOutputChannel('CrOS IDE: Gerrit');
-  context.subscriptions.push(outputChannel);
+  subscriptions.push(outputChannel);
+
   statusManager.setTask(GERRIT, {
     status: TaskStatus.OK,
     outputChannel,
   });
 
-  new virtualDocument.GerritDocumentProvider().activate(context);
+  subscriptions.push(new virtualDocument.GerritDocumentProvider());
 
   if (underDevelopment.gerrit) {
     // Test auth for Gerrit
-    context.subscriptions.push(
+    subscriptions.push(
       vscode.commands.registerCommand(
         'cros-ide.gerrit.internal.testAuth',
         async () => {
@@ -61,7 +68,7 @@ export function activate(
   }
 
   const focusCommentsPanel = 'cros-ide.gerrit.focusCommentsPanel';
-  context.subscriptions.push(
+  subscriptions.push(
     vscode.commands.registerCommand(focusCommentsPanel, () => {
       void vscode.commands.executeCommand(
         'workbench.action.focusCommentsPanel'
@@ -79,14 +86,20 @@ export function activate(
   );
   statusBar.command = focusCommentsPanel;
 
-  const gerrit = new Gerrit(outputChannel, statusBar, statusManager);
-  context.subscriptions.push(gerrit);
+  const gerrit = new Gerrit(
+    outputChannel,
+    statusBar,
+    statusManager,
+    internalErrorForTesting
+  );
+  subscriptions.push(gerrit);
 
   let gitHead: string | undefined;
 
-  context.subscriptions.push(
-    vscode.workspace.onDidSaveTextDocument(document => {
-      void gerrit.showChanges(document.fileName, false);
+  subscriptions.push(
+    vscode.workspace.onDidSaveTextDocument(async document => {
+      await gerrit.showChanges(document.fileName, false);
+      onDidHandleEventForTestingEmitter.fire();
     }),
     vscode.commands.registerCommand(
       'cros-ide.gerrit.collapseAllCommentThreads',
@@ -171,9 +184,12 @@ export function activate(
       if (event.head && event.head !== gitHead) {
         gitHead = event.head;
         await gerrit.showChanges(event.gitDir);
+        onDidHandleEventForTestingEmitter.fire();
       }
     })
   );
+
+  return vscode.Disposable.from(...subscriptions.reverse());
 }
 
 async function openExternal(repoId: git.RepoId, path: string): Promise<void> {
@@ -205,7 +221,8 @@ class Gerrit implements vscode.Disposable {
   constructor(
     private readonly outputChannel: vscode.OutputChannel,
     private readonly statusBar: vscode.StatusBarItem,
-    statusManager: bgTaskStatus.StatusManager
+    statusManager: bgTaskStatus.StatusManager,
+    private readonly internalErrorForTesting?: Error
   ) {
     this.errorMessageRouter = new ErrorMessageRouter(
       outputChannel,
@@ -241,14 +258,10 @@ class Gerrit implements vscode.Disposable {
    * from Gerrit and uses it unless fetch is true.
    * TODO(davidwelling): Optimize UI experience by merging in changes rather than doing a replace, and accepting filePath as an array.
    */
-  async showChanges(
-    filePath: string,
-    fetch = true,
-    internalErrorForTesting?: Error
-  ): Promise<void> {
+  async showChanges(filePath: string, fetch = true): Promise<void> {
     try {
-      if (internalErrorForTesting) {
-        throw internalErrorForTesting;
+      if (this.internalErrorForTesting) {
+        throw this.internalErrorForTesting;
       }
 
       const gitDir = await this.findGitDir(filePath);
@@ -1010,7 +1023,5 @@ function getCommentContextValue(c: api.CommentInfo | null | undefined): string {
 }
 
 export const TEST_ONLY = {
-  ErrorMessageRouter,
-  Gerrit,
   shiftCommentThreadsByHunks,
 };

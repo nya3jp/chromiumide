@@ -7,16 +7,15 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as api from '../../../../features/gerrit/api';
 import * as auth from '../../../../features/gerrit/auth';
-import {TEST_ONLY} from '../../../../features/gerrit/gerrit';
+import * as gerrit from '../../../../features/gerrit/gerrit';
 import * as metrics from '../../../../features/metrics/metrics';
+import {GitDirsWatcher} from '../../../../services';
 import * as bgTaskStatus from '../../../../ui/bg_task_status';
 import {TaskStatus} from '../../../../ui/bg_task_status';
 import * as testing from '../../../testing';
 import {VoidOutputChannel} from '../../../testing/fakes';
 import {FakeCommentController} from '../../../testing/fakes/comment_controller';
 import {FakeGerrit} from './fake_env';
-
-const {Gerrit} = TEST_ONLY;
 
 const AUTHOR: api.AccountInfo = Object.freeze({
   _account_id: 1355869,
@@ -138,7 +137,7 @@ describe('Gerrit', () => {
     return path.join(tempDir.path, relative);
   }
 
-  const {vscodeSpy} = testing.installVscodeDouble();
+  const {vscodeEmitters, vscodeSpy} = testing.installVscodeDouble();
 
   beforeEach(() => {
     spyOn(metrics, 'send');
@@ -155,15 +154,18 @@ describe('Gerrit', () => {
       outputChannel: new VoidOutputChannel(),
       statusManager: jasmine.createSpyObj<bgTaskStatus.StatusManager>(
         'statusManager',
-        ['setStatus']
+        ['setStatus', 'setTask']
       ),
     };
 
-    vscodeSpy.window.createStatusBarItem.and.returnValue(state.statusBarItem);
     vscodeSpy.comments.createCommentController.and.returnValue(
       state.commentController
     );
+    vscodeSpy.commands.registerCommand.and.returnValue(
+      vscode.Disposable.from()
+    );
     vscodeSpy.window.createOutputChannel.and.returnValue(state.outputChannel);
+    vscodeSpy.window.createStatusBarItem.and.returnValue(state.statusBarItem);
 
     return state;
   });
@@ -189,26 +191,34 @@ describe('Gerrit', () => {
     const changeId = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
     const commitId = await git.commit(`Second\nChange-Id: ${changeId}`);
 
-    const gerrit = new Gerrit(
-      state.outputChannel,
-      state.statusBarItem,
-      state.statusManager
-    );
-    subscriptions.push(gerrit);
-
     FakeGerrit.initialize().setChange({
       id: changeId,
       info: CHANGE_INFO(changeId, [commitId]),
       comments: SIMPLE_COMMENT_INFOS_MAP(commitId),
     });
 
-    await expectAsync(
-      gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
-    ).toBeResolved();
+    const gitDirsWatcher = new GitDirsWatcher('/');
+    subscriptions.push(
+      gerrit.activate(state.statusManager, gitDirsWatcher),
+      gitDirsWatcher
+    );
+
+    const completeShowChangeEvents = new testing.EventReader(
+      gerrit.onDidHandleEventForTesting,
+      subscriptions
+    );
+
+    const cryptohomeFilePath = abs('cryptohome/cryptohome.cc');
+    vscodeEmitters.workspace.onDidOpenTextDocument.fire({
+      uri: vscode.Uri.file(cryptohomeFilePath),
+      fileName: cryptohomeFilePath,
+    } as vscode.TextDocument);
+
+    await completeShowChangeEvents.read();
 
     const threads = state.commentController.threads;
     expect(threads.length).toEqual(1);
-    expect(threads[0].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    expect(threads[0].uri.fsPath).toEqual(cryptohomeFilePath);
     expect(threads[0].range.start.line).toEqual(2);
     expect(threads[0].comments[0].body).toEqual(
       new vscode.MarkdownString('Unresolved comment on the added line.')
@@ -238,16 +248,11 @@ describe('Gerrit', () => {
     await testing.putFiles(git.root, {
       'cryptohome/cryptohome.cc': 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
     });
+
+    const cryptohomeFilePath = abs('cryptohome/cryptohome.cc');
     await git.addAll();
     const changeId = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
     const commitId = await git.commit(`Second\nChange-Id: ${changeId}`);
-
-    const gerrit = new Gerrit(
-      state.outputChannel,
-      state.statusBarItem,
-      state.statusManager
-    );
-    subscriptions.push(gerrit);
 
     FakeGerrit.initialize({accountsMe: AUTHOR}).setChange({
       id: changeId,
@@ -256,13 +261,27 @@ describe('Gerrit', () => {
       drafts: SIMPLE_DRAFT_COMMENT_INFOS_MAP(commitId),
     });
 
-    await expectAsync(
-      gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
-    ).toBeResolved();
+    const gitDirsWatcher = new GitDirsWatcher('/');
+    subscriptions.push(
+      gerrit.activate(state.statusManager, gitDirsWatcher),
+      gitDirsWatcher
+    );
+
+    const completeShowChangeEvents = new testing.EventReader(
+      gerrit.onDidHandleEventForTesting,
+      subscriptions
+    );
+
+    vscodeEmitters.workspace.onDidOpenTextDocument.fire({
+      uri: vscode.Uri.file(cryptohomeFilePath),
+      fileName: cryptohomeFilePath,
+    } as vscode.TextDocument);
+
+    await completeShowChangeEvents.read();
 
     const threads = state.commentController.threads;
     expect(threads.length).toEqual(1);
-    expect(threads[0].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    expect(threads[0].uri.fsPath).toEqual(cryptohomeFilePath);
     expect(threads[0].range.start.line).toEqual(2);
     const comments = threads[0].comments;
     expect(comments.length).toEqual(2);
@@ -348,22 +367,30 @@ describe('Gerrit', () => {
       {amend: true}
     );
 
-    const gerrit = new Gerrit(
-      state.outputChannel,
-      state.statusBarItem,
-      new bgTaskStatus.TEST_ONLY.StatusManagerImpl()
-    );
-    subscriptions.push(gerrit);
-
     FakeGerrit.initialize().setChange({
       id: changeId,
       info: CHANGE_INFO(changeId, [reviewCommitId]),
       comments: SPECIAL_COMMENT_TYPES(reviewCommitId),
     });
 
-    await expectAsync(
-      gerrit.showChanges(abs('cryptohome/crypto.h'))
-    ).toBeResolved();
+    const gitDirsWatcher = new GitDirsWatcher('/');
+    subscriptions.push(
+      gerrit.activate(state.statusManager, gitDirsWatcher),
+      gitDirsWatcher
+    );
+
+    const completeShowChangeEvents = new testing.EventReader(
+      gerrit.onDidHandleEventForTesting,
+      subscriptions
+    );
+
+    const cryptohomeFilePath = abs('cryptohome/crypto.h');
+    vscodeEmitters.workspace.onDidOpenTextDocument.fire({
+      uri: vscode.Uri.file(cryptohomeFilePath),
+      fileName: cryptohomeFilePath,
+    } as vscode.TextDocument);
+
+    await completeShowChangeEvents.read();
 
     const threads = threadsSortedByFirstCommentBody(state.commentController);
     expect(threads.length).toEqual(4);
@@ -381,14 +408,14 @@ describe('Gerrit', () => {
       new vscode.MarkdownString('Commit message comment')
     );
 
-    expect(threads[1].uri.fsPath).toEqual(abs('cryptohome/crypto.h'));
+    expect(threads[1].uri.fsPath).toEqual(cryptohomeFilePath);
     // File comments should always be shown on the first line.
     expect(threads[1].range.start.line).toEqual(0);
     expect(threads[1].comments[0].body).toEqual(
       new vscode.MarkdownString('File comment.')
     );
 
-    expect(threads[2].uri.fsPath).toEqual(abs('cryptohome/crypto.h'));
+    expect(threads[2].uri.fsPath).toEqual(cryptohomeFilePath);
     // No shift, but we convert 1-based to 0-based.
     expect(threads[2].range.start.line).toEqual(10);
     expect(threads[2].comments[0].body).toEqual(
@@ -460,27 +487,35 @@ describe('Gerrit', () => {
       all: true,
     });
 
-    const gerrit = new Gerrit(
-      state.outputChannel,
-      state.statusBarItem,
-      new bgTaskStatus.TEST_ONLY.StatusManagerImpl()
-    );
-    subscriptions.push(gerrit);
-
-    const fileName = abs('cryptohome/cryptohome.cc');
-
     FakeGerrit.initialize().setChange({
       id: changeId,
       info: CHANGE_INFO(changeId, [commitId1, commitId2]),
       comments: TWO_PATCHSETS_COMMENT_INFOS_MAP(commitId1, commitId2),
     });
 
-    await expectAsync(gerrit.showChanges(fileName)).toBeResolved();
+    const gitDirsWatcher = new GitDirsWatcher('/');
+    subscriptions.push(
+      gerrit.activate(state.statusManager, gitDirsWatcher),
+      gitDirsWatcher
+    );
+
+    const completeShowChangeEvents = new testing.EventReader(
+      gerrit.onDidHandleEventForTesting,
+      subscriptions
+    );
+
+    const cryptohomeFilePath = abs('cryptohome/cryptohome.cc');
+    vscodeEmitters.workspace.onDidOpenTextDocument.fire({
+      uri: vscode.Uri.file(cryptohomeFilePath),
+      fileName: cryptohomeFilePath,
+    } as vscode.TextDocument);
+
+    await completeShowChangeEvents.read();
 
     const threads = threadsSortedByFirstCommentBody(state.commentController);
     expect(threads.length).toEqual(2);
 
-    expect(threads[0].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    expect(threads[0].uri.fsPath).toEqual(cryptohomeFilePath);
     // The original comment is on line 15. It is shifted by 2 lines (+2)
     // and represented in zero-based (-1).
     expect(threads[0].range.start.line).toEqual(16);
@@ -488,7 +523,7 @@ describe('Gerrit', () => {
       new vscode.MarkdownString('Comment on termios')
     );
 
-    expect(threads[1].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    expect(threads[1].uri.fsPath).toEqual(cryptohomeFilePath);
     // The comment on the second patchset stays on line 18,
     // but we convert 1-based number to 0-based.
     expect(threads[1].range.start.line).toEqual(17);
@@ -551,13 +586,6 @@ describe('Gerrit', () => {
       `Second uploaded\nChange-Id: ${changeId2}`
     );
 
-    const gerrit = new Gerrit(
-      state.outputChannel,
-      state.statusBarItem,
-      new bgTaskStatus.TEST_ONLY.StatusManagerImpl()
-    );
-    subscriptions.push(gerrit);
-
     FakeGerrit.initialize()
       .setChange({
         id: changeId1,
@@ -570,9 +598,27 @@ describe('Gerrit', () => {
         comments: SECOND_COMMIT_IN_CHAIN(commitId2),
       });
 
-    await expectAsync(
-      gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
-    ).toBeResolved();
+    const gitDirsWatcher = new GitDirsWatcher('/');
+    subscriptions.push(
+      gerrit.activate(
+        new bgTaskStatus.TEST_ONLY.StatusManagerImpl(),
+        gitDirsWatcher
+      ),
+      gitDirsWatcher
+    );
+
+    const completeShowChangeEvents = new testing.EventReader(
+      gerrit.onDidHandleEventForTesting,
+      subscriptions
+    );
+
+    const cryptohomeFilePath = abs('cryptohome/cryptohome.cc');
+    vscodeEmitters.workspace.onDidOpenTextDocument.fire({
+      uri: vscode.Uri.file(cryptohomeFilePath),
+      fileName: cryptohomeFilePath,
+    } as vscode.TextDocument);
+
+    await completeShowChangeEvents.read();
 
     const threads = threadsSortedByFirstCommentBody(state.commentController);
     expect(threads.length).toEqual(2);
@@ -622,26 +668,34 @@ describe('Gerrit', () => {
       'cryptohome/cryptohome.cc': 'Line 4\nLine 5\n',
     });
 
-    const gerrit = new Gerrit(
-      state.outputChannel,
-      state.statusBarItem,
-      state.statusManager
-    );
-    subscriptions.push(gerrit);
-
     FakeGerrit.initialize().setChange({
       id: changeId,
       info: CHANGE_INFO(changeId, [commitId]),
       comments: SIMPLE_COMMENT_INFOS_MAP(commitId),
     });
 
-    await expectAsync(
-      gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
-    ).toBeResolved();
+    const gitDirsWatcher = new GitDirsWatcher('/');
+    subscriptions.push(
+      gerrit.activate(state.statusManager, gitDirsWatcher),
+      gitDirsWatcher
+    );
+
+    const completeShowChangeEvents = new testing.EventReader(
+      gerrit.onDidHandleEventForTesting,
+      subscriptions
+    );
+
+    const cryptohomeFilePath = abs('cryptohome/cryptohome.cc');
+    vscodeEmitters.workspace.onDidOpenTextDocument.fire({
+      uri: vscode.Uri.file(cryptohomeFilePath),
+      fileName: cryptohomeFilePath,
+    } as vscode.TextDocument);
+
+    await completeShowChangeEvents.read();
 
     const threads = threadsSortedByFirstCommentBody(state.commentController);
     expect(threads.length).toEqual(1);
-    expect(threads[0].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    expect(threads[0].uri.fsPath).toEqual(cryptohomeFilePath);
     // The comment was on line 3 (1-based) and the first three lines were deleted.
     // It should be placed on line 0 (0-based).
     expect(threads[0].range.start.line).toEqual(0);
@@ -658,20 +712,28 @@ describe('Gerrit', () => {
     const changeId = 'Iaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     await git.commit(`Second\nChange-Id: ${changeId}`);
 
-    const gerrit = new Gerrit(
-      state.outputChannel,
-      state.statusBarItem,
-      state.statusManager
-    );
-    subscriptions.push(gerrit);
-
     FakeGerrit.initialize().setChange({
       id: changeId,
     });
 
-    await expectAsync(
-      gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
-    ).toBeResolved();
+    const gitDirsWatcher = new GitDirsWatcher('/');
+    subscriptions.push(
+      gerrit.activate(state.statusManager, gitDirsWatcher),
+      gitDirsWatcher
+    );
+
+    const completeShowChangeEvents = new testing.EventReader(
+      gerrit.onDidHandleEventForTesting,
+      subscriptions
+    );
+
+    const cryptohomeFilePath = abs('cryptohome/cryptohome.cc');
+    vscodeEmitters.workspace.onDidOpenTextDocument.fire({
+      uri: vscode.Uri.file(cryptohomeFilePath),
+      fileName: cryptohomeFilePath,
+    } as vscode.TextDocument);
+
+    await completeShowChangeEvents.read();
 
     expect(state.commentController.threads.length).toEqual(0);
 
@@ -696,26 +758,34 @@ describe('Gerrit', () => {
     const changeId = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
     const commitId = await git.commit(`Second\nChange-Id: ${changeId}`);
 
-    const gerrit = new Gerrit(
-      state.outputChannel,
-      state.statusBarItem,
-      state.statusManager
-    );
-    subscriptions.push(gerrit);
-
     FakeGerrit.initialize({internal: true}).setChange({
       id: changeId,
       info: CHANGE_INFO(changeId, [commitId]),
       comments: SIMPLE_COMMENT_INFOS_MAP(commitId),
     });
 
-    await expectAsync(
-      gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
-    ).toBeResolved();
+    const gitDirsWatcher = new GitDirsWatcher('/');
+    subscriptions.push(
+      gerrit.activate(state.statusManager, gitDirsWatcher),
+      gitDirsWatcher
+    );
+
+    const completeShowChangeEvents = new testing.EventReader(
+      gerrit.onDidHandleEventForTesting,
+      subscriptions
+    );
+
+    const cryptohomeFilePath = abs('cryptohome/cryptohome.cc');
+    vscodeEmitters.workspace.onDidOpenTextDocument.fire({
+      uri: vscode.Uri.file(cryptohomeFilePath),
+      fileName: cryptohomeFilePath,
+    } as vscode.TextDocument);
+
+    await completeShowChangeEvents.read();
 
     const threads = threadsSortedByFirstCommentBody(state.commentController);
     expect(threads.length).toEqual(1);
-    expect(threads[0].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    expect(threads[0].uri.fsPath).toEqual(cryptohomeFilePath);
     expect(threads[0].range.start.line).toEqual(2);
     expect(threads[0].comments[0].body).toEqual(
       new vscode.MarkdownString('Unresolved comment on the added line.')
@@ -734,15 +804,24 @@ describe('Gerrit', () => {
   });
 
   it('does not throw errors when repositioning is triggered outside a Git repo', async () => {
-    registerFakeCommentController(vscodeSpy);
-    const gerrit = new Gerrit(
-      state.outputChannel,
-      state.statusBarItem,
-      state.statusManager
+    const gitDirsWatcher = new GitDirsWatcher('/');
+    subscriptions.push(
+      gerrit.activate(state.statusManager, gitDirsWatcher),
+      gitDirsWatcher
     );
-    subscriptions.push(gerrit);
 
-    await expectAsync(gerrit.showChanges(tempDir.path)).toBeResolved();
+    const completeShowChangeEvents = new testing.EventReader(
+      gerrit.onDidHandleEventForTesting,
+      subscriptions
+    );
+
+    const cryptohomeFilePath = abs('cryptohome/cryptohome.cc');
+    vscodeEmitters.workspace.onDidSaveTextDocument.fire({
+      uri: vscode.Uri.file(cryptohomeFilePath),
+      fileName: cryptohomeFilePath,
+    } as vscode.TextDocument);
+
+    await completeShowChangeEvents.read();
 
     expect(state.statusManager.setStatus).not.toHaveBeenCalled();
   });
@@ -757,34 +836,42 @@ describe('Gerrit', () => {
     const commitId1 = await git.commit(`Under review\nChange-Id: ${changeId}`);
     const commitId2 = '1111111111111111111111111111111111111111';
 
-    const gerrit = new Gerrit(
-      state.outputChannel,
-      state.statusBarItem,
-      state.statusManager
-    );
-    subscriptions.push(gerrit);
-
     FakeGerrit.initialize().setChange({
       id: changeId,
       info: CHANGE_INFO(changeId, [commitId1, commitId2]),
       comments: TWO_PATCHSETS_COMMENT_INFOS_MAP(commitId1, commitId2),
     });
 
-    await expectAsync(
-      gerrit.showChanges(abs('cryptohome/cryptohome.cc'))
-    ).toBeResolved();
+    const gitDirsWatcher = new GitDirsWatcher('/');
+    subscriptions.push(
+      gerrit.activate(state.statusManager, gitDirsWatcher),
+      gitDirsWatcher
+    );
+
+    const completeShowChangeEvents = new testing.EventReader(
+      gerrit.onDidHandleEventForTesting,
+      subscriptions
+    );
+
+    const cryptohomeFilePath = abs('cryptohome/cryptohome.cc');
+    vscodeEmitters.workspace.onDidOpenTextDocument.fire({
+      uri: vscode.Uri.file(cryptohomeFilePath),
+      fileName: cryptohomeFilePath,
+    } as vscode.TextDocument);
+
+    await completeShowChangeEvents.read();
 
     const threads = threadsSortedByFirstCommentBody(state.commentController);
     expect(threads.length).toEqual(2);
 
-    expect(threads[0].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    expect(threads[0].uri.fsPath).toEqual(cryptohomeFilePath);
     // The comment is on line 15 and there are no local changes.
     expect(threads[0].range.start.line).toEqual(14);
     expect(threads[0].comments[0].body).toEqual(
       new vscode.MarkdownString('Comment on termios')
     );
 
-    expect(threads[1].uri.fsPath).toEqual(abs('cryptohome/cryptohome.cc'));
+    expect(threads[1].uri.fsPath).toEqual(cryptohomeFilePath);
     expect(threads[1].range.start.line).toEqual(17);
     expect(threads[1].comments[0].body).toEqual(
       new vscode.MarkdownString('Comment on unistd')
@@ -819,17 +906,24 @@ describe('Gerrit', () => {
       `${user} saw a test error while editing /home/${user}/hello/world.php`
     );
 
-    registerFakeCommentController(vscodeSpy);
-    const gerrit = new Gerrit(
-      state.outputChannel,
-      state.statusBarItem,
-      state.statusManager
+    const gitDirsWatcher = new GitDirsWatcher('/');
+    subscriptions.push(
+      gerrit.activate(state.statusManager, gitDirsWatcher, internalError),
+      gitDirsWatcher
     );
-    subscriptions.push(gerrit);
 
-    await expectAsync(
-      gerrit.showChanges(abs('cryptohome/cryptohome.cc'), true, internalError)
-    ).toBeResolved();
+    const completeShowChangeEvents = new testing.EventReader(
+      gerrit.onDidHandleEventForTesting,
+      subscriptions
+    );
+
+    const cryptohomeFilePath = abs('cryptohome/cryptohome.cc');
+    vscodeEmitters.workspace.onDidSaveTextDocument.fire({
+      uri: vscode.Uri.file(cryptohomeFilePath),
+      fileName: cryptohomeFilePath,
+    } as vscode.TextDocument);
+
+    await completeShowChangeEvents.read();
 
     expect(state.statusManager.setStatus).toHaveBeenCalledOnceWith(
       'Gerrit',
@@ -853,12 +947,4 @@ function threadsSortedByFirstCommentBody(
       (b.comments[0].body as vscode.MarkdownString).value
     )
   );
-}
-
-function registerFakeCommentController(vscodeSpy: {
-  comments: jasmine.SpyObj<typeof vscode.comments>;
-}): FakeCommentController {
-  const commentController = new FakeCommentController();
-  vscodeSpy.comments.createCommentController.and.returnValue(commentController);
-  return commentController;
 }

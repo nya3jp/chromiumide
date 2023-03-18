@@ -128,10 +128,8 @@ async function postMetricsActivate(
 
   if (config.gerrit.enabled.get()) {
     const gitDirsWatcher = new services.GitDirsWatcher('/');
-    gerrit.activate(
-      context,
-      statusManager,
-      gitDocumentProvider,
+    context.subscriptions.push(
+      gerrit.activate(statusManager, gitDirsWatcher),
       gitDirsWatcher
     );
   }
