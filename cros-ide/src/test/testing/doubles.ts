@@ -35,6 +35,9 @@ type SpiableVscodeWorkspace = typeof vscode.workspace & {
  */
 function newVscodeSpy() {
   return {
+    comments: jasmine.createSpyObj<typeof vscode.comments>('vscode.comments', [
+      'createCommentController',
+    ]),
     commands: jasmine.createSpyObj<typeof vscode.commands>('vscode.commands', [
       'registerCommand',
       'registerTextEditorCommand',
@@ -264,6 +267,7 @@ export function installVscodeDouble(): {
   // TypeError: Cannot set property CancellationTokenSource of #<Object> which has only a getter
   const original = copyVscodeNamespaces();
   beforeEach(() => {
+    theVscode.comments = vscodeSpy.comments;
     theVscode.commands = vscodeSpy.commands;
     theVscode.env = vscodeSpy.env;
     theVscode.extensions = vscodeSpy.extensions;

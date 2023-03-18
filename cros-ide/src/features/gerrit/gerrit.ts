@@ -35,13 +35,6 @@ export function activate(
 
   new virtualDocument.GerritDocumentProvider().activate(context);
 
-  const commentController = vscode.comments.createCommentController(
-    'cros-ide-gerrit',
-    'CrOS IDE Gerrit'
-  );
-
-  context.subscriptions.push(commentController);
-
   if (underDevelopment.gerrit) {
     // Test auth for Gerrit
     context.subscriptions.push(
@@ -80,19 +73,14 @@ export function activate(
       });
     })
   );
-  context.subscriptions;
   const statusBar = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Left,
     10 // puts this item left of clangd
   );
   statusBar.command = focusCommentsPanel;
 
-  const gerrit = new Gerrit(
-    commentController,
-    outputChannel,
-    statusBar,
-    statusManager
-  );
+  const gerrit = new Gerrit(outputChannel, statusBar, statusManager);
+  context.subscriptions.push(gerrit);
 
   let gitHead: string | undefined;
 
@@ -202,13 +190,19 @@ function redactPII(input: string): string {
   return input.replace(new RegExp(user, 'g'), '${USER}');
 }
 
-class Gerrit {
+class Gerrit implements vscode.Disposable {
   // Map git file paths to their associated changes.
   private changes: Map<string, Change[]> = new Map<string, Change[]>();
   private errorMessageRouter: ErrorMessageRouter;
 
+  private readonly commentController = vscode.comments.createCommentController(
+    'cros-ide-gerrit',
+    'CrOS IDE Gerrit'
+  );
+
+  private readonly subscriptions = [this.commentController];
+
   constructor(
-    private readonly commentController: vscode.CommentController,
     private readonly outputChannel: vscode.OutputChannel,
     private readonly statusBar: vscode.StatusBarItem,
     statusManager: bgTaskStatus.StatusManager
@@ -588,6 +582,10 @@ class Gerrit {
     for (const commentThread of this.commentThreads(filePath)) {
       commentThread.clearFromVscode();
     }
+  }
+
+  dispose(): void {
+    vscode.Disposable.from(...this.subscriptions.reverse()).dispose();
   }
 }
 
