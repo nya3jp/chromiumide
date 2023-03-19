@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import * as commonUtil from '../../common/common_util';
 import {Chroot} from '../../common/common_util';
 import {cleanState} from './clean_state';
 
@@ -70,4 +72,67 @@ export async function buildFakeChroot(tempDir: string): Promise<Chroot> {
 export function getExtensionUri(): vscode.Uri {
   const dir = path.normalize(path.join(__dirname, '..', '..', '..'));
   return vscode.Uri.file(dir);
+}
+
+const fsSetupCacheDir = path.join(
+  os.homedir(),
+  '.cache/cros-ide-test/fs-setup'
+);
+
+/**
+ * Set up dir running init. The resulting state is cached to speed up the
+ * operation from the second time.
+ *
+ * @param dir must be an empty directory.
+ * @param init must not have any side effect other than setting up dir, because
+ * it is not executed if cache exists.
+ * @param cacheKey must be globally unique and must be valid as a directory
+ * name.
+ * @param version must be updated when the result of init changes without the
+ * implementation of init being updated.
+ *
+ * The tuple [init.toString(), cacheKey, version] determines the cache location.
+ */
+export async function cachedSetup(
+  dir: string,
+  init: () => Promise<void>,
+  cacheKey: string,
+  version = 0
+) {
+  // Assert empty
+  for (const x of await fs.promises.readdir(dir)) {
+    throw new Error(`dir ${dir} must be empty, but has ${x}`);
+  }
+
+  const dirForKey = path.join(fsSetupCacheDir, cacheKey);
+  await fs.promises.mkdir(dirForKey, {recursive: true});
+
+  const hash = crypto.createHash('sha1');
+  hash.update(init.toString());
+  hash.update(version.toString());
+  const cachePath = path.join(dirForKey, hash.digest('hex'));
+
+  // Clean up stale cache.
+  for (const x of await fs.promises.readdir(dirForKey)) {
+    const existingCachePath = path.join(dirForKey, x);
+
+    if (existingCachePath !== cachePath) {
+      await fs.promises.rm(existingCachePath, {recursive: true});
+    }
+  }
+
+  if (fs.existsSync(cachePath)) {
+    // Remove the empty dir and copy the cache to dir.
+    await fs.promises.rmdir(dir);
+    await commonUtil.execOrThrow('cp', ['-r', cachePath, dir]);
+    return;
+  }
+
+  await init();
+  try {
+    await commonUtil.execOrThrow('cp', ['-r', dir, cachePath]);
+  } catch (e) {
+    await fs.promises.rm(cachePath, {recursive: true});
+    throw e;
+  }
 }

@@ -82,15 +82,26 @@ describe('Gerrit', () => {
     //   1) The first simulates cros/main.
     //   2) The second is the commit on which Gerrit review is taking place.
     const git = new testing.Git(tempDir.path);
-    await git.init();
-    await git.commit('First');
-    await git.setupCrosBranches();
-    await testing.putFiles(git.root, {
-      'cryptohome/cryptohome.cc': 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
-    });
-    await git.addAll();
+
     const changeId = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
-    const commitId = await git.commit(`Second\nChange-Id: ${changeId}`);
+
+    await testing.cachedSetup(
+      tempDir.path,
+      async () => {
+        await git.init();
+        await git.commit('First');
+        await git.setupCrosBranches();
+        await testing.putFiles(git.root, {
+          'cryptohome/cryptohome.cc':
+            'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
+        });
+        await git.addAll();
+        await git.commit(`Second\nChange-Id: ${changeId}`);
+      },
+      'gerrit_display_a_comment'
+    );
+
+    const commitId = await git.getCommitId();
 
     FakeGerrit.initialize().setChange({
       id: changeId,
@@ -151,17 +162,28 @@ describe('Gerrit', () => {
     //   1) The first simulates cros/main.
     //   2) The second is the commit on which Gerrit review is taking place.
     const git = new testing.Git(tempDir.path);
-    await git.init();
-    await git.commit('First');
-    await git.setupCrosBranches();
-    await testing.putFiles(git.root, {
-      'cryptohome/cryptohome.cc': 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
-    });
 
     const cryptohomeFilePath = abs('cryptohome/cryptohome.cc');
-    await git.addAll();
     const changeId = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
-    const commitId = await git.commit(`Second\nChange-Id: ${changeId}`);
+
+    await testing.cachedSetup(
+      tempDir.path,
+      async () => {
+        await git.init();
+        await git.commit('First');
+        await git.setupCrosBranches();
+        await testing.putFiles(git.root, {
+          'cryptohome/cryptohome.cc':
+            'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
+        });
+
+        await git.addAll();
+        await git.commit(`Second\nChange-Id: ${changeId}`);
+      },
+      'gerrit_displays_a_draft_comment'
+    );
+
+    const commitId = await git.getCommitId();
 
     const firstComment = unresolvedCommentInfo({
       line: 3,
@@ -235,21 +257,30 @@ describe('Gerrit', () => {
     //   1) The first simulates cros/main.
     //   2) The second is the commit on which Gerrit review is taking place.
     const git = new testing.Git(tempDir.path);
-    await git.init();
-    await git.commit('First');
-    await git.setupCrosBranches();
-    await testing.putFiles(git.root, {
-      'cryptohome/crypto.h': 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
-    });
-    await git.addAll();
+
     const changeId = 'Iba73f448e0da2a814f7303d1456049bb3554676e';
-    const reviewCommitId = await git.commit(
-      `Under review\nChange-Id: ${changeId}`
+
+    await testing.cachedSetup(
+      tempDir.path,
+      async () => {
+        await git.init();
+        await git.commit('First');
+        await git.setupCrosBranches();
+        await testing.putFiles(git.root, {
+          'cryptohome/crypto.h': 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
+        });
+        await git.addAll();
+        await git.commit(`Under review\nChange-Id: ${changeId}`);
+        await git.commit(
+          `Under review with local amend\nChange-Id: ${changeId}`,
+          {amend: true}
+        );
+      },
+      'gerrit_handles_special_comment_types'
     );
-    const amendedCommitId = await git.commit(
-      `Under review with local amend\nChange-Id: ${changeId}`,
-      {amend: true}
-    );
+
+    const reviewCommitId = await git.getCommitId('HEAD@{1}');
+    const amendedCommitId = await git.getCommitId();
 
     FakeGerrit.initialize().setChange({
       id: changeId,
@@ -369,41 +400,50 @@ describe('Gerrit', () => {
   it('repositions comments from two patch sets', async () => {
     // Create a file that we'll be changing.
     const git = new testing.Git(tempDir.path);
-    await git.init();
-    await testing.putFiles(git.root, {
-      'cryptohome/cryptohome.cc':
-        'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\n' +
-        'Line 7\n' +
-        'Line 8\nLine 9\nLine 10\nLine 11\nLine 12\nLine 13\nLine 14\nLine 15\n',
-    });
-    await git.addAll();
-    await git.commit('Initial file');
-    await git.setupCrosBranches();
 
     const changeId = 'I6adb56bd6f1998dde6b24af26881095292ac2620';
 
-    // First review patchset.
-    await testing.putFiles(git.root, {
-      'cryptohome/cryptohome.cc':
-        'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\n' +
-        'ADDED 1.1\nADDED 1.2\nLine 7\n' +
-        'Line 8\nLine 9\nLine 10\nLine 11\nLine 12\nLine 13\nLine 14\nLine 15\n',
-    });
-    const commitId1 = await git.commit(`Change\nChange-Id: ${changeId}\n`, {
-      all: true,
-    });
+    await testing.cachedSetup(
+      tempDir.path,
+      async () => {
+        await git.init();
+        await testing.putFiles(git.root, {
+          'cryptohome/cryptohome.cc':
+            'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\n' +
+            'Line 7\n' +
+            'Line 8\nLine 9\nLine 10\nLine 11\nLine 12\nLine 13\nLine 14\nLine 15\n',
+        });
+        await git.addAll();
+        await git.commit('Initial file');
+        await git.setupCrosBranches();
 
-    // Second review patchset.
-    await testing.putFiles(git.root, {
-      'cryptohome/cryptohome.cc':
-        'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\n' +
-        'ADDED 1.1\nADDED 1.2\nLine 7\nADDED 2.1\nADDED 2.2\n' +
-        'Line 8\nLine 9\nLine 10\nLine 11\nLine 12\nLine 13\nLine 14\nLine 15\n',
-    });
-    const commitId2 = await git.commit(`Amended\nChange-Id: ${changeId}\n`, {
-      amend: true,
-      all: true,
-    });
+        // First review patchset.
+        await testing.putFiles(git.root, {
+          'cryptohome/cryptohome.cc':
+            'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\n' +
+            'ADDED 1.1\nADDED 1.2\nLine 7\n' +
+            'Line 8\nLine 9\nLine 10\nLine 11\nLine 12\nLine 13\nLine 14\nLine 15\n',
+        });
+        await git.commit(`Change\nChange-Id: ${changeId}\n`, {
+          all: true,
+        });
+        // Second review patchset.
+        await testing.putFiles(git.root, {
+          'cryptohome/cryptohome.cc':
+            'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\n' +
+            'ADDED 1.1\nADDED 1.2\nLine 7\nADDED 2.1\nADDED 2.2\n' +
+            'Line 8\nLine 9\nLine 10\nLine 11\nLine 12\nLine 13\nLine 14\nLine 15\n',
+        });
+        await git.commit(`Amended\nChange-Id: ${changeId}\n`, {
+          amend: true,
+          all: true,
+        });
+      },
+      'gerrit_repositions_comments_from_two_patch_sets'
+    );
+
+    const commitId1 = await git.getCommitId('HEAD@{1}');
+    const commitId2 = await git.getCommitId();
 
     FakeGerrit.initialize().setChange({
       id: changeId,
@@ -472,50 +512,57 @@ describe('Gerrit', () => {
 
   it('shows all comments in a chain', async () => {
     const git = new testing.Git(tempDir.path);
-    await git.init();
-    await testing.putFiles(git.root, {
-      'cryptohome/cryptohome.cc': `Line 1
-          Line 2
-          Line 3
-          Line 4
-          Line 5
-          Line 6
-          Line 7
-          Line 8`,
-    });
-    await git.commit('Merged');
-    await git.setupCrosBranches();
 
-    // First commit in a chain.
-    await testing.putFiles(git.root, {
-      'cryptohome/cryptohome.cc': `Line 1
-          Line 2
-          ADD-1
-          Line 3
-          Line 4
-          Line 5`,
-    });
-    await git.addAll();
     const changeId1 = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
-    const commitId1 = await git.commit(
-      `First uploaded\nChange-Id: ${changeId1}`
+    const changeId2 = 'Iecc86ab5691709978e6b171795c95e538aec1a47';
+
+    await testing.cachedSetup(
+      tempDir.path,
+      async () => {
+        await git.init();
+        await testing.putFiles(git.root, {
+          'cryptohome/cryptohome.cc': `Line 1
+            Line 2
+            Line 3
+            Line 4
+            Line 5
+            Line 6
+            Line 7
+            Line 8`,
+        });
+        await git.commit('Merged');
+        await git.setupCrosBranches();
+
+        // First commit in a chain.
+        await testing.putFiles(git.root, {
+          'cryptohome/cryptohome.cc': `Line 1
+            Line 2
+            ADD-1
+            Line 3
+            Line 4
+            Line 5`,
+        });
+        await git.addAll();
+        await git.commit(`First uploaded\nChange-Id: ${changeId1}`);
+
+        // Second commit in a chain.
+        await testing.putFiles(git.root, {
+          'cryptohome/cryptohome.cc': `Line 1
+            Line 2
+            ADD-1
+            Line 3
+            Line 4
+            ADD-2
+            Line 5`,
+        });
+        await git.addAll();
+        await git.commit(`Second uploaded\nChange-Id: ${changeId2}`);
+      },
+      'gerrit_shows_all_comments_in_a_chain'
     );
 
-    // Second commit in a chain.
-    await testing.putFiles(git.root, {
-      'cryptohome/cryptohome.cc': `Line 1
-          Line 2
-          ADD-1
-          Line 3
-          Line 4
-          ADD-2
-          Line 5`,
-    });
-    await git.addAll();
-    const changeId2 = 'Iecc86ab5691709978e6b171795c95e538aec1a47';
-    const commitId2 = await git.commit(
-      `Second uploaded\nChange-Id: ${changeId2}`
-    );
+    const commitId1 = await git.getCommitId('HEAD@{1}');
+    const commitId2 = await git.getCommitId();
 
     FakeGerrit.initialize()
       .setChange({
@@ -599,18 +646,29 @@ describe('Gerrit', () => {
 
   it('positions comments on valid line numbers', async () => {
     const git = new testing.Git(tempDir.path);
-    await git.init();
-    await git.commit('Mainline');
-    await git.setupCrosBranches();
-    await testing.putFiles(git.root, {
-      'cryptohome/cryptohome.cc': 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
-    });
-    await git.addAll();
+
     const changeId = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
-    const commitId = await git.commit(`Under review\nChange-Id: ${changeId}`);
-    await testing.putFiles(git.root, {
-      'cryptohome/cryptohome.cc': 'Line 4\nLine 5\n',
-    });
+
+    await testing.cachedSetup(
+      tempDir.path,
+      async () => {
+        await git.init();
+        await git.commit('Mainline');
+        await git.setupCrosBranches();
+        await testing.putFiles(git.root, {
+          'cryptohome/cryptohome.cc':
+            'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
+        });
+        await git.addAll();
+        await git.commit(`Under review\nChange-Id: ${changeId}`);
+        await testing.putFiles(git.root, {
+          'cryptohome/cryptohome.cc': 'Line 4\nLine 5\n',
+        });
+      },
+      'gerrit_positions_comments_on_valid_line_numbers'
+    );
+
+    const commitId = await git.getCommitId();
 
     FakeGerrit.initialize().setChange({
       id: changeId,
@@ -658,11 +716,19 @@ describe('Gerrit', () => {
 
   it('does not throw errors when the change is not in Gerrit', async () => {
     const git = new testing.Git(tempDir.path);
-    await git.init();
-    await git.commit('First');
-    await git.setupCrosBranches();
+
     const changeId = 'Iaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-    await git.commit(`Second\nChange-Id: ${changeId}`);
+
+    await testing.cachedSetup(
+      tempDir.path,
+      async () => {
+        await git.init();
+        await git.commit('First');
+        await git.setupCrosBranches();
+        await git.commit(`Second\nChange-Id: ${changeId}`);
+      },
+      'gerrit_does_not_throw_errors_when_the_change_is_not_in_Gerrit'
+    );
 
     FakeGerrit.initialize().setChange({
       id: changeId,
@@ -700,15 +766,26 @@ describe('Gerrit', () => {
     //   1) The first simulates cros-internal/main.
     //   2) The second is the commit on which Gerrit review is taking place.
     const git = new testing.Git(tempDir.path);
-    await git.init({repoId: 'cros-internal'});
-    await git.commit('First');
-    await git.setupCrosBranches({internal: true});
-    await testing.putFiles(git.root, {
-      'cryptohome/cryptohome.cc': 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
-    });
-    await git.addAll();
+
     const changeId = 'I23f50ecfe44ee28972aa640e1fa82ceabcc706a8';
-    const commitId = await git.commit(`Second\nChange-Id: ${changeId}`);
+
+    await testing.cachedSetup(
+      tempDir.path,
+      async () => {
+        await git.init({repoId: 'cros-internal'});
+        await git.commit('First');
+        await git.setupCrosBranches({internal: true});
+        await testing.putFiles(git.root, {
+          'cryptohome/cryptohome.cc':
+            'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n',
+        });
+        await git.addAll();
+        await git.commit(`Second\nChange-Id: ${changeId}`);
+      },
+      'gerrit_displays_a_comment_for_an_internal_repo'
+    );
+
+    const commitId = await git.getCommitId();
 
     FakeGerrit.initialize({internal: true}).setChange({
       id: changeId,
@@ -788,12 +865,22 @@ describe('Gerrit', () => {
 
   it('shows a specific error when a commit is not available locally', async () => {
     const git = new testing.Git(tempDir.path);
-    await git.init();
-    await git.commit('Mainline');
-    await git.setupCrosBranches();
-    await git.addAll();
+
     const changeId = 'Iaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa12345';
-    const commitId1 = await git.commit(`Under review\nChange-Id: ${changeId}`);
+
+    await testing.cachedSetup(
+      tempDir.path,
+      async () => {
+        await git.init();
+        await git.commit('Mainline');
+        await git.setupCrosBranches();
+        await git.addAll();
+        await git.commit(`Under review\nChange-Id: ${changeId}`);
+      },
+      'gerrit_shows_a_specific_error_when_a_commit_is_not_available_locally'
+    );
+
+    const commitId1 = await git.getCommitId();
     const commitId2 = '1111111111111111111111111111111111111111';
 
     FakeGerrit.initialize().setChange({

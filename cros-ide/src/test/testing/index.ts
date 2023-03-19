@@ -11,7 +11,13 @@ export {
   lazyHandler,
   prefixMatch,
 } from './fake_exec';
-export {buildFakeChroot, getExtensionUri, putFiles, tempDir} from './fs';
+export {
+  buildFakeChroot,
+  cachedSetup,
+  getExtensionUri,
+  putFiles,
+  tempDir,
+} from './fs';
 export {ThrottledJobRunner} from './parallelize';
 export {BlockingPromise} from './promises';
 export {Git} from './git';

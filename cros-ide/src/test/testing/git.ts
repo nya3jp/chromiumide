@@ -64,8 +64,12 @@ export class Git {
     await commonUtil.execOrThrow('git', args, {
       cwd: this.root,
     });
+    return await this.getCommitId();
+  }
+
+  async getCommitId(revision = 'HEAD'): Promise<string> {
     return (
-      await commonUtil.execOrThrow('git', ['rev-parse', 'HEAD'], {
+      await commonUtil.execOrThrow('git', ['rev-parse', revision], {
         cwd: this.root,
       })
     ).stdout.trim();
