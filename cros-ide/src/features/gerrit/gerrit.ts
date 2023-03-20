@@ -283,7 +283,7 @@ class Gerrit implements vscode.Disposable {
         this.changes.set(filePath, changes);
       }
       let nCommentThreads = 0;
-      for (const {revisions} of this.changes.get(filePath) ?? []) {
+      for (const {revisions} of this.changes.get(gitDir) ?? []) {
         for (const revision of Object.values(revisions)) {
           const {commitId, commentThreadsMap} = revision;
           const commitExists = await this.checkCommitExists(commitId, gitDir);

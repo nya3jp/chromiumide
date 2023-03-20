@@ -510,6 +510,84 @@ describe('Gerrit', () => {
     expect(state.statusBarItem.text).toEqual('$(comment) 1');
   });
 
+  it('repositions comments on file save', async () => {
+    // Create a file that we'll be changing.
+    const git = new testing.Git(tempDir.path);
+
+    const changeId = 'I123';
+
+    await testing.cachedSetup(
+      tempDir.path,
+      async () => {
+        await git.init();
+        await git.commit('Mainline');
+        await git.setupCrosBranches();
+
+        // First review patchset.
+        await testing.putFiles(git.root, {
+          'foo.cc': 'A\nB',
+        });
+        await git.addAll();
+        await git.commit(`A and B\nChange-Id: ${changeId}\n`, {
+          all: true,
+        });
+      },
+      'gerrit_repositions_comments_on_file_save'
+    );
+
+    const commitId = await git.getCommitId();
+
+    FakeGerrit.initialize().setChange({
+      id: changeId,
+      info: changeInfo(changeId, [commitId]),
+      comments: {
+        'foo.cc': [
+          // Comment on B
+          unresolvedCommentInfo({
+            line: 2,
+            message: 'Hello',
+            commitId,
+          }),
+        ],
+      },
+    });
+
+    gerrit.activate(
+      state.statusManager,
+      new GitDirsWatcher('/', subscriptions),
+      subscriptions
+    );
+
+    const completeShowChangeEvents = new testing.EventReader(
+      gerrit.onDidHandleEventForTesting,
+      subscriptions
+    );
+
+    const fooFilePath = abs('foo.cc');
+
+    vscodeEmitters.workspace.onDidOpenTextDocument.fire({
+      uri: vscode.Uri.file(fooFilePath),
+      fileName: fooFilePath,
+    } as vscode.TextDocument);
+
+    await completeShowChangeEvents.read();
+
+    expect(state.commentController.threads[0].range.start.line).toEqual(1);
+
+    await testing.putFiles(tempDir.path, {
+      'foo.cc': 'A\nC\nB',
+    });
+
+    vscodeEmitters.workspace.onDidSaveTextDocument.fire({
+      uri: vscode.Uri.file(fooFilePath),
+      fileName: fooFilePath,
+    } as vscode.TextDocument);
+
+    await completeShowChangeEvents.read();
+
+    expect(state.commentController.threads[0].range.start.line).toEqual(2);
+  });
+
   it('shows all comments in a chain', async () => {
     const git = new testing.Git(tempDir.path);
 
