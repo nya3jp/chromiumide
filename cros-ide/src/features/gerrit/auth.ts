@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as commonUtil from '../../common/common_util';
@@ -10,8 +11,32 @@ import {Sink} from './sink';
 
 // The implementation here is largely based on depot_tools/gerrit_util.py
 
+/** Reads gitcookies or returns undefined. */
+export async function readAuthCookie(
+  repoId: git.RepoId,
+  sink: Sink
+): Promise<string | undefined> {
+  const filePath = await getGitcookiesPath(sink);
+  try {
+    const str = await fs.promises.readFile(filePath, {encoding: 'utf8'});
+    return parseAuthGitcookies(repoId, str);
+  } catch (err) {
+    if ((err as {code?: unknown}).code === 'ENOENT') {
+      const msg =
+        'The gitcookies file for Gerrit auth was not found at ' + filePath;
+      sink.show(msg);
+    } else {
+      let msg =
+        'Unknown error in reading the gitcookies file for Gerrit auth at ' +
+        filePath;
+      if (err instanceof Object) msg += ': ' + err.toString();
+      sink.show(msg);
+    }
+  }
+}
+
 /** Get the path of the gitcookies */
-export async function getGitcookiesPath(sink: Sink): Promise<string> {
+async function getGitcookiesPath(sink: Sink): Promise<string> {
   // Use the environment variable GIT_COOKIES_PATH if it exists
   const envPath = process.env.GIT_COOKIES_PATH;
   if (envPath) return envPath;
@@ -35,7 +60,7 @@ export async function getGitcookiesPath(sink: Sink): Promise<string> {
  * Parse the gitcookies to get the cookie for
  * authentication on the Gerrit repository of `repoId`.
  **/
-export function parseAuthGitcookies(
+function parseAuthGitcookies(
   repoId: git.RepoId,
   gitcookies: string
 ): string | undefined {
@@ -56,3 +81,5 @@ export function parseAuthGitcookies(
     }
   }
 }
+
+export const TEST_ONLY = {parseAuthGitcookies};

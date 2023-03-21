@@ -5,7 +5,6 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import * as auth from '../../../../features/gerrit/auth';
 import * as gerrit from '../../../../features/gerrit/gerrit';
 import * as metrics from '../../../../features/metrics/metrics';
 import {GitDirsWatcher} from '../../../../services';
@@ -38,7 +37,8 @@ describe('Gerrit', () => {
 
   beforeEach(() => {
     spyOn(metrics, 'send');
-    spyOn(auth, 'getGitcookiesPath').and.resolveTo(GITCOOKIES_PATH);
+
+    process.env.GIT_COOKIES_PATH = GITCOOKIES_PATH;
   });
 
   const state = testing.cleanState(() => {

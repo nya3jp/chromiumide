@@ -15,26 +15,26 @@ export function gerritUrl(repoId: RepoId): string {
     : 'https://chrome-internal-review.googlesource.com';
 }
 
-export class UnknownRepoError extends Error {
-  constructor(readonly repoId: string, readonly repoUrl: string) {
-    super();
-  }
-}
-
 /**
- * Gets RepoId by git remote, or returns UnknownRepoError, if the
- * remote repo was found but unknown, or some Error for other errors.
+ * Gets RepoId by git remote. It returns undefined if error happens.
+ * Errors are reported to sink.
  */
 export async function getRepoId(
   gitDir: string,
   sink: Sink
-): Promise<RepoId | Error> {
+): Promise<RepoId | undefined> {
   const gitRemote = await commonUtil.exec('git', ['remote', '-v'], {
     cwd: gitDir,
     logStdout: true,
     logger: sink,
   });
-  if (gitRemote instanceof Error) return gitRemote;
+  if (gitRemote instanceof Error) {
+    sink.show({
+      log: `'git remote' failed: ${gitRemote.message}`,
+      metrics: 'git remote failed',
+    });
+    return;
+  }
   const [repoId, repoUrl] = gitRemote.stdout.split('\n')[0].split(/\s+/);
   if (
     (repoId === 'cros' &&
@@ -42,9 +42,22 @@ export async function getRepoId(
     (repoId === 'cros-internal' &&
       repoUrl.startsWith('https://chrome-internal.googlesource.com/'))
   ) {
+    const repoKind = repoId === 'cros' ? 'Public' : 'Internal';
+    sink.appendLine(`${repoKind} Chrome remote repo detected at ${gitDir}`);
+
     return repoId;
   }
-  return new UnknownRepoError(repoId, repoUrl);
+
+  sink.show({
+    log:
+      'Unknown remote repo detected: ' +
+      `id ${repoId}, url ${repoUrl}.\n` +
+      'Gerrit comments in this repo are not supported.',
+    metrics: '(warning) unknown git remote result',
+    noErrorStatus: true,
+  });
+
+  return;
 }
 
 export type FilePathToHunks = {
@@ -86,15 +99,45 @@ export class Hunk {
   }
 }
 
+/**
+ * Returns true if it check that the commit exists locally,
+ * or returns false otherwise showing an error message
+ */
+export async function checkCommitExists(
+  commitId: string,
+  gitDir: string,
+  sink: Sink
+): Promise<boolean> {
+  const exists = await commitExists(commitId, gitDir, sink);
+  if (exists instanceof Error) {
+    sink.show({
+      log: `Local availability check failed for the patchset ${commitId}.`,
+      metrics: 'Local commit availability check failed',
+    });
+    return false;
+  }
+  if (!exists) {
+    sink.show({
+      log:
+        `The patchset ${commitId} was not available locally. This happens ` +
+        'when some patchsets were uploaded to Gerrit from a different chroot, ' +
+        'when a change is submitted, but local repo is not synced, etc.',
+      metrics: '(warning) commit not available locally',
+      noErrorStatus: true,
+    });
+  }
+  return exists;
+}
+
 /** Judges if the commit is available locally. */
-export async function commitExists(
+async function commitExists(
   commitId: string,
   dir: string,
-  logger?: Sink
+  sink: Sink
 ): Promise<boolean | Error> {
   const result = await commonUtil.exec('git', ['cat-file', '-e', commitId], {
     cwd: dir,
-    logger,
+    logger: sink,
     ignoreNonZeroExit: true,
   });
   if (result instanceof Error) return result;
@@ -109,8 +152,8 @@ export async function readDiffHunks(
   gitDir: string,
   commitId: string,
   paths: string[],
-  sink?: Sink
-): Promise<FilePathToHunks | Error> {
+  sink: Sink
+): Promise<FilePathToHunks | undefined> {
   const gitDiff = await commonUtil.exec(
     'git',
     ['diff', '-U0', commitId, '--', ...paths],
@@ -119,7 +162,13 @@ export async function readDiffHunks(
       logger: sink,
     }
   );
-  if (gitDiff instanceof Error) return gitDiff;
+  if (gitDiff instanceof Error) {
+    sink.show({
+      log: 'Failed to get git diff to reposition Gerrit comments',
+      metrics: 'Failed to get git diff to reposition Gerrit comments',
+    });
+    return;
+  }
   return parseDiffHunks(gitDiff.stdout);
 }
 
@@ -167,13 +216,13 @@ export type GitLogInfo = {
   readonly changeId: string;
 };
 
-async function isHeadDetached(
+async function isHeadDetachedOrThrow(
   gitDir: string,
   sink: Sink
-): Promise<boolean | Error> {
+): Promise<boolean> {
   // `git rev-parse --symbolic-full-name HEAD` outputs `HEAD`
   // when the head is detached.
-  const revParseHead = await commonUtil.exec(
+  const revParseHead = await commonUtil.execOrThrow(
     'git',
     ['rev-parse', '--symbolic-full-name', 'HEAD'],
     {
@@ -182,9 +231,6 @@ async function isHeadDetached(
       logger: sink,
     }
   );
-  if (revParseHead instanceof Error) {
-    return revParseHead;
-  }
   return revParseHead.stdout.trim() === 'HEAD';
 }
 
@@ -193,26 +239,40 @@ async function isHeadDetached(
  *
  * The ids are ordered from new to old. If the HEAD is already merged
  * or detached the result will be an empty array.
+ *
+ * If error happens it is reported to sink and an empty array is returned.
  */
 export async function readGitLog(
   gitDir: string,
   sink: Sink
-): Promise<GitLogInfo[] | Error> {
-  const detachedHead = await isHeadDetached(gitDir, sink);
-  if (detachedHead instanceof Error) return detachedHead;
+): Promise<GitLogInfo[]> {
+  try {
+    return readGitLogOrThrow(gitDir, sink);
+  } catch (e) {
+    sink.show({
+      log: `Failed to get commits in ${gitDir}`,
+      metrics: 'readGitLog failed to get commits',
+    });
+    return [];
+  }
+}
 
+async function readGitLogOrThrow(gitDir: string, sink: Sink) {
+  const detachedHead = await isHeadDetachedOrThrow(gitDir, sink);
   if (detachedHead) {
     sink.appendLine(
       'Detected detached head. Gerrit comments will not be shown.'
     );
     return [];
   }
-
-  const branchLog = await commonUtil.exec('git', ['log', '@{upstream}..HEAD'], {
-    cwd: gitDir,
-    logger: sink,
-  });
-  if (branchLog instanceof Error) return branchLog;
+  const branchLog = await commonUtil.execOrThrow(
+    'git',
+    ['log', '@{upstream}..HEAD'],
+    {
+      cwd: gitDir,
+      logger: sink,
+    }
+  );
   return parseGitLog(branchLog.stdout);
 }
 
@@ -230,6 +290,22 @@ function parseGitLog(gitLog: string): GitLogInfo[] {
     });
   }
   return result;
+}
+
+/**
+ * Finds the Git directory for the file
+ * or returns undefined with logging when the directory is not found.
+ */
+export async function findGitDir(
+  filePath: string,
+  sink: Sink
+): Promise<string | undefined> {
+  const gitDir = commonUtil.findGitDir(filePath);
+  if (!gitDir) {
+    sink.appendLine('Git directory not found for ' + filePath);
+    return;
+  }
+  return gitDir;
 }
 
 export const TEST_ONLY = {parseDiffHunks, parseGitLog};

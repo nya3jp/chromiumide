@@ -5,8 +5,6 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as commonUtil from '../../common/common_util';
 import * as services from '../../services';
 import {underDevelopment} from '../../services/config';
 import * as gitDocument from '../../services/git_document';
@@ -44,7 +42,7 @@ export function activate(
       vscode.commands.registerCommand(
         'cros-ide.gerrit.internal.testAuth',
         async () => {
-          const authCookie = await gerrit.readAuthCookie('cros-internal');
+          const authCookie = await auth.readAuthCookie('cros-internal', sink);
           // Fetch from some internal Gerrit change
           const out = await api.fetchOrThrow(
             'cros-internal',
@@ -248,7 +246,7 @@ class Gerrit implements vscode.Disposable {
         throw this.internalErrorForTesting;
       }
 
-      const gitDir = await this.findGitDir(filePath);
+      const gitDir = await git.findGitDir(filePath, this.sink);
       if (!gitDir) return;
       if (fetch) {
         // Clear existing comments.
@@ -267,7 +265,11 @@ class Gerrit implements vscode.Disposable {
       for (const {revisions} of this.changes.get(gitDir) ?? []) {
         for (const revision of Object.values(revisions)) {
           const {commitId, commentThreadsMap} = revision;
-          const commitExists = await this.checkCommitExists(commitId, gitDir);
+          const commitExists = await git.checkCommitExists(
+            commitId,
+            gitDir,
+            this.sink
+          );
           if (commitExists) {
             await this.shiftCommentThreadsMap(
               gitDir,
@@ -309,50 +311,6 @@ class Gerrit implements vscode.Disposable {
     }
   }
 
-  /**
-   * Finds the Git directory for the file
-   * or returns undefined with logging when the directory is not found.
-   */
-  private async findGitDir(filePath: string): Promise<string | undefined> {
-    const gitDir = commonUtil.findGitDir(filePath);
-    if (!gitDir) {
-      this.sink.appendLine('Git directory not found for ' + filePath);
-      return;
-    }
-    return gitDir;
-  }
-
-  /**
-   * Executes git remote to get RepoId or returns undefined
-   * showing an error message if the id is not found.
-   */
-  async getRepoId(gitDir: string): Promise<git.RepoId | undefined> {
-    const repoId = await git.getRepoId(gitDir, this.sink);
-    if (repoId instanceof git.UnknownRepoError) {
-      this.sink.show({
-        log:
-          'Unknown remote repo detected: ' +
-          `id ${repoId.repoId}, url ${repoId.repoUrl}.\n` +
-          'Gerrit comments in this repo are not supported.',
-        metrics: '(warning) unknown git remote result',
-        noErrorStatus: true,
-      });
-      return;
-    }
-    if (repoId instanceof Error) {
-      this.sink.show({
-        log: `'git remote' failed: ${repoId.message}`,
-        metrics: 'git remote failed',
-      });
-      return;
-    }
-    const repoKind = repoId === 'cros' ? 'Public' : 'Internal';
-    this.sink.appendLine(
-      `${repoKind} Chrome remote repo detected at ${gitDir}`
-    );
-    return repoId;
-  }
-
   collapseAllCommentThreadsInVscode(): void {
     for (const commentThread of this.commentThreads()) {
       commentThread.collapseInVscode();
@@ -383,10 +341,10 @@ class Gerrit implements vscode.Disposable {
   private async fetchChangesOrThrow(
     gitDir: string
   ): Promise<Change[] | undefined> {
-    const repoId = await this.getRepoId(gitDir);
+    const repoId = await git.getRepoId(gitDir, this.sink);
     if (repoId === undefined) return;
-    const authCookie = await this.readAuthCookie(repoId);
-    const gitLogInfos = await this.readGitLog(gitDir);
+    const authCookie = await auth.readAuthCookie(repoId, this.sink);
+    const gitLogInfos = await git.readGitLog(gitDir, this.sink);
     if (gitLogInfos.length === 0) return;
 
     // Fetch the user's account info
@@ -462,72 +420,6 @@ class Gerrit implements vscode.Disposable {
   }
 
   /**
-   * Gets the array of GitLogInfo for local changes,
-   * typically these are the changes from HEAD (inclusive) to remote main (exclusive).
-   */
-  private async readGitLog(gitDir: string): Promise<git.GitLogInfo[]> {
-    const gitLogInfos = await git.readGitLog(gitDir, this.sink);
-    if (gitLogInfos instanceof Error) {
-      this.sink.show({
-        log: `Failed to get commits in ${gitDir}`,
-        metrics: 'readGitLog failed to get commits',
-      });
-      return [];
-    }
-    return gitLogInfos;
-  }
-
-  /** Reads gitcookies or returns undefined. */
-  async readAuthCookie(repoId: git.RepoId): Promise<string | undefined> {
-    const filePath = await auth.getGitcookiesPath(this.sink);
-    try {
-      const str = await fs.promises.readFile(filePath, {encoding: 'utf8'});
-      return auth.parseAuthGitcookies(repoId, str);
-    } catch (err) {
-      if ((err as {code?: unknown}).code === 'ENOENT') {
-        const msg =
-          'The gitcookies file for Gerrit auth was not found at ' + filePath;
-        this.sink.show(msg);
-      } else {
-        let msg =
-          'Unknown error in reading the gitcookies file for Gerrit auth at ' +
-          filePath;
-        if (err instanceof Object) msg += ': ' + err.toString();
-        this.sink.show(msg);
-      }
-    }
-  }
-
-  /**
-   * Returns true if it check that the commit exists locally,
-   * or returns false otherwise showing an error message
-   */
-  private async checkCommitExists(
-    commitId: string,
-    gitDir: string
-  ): Promise<boolean> {
-    const commitExists = await git.commitExists(commitId, gitDir, this.sink);
-    if (commitExists instanceof Error) {
-      this.sink.show({
-        log: `Local availability check failed for the patchset ${commitId}.`,
-        metrics: 'Local commit availability check failed',
-      });
-      return false;
-    }
-    if (!commitExists) {
-      this.sink.show({
-        log:
-          `The patchset ${commitId} was not available locally. This happens ` +
-          'when some patchsets were uploaded to Gerrit from a different chroot, ' +
-          'when a change is submitted, but local repo is not synced, etc.',
-        metrics: '(warning) commit not available locally',
-        noErrorStatus: true,
-      });
-    }
-    return commitExists;
-  }
-
-  /**
    * Updates line numbers in `commentThreadsMap`, which are assumed to be made
    * on `commitId`, so they can be placed in the right lines on the files
    * in the working tree.
@@ -543,30 +435,14 @@ class Gerrit implements vscode.Disposable {
     const filePaths = Object.keys(commentThreadsMap).filter(
       filePath => !api.MAGIC_PATHS.includes(filePath)
     );
-    const hunksMap = await this.readDiffHunks(gitDir, commitId, filePaths);
-    if (!hunksMap) return;
-    shiftCommentThreadsByHunks(commentThreadsMap, hunksMap);
-  }
-
-  async readDiffHunks(
-    gitDir: string,
-    commitId: string,
-    filePaths: string[]
-  ): Promise<git.FilePathToHunks | undefined> {
     const hunksMap = await git.readDiffHunks(
       gitDir,
       commitId,
       filePaths,
       this.sink
     );
-    if (hunksMap instanceof Error) {
-      this.sink.show({
-        log: 'Failed to get git diff to reposition Gerrit comments',
-        metrics: 'Failed to get git diff to reposition Gerrit comments',
-      });
-      return;
-    }
-    return hunksMap;
+    if (!hunksMap) return;
+    shiftCommentThreadsByHunks(commentThreadsMap, hunksMap);
   }
 
   clearCommentThreadsFromVscode(filePath: string): void {

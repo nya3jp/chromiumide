@@ -7,7 +7,7 @@ import * as auth from '../../../../features/gerrit/auth';
 describe('parseAuthGitcookies', () => {
   it('can parse a gitcookies', () => {
     expect(
-      auth.parseAuthGitcookies(
+      auth.TEST_ONLY.parseAuthGitcookies(
         'cros',
         'example.com\tFALSE\t/\tTRUE\t2147483647\to\tdifferentdomain\n' +
           '# chromium-review.googlesource.com\tFALSE\t/\tTRUE\t2147483647\to\tcommentedout\n' +

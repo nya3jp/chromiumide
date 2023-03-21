@@ -5,7 +5,7 @@
 import * as vscode from 'vscode';
 import * as testing from '../../../testing';
 import {
-  commitExists,
+  checkCommitExists,
   readGitLog,
   TEST_ONLY,
 } from '../../../../features/gerrit/git';
@@ -94,13 +94,21 @@ describe('Git helper', () => {
   });
 
   it('detects which SHA is available locally', async () => {
+    const sink = new Sink(new FakeStatusManager(), subscriptions);
+
     const repo = new testing.Git(tempDir.path);
     await repo.init();
     const existingCommitId = await repo.commit('Hello');
 
-    expect(await commitExists(existingCommitId, repo.root)).toBeTrue();
     expect(
-      await commitExists('08f5019f534c2c5075c5de4425b7902d7517342e', repo.root)
+      await checkCommitExists(existingCommitId, repo.root, sink)
+    ).toBeTrue();
+    expect(
+      await checkCommitExists(
+        '08f5019f534c2c5075c5de4425b7902d7517342e',
+        repo.root,
+        sink
+      )
     ).toBeFalse();
   });
 
