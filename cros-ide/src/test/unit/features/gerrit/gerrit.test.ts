@@ -6,6 +6,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as gerrit from '../../../../features/gerrit/gerrit';
+import {POLL_INTERVAL_MILLIS} from '../../../../features/gerrit/model/gerrit_comments';
 import * as metrics from '../../../../features/metrics/metrics';
 import {GitDirsWatcher} from '../../../../services';
 import * as bgTaskStatus from '../../../../ui/bg_task_status';
@@ -33,13 +34,25 @@ describe('Gerrit', () => {
     return path.join(tempDir.path, relative);
   }
 
-  const {vscodeEmitters, vscodeSpy} = testing.installVscodeDouble();
+  const subscriptions: vscode.Disposable[] = [];
 
   beforeEach(() => {
+    jasmine.clock().install();
+
     spyOn(metrics, 'send');
 
     process.env.GIT_COOKIES_PATH = GITCOOKIES_PATH;
   });
+
+  afterEach(() => {
+    jasmine.clock().uninstall();
+    jasmine.clock().mockDate(new Date());
+
+    vscode.Disposable.from(...subscriptions.reverse()).dispose();
+    subscriptions.length = 0;
+  });
+
+  const {vscodeEmitters, vscodeSpy} = testing.installVscodeDouble();
 
   const state = testing.cleanState(() => {
     const state = {
@@ -69,12 +82,6 @@ describe('Gerrit', () => {
       vscode.Disposable.from()
     );
     return state;
-  });
-
-  const subscriptions: vscode.Disposable[] = [];
-  afterEach(() => {
-    vscode.Disposable.from(...subscriptions.reverse()).dispose();
-    subscriptions.length = 0;
   });
 
   it('displays a comment', async () => {
@@ -586,6 +593,80 @@ describe('Gerrit', () => {
     await completeShowChangeEvents.read();
 
     expect(state.commentController.threads[0].range.start.line).toEqual(2);
+  });
+
+  it('polls remote changes', async () => {
+    const git = new testing.Git(tempDir.path);
+
+    const changeId = 'I123';
+
+    await testing.cachedSetup(
+      tempDir.path,
+      async () => {
+        await git.init();
+        await git.commit('Mainline');
+        await git.setupCrosBranches();
+
+        await testing.putFiles(git.root, {
+          'foo.cc': 'A\nB',
+        });
+        await git.addAll();
+        await git.commit(`A and B\nChange-Id: ${changeId}\n`, {
+          all: true,
+        });
+      },
+      'gerrit_poll_remote_changes'
+    );
+
+    const commitId = await git.getCommitId();
+
+    const fakeGerrit = FakeGerrit.initialize().setChange({
+      id: changeId,
+      info: changeInfo(changeId, [commitId]),
+      comments: {},
+    });
+
+    gerrit.activate(
+      state.statusManager,
+      new GitDirsWatcher('/', subscriptions),
+      subscriptions
+    );
+
+    const completeShowChangeEvents = new testing.EventReader(
+      gerrit.onDidHandleEventForTesting,
+      subscriptions
+    );
+
+    const fooFilePath = abs('foo.cc');
+
+    vscodeEmitters.workspace.onDidOpenTextDocument.fire({
+      uri: vscode.Uri.file(fooFilePath),
+      fileName: fooFilePath,
+    } as vscode.TextDocument);
+
+    await completeShowChangeEvents.read();
+
+    expect(state.commentController.threads.length).toEqual(0);
+
+    fakeGerrit.setChange({
+      id: changeId,
+      info: changeInfo(changeId, [commitId]),
+      comments: {
+        'foo.cc': [
+          unresolvedCommentInfo({
+            line: 2,
+            message: 'Hello',
+            commitId,
+          }),
+        ],
+      },
+    });
+
+    jasmine.clock().tick(POLL_INTERVAL_MILLIS * 1.5);
+
+    await completeShowChangeEvents.read();
+
+    expect(state.commentController.threads.length).toEqual(1);
   });
 
   it('shows all comments in a chain', async () => {

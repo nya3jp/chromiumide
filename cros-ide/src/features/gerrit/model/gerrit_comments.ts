@@ -10,7 +10,10 @@ import {Change} from '../gerrit';
 import * as git from '../git';
 import {showTopLevelError} from '../helpers';
 import {Sink} from '../sink';
+import {Clock} from './clock';
 import {Ticket} from './ticket';
+
+export const POLL_INTERVAL_MILLIS = 10 * 1000;
 
 /**
  * Retrieves and holds current comments from Gerrit. It does this by fetching
@@ -26,39 +29,43 @@ export class GerritComments implements vscode.Disposable {
   }>();
   readonly onDidUpdateComments = this.onDidUpdateCommentsEmitter.event;
 
-  private gitHead?: string;
   private readonly subscriptions: vscode.Disposable[] = [
     this.onDidUpdateCommentsEmitter,
-    this.gitDirsWatcher.onDidChangeHead(async event => {
-      // 1. Check !event.head to avoid closing comments
-      //    when the only visible file is closed or replaced.
-      // 2. Check event.head !== gitHead to avoid reloading comments
-      //    on "head_1 -> undefined -> head_1" sequence.
-      if (event.head && event.head !== this.gitHead) {
-        this.gitHead = event.head;
-        await this.fetch(event.gitDir, new Ticket());
-      }
-    }),
-    // TODO(b/268655627): Instrument this command to send metrics.
-    vscode.commands.registerCommand(
-      'cros-ide.gerrit.refreshComments',
-      async () => {
-        // Refresh all git directories that are being tracked by the IDE.
-        const showChangePromises: Promise<void>[] = [];
-        for (const curGitDir of this.gitDirsWatcher.visibleGitDirs) {
-          showChangePromises.push(this.fetch(curGitDir, new Ticket()));
-        }
-        await Promise.all(showChangePromises);
-      }
-    ),
   ];
 
   constructor(
-    private readonly gitDirsWatcher: GitDirsWatcher,
+    private gitDirsWatcher: GitDirsWatcher,
     private readonly sink: Sink,
     subscriptions?: vscode.Disposable[]
   ) {
     subscriptions?.push(this);
+
+    let gitHead = '';
+
+    const clock = new Clock(POLL_INTERVAL_MILLIS, this.subscriptions);
+
+    this.subscriptions.push(
+      gitDirsWatcher.onDidChangeHead(async event => {
+        // 1. Check !event.head to avoid closing comments
+        //    when the only visible file is closed or replaced.
+        // 2. Check event.head !== gitHead to avoid reloading comments
+        //    on "head_1 -> undefined -> head_1" sequence.
+        if (event.head && event.head !== gitHead) {
+          gitHead = event.head;
+          await this.fetch(event.gitDir, new Ticket());
+        }
+      }),
+      clock.onDidTick(async () => {
+        await this.refresh();
+      }),
+      // TODO(b/268655627): Instrument this command to send metrics.
+      vscode.commands.registerCommand(
+        'cros-ide.gerrit.refreshComments',
+        async () => {
+          await this.refresh();
+        }
+      )
+    );
   }
 
   private async fetch(gitDir: string, ticket: Ticket): Promise<void> {
@@ -95,6 +102,15 @@ export class GerritComments implements vscode.Disposable {
       gitDir,
       changes,
     });
+  }
+
+  private async refresh(): Promise<void> {
+    // Refresh all git directories that are being tracked by the IDE.
+    const showChangePromises: Promise<void>[] = [];
+    for (const curGitDir of this.gitDirsWatcher.visibleGitDirs) {
+      showChangePromises.push(this.fetch(curGitDir, new Ticket()));
+    }
+    await Promise.all(showChangePromises);
   }
 
   dispose() {
