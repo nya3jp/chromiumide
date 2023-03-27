@@ -58,7 +58,11 @@ function newVscodeSpy() {
     ]),
     workspace: jasmine.createSpyObj<SpiableVscodeWorkspace>(
       'vscode.workspace',
-      ['getConfiguration', 'openTextDocument']
+      [
+        'getConfiguration',
+        'openTextDocument',
+        'registerTextDocumentContentProvider',
+      ]
     ),
     extensions: jasmine.createSpyObj<typeof vscode.extensions>(
       'vscode.extensions',

@@ -27,7 +27,7 @@ export class GerritDocumentProvider
 {
   private subscriptions: vscode.Disposable[] = [];
 
-  activate() {
+  constructor() {
     this.subscriptions.push(
       vscode.workspace.registerTextDocumentContentProvider(SCHEME, this)
     );

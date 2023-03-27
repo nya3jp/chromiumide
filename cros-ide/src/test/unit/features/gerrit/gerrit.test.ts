@@ -164,9 +164,13 @@ describe('Gerrit', () => {
     vscodeSpy.commands.registerCommand.and.returnValue(
       vscode.Disposable.from()
     );
+
     vscodeSpy.window.createOutputChannel.and.returnValue(state.outputChannel);
     vscodeSpy.window.createStatusBarItem.and.returnValue(state.statusBarItem);
 
+    vscodeSpy.workspace.registerTextDocumentContentProvider.and.returnValue(
+      vscode.Disposable.from()
+    );
     return state;
   });
 
@@ -378,6 +382,12 @@ describe('Gerrit', () => {
       gerrit.activate(state.statusManager, gitDirsWatcher),
       gitDirsWatcher
     );
+
+    // Document provider for patch set level comments must be registered.
+    expect(
+      vscodeSpy.workspace.registerTextDocumentContentProvider.calls.first()
+        .args[0]
+    ).toEqual('gerrit');
 
     const completeShowChangeEvents = new testing.EventReader(
       gerrit.onDidHandleEventForTesting,
