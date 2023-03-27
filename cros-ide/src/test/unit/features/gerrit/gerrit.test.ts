@@ -13,6 +13,7 @@ import {
 } from '../../../../features/gerrit/model/gerrit_comments';
 import * as metrics from '../../../../features/metrics/metrics';
 import {GitDirsWatcher} from '../../../../services';
+import {underDevelopment} from '../../../../services/config';
 import {TaskStatus} from '../../../../ui/bg_task_status';
 import * as testing from '../../../testing';
 import {FakeStatusManager, VoidOutputChannel} from '../../../testing/fakes';
@@ -56,8 +57,11 @@ describe('Gerrit', () => {
   });
 
   const {vscodeEmitters, vscodeSpy} = testing.installVscodeDouble();
+  testing.installFakeConfigs(vscodeSpy, vscodeEmitters);
 
-  const state = testing.cleanState(() => {
+  const state = testing.cleanState(async () => {
+    await underDevelopment.gerrit.update(true);
+
     const state = {
       statusBarItem: jasmine.createSpyObj<vscode.StatusBarItem>(
         'statusBarItem',
@@ -147,6 +151,8 @@ describe('Gerrit', () => {
     expect(threads.length).toEqual(1);
     expect(threads[0].uri.fsPath).toEqual(cryptohomeFilePath);
     expect(threads[0].range.start.line).toEqual(2);
+    expect(threads[0].canReply).toBeTrue();
+
     expect(threads[0].comments[0].body).toEqual(
       new vscode.MarkdownString('Unresolved comment on the added line.')
     );
@@ -192,9 +198,9 @@ describe('Gerrit', () => {
 
     const commitId = await git.getCommitId();
 
-    const firstComment = unresolvedCommentInfo({
+    const firstComment = resolvedCommentInfo({
       line: 3,
-      message: 'Unresolved comment on the added line.',
+      message: 'Resolved comment on the added line.',
       commitId,
     });
     const draftReplyComment = unresolvedCommentInfo({
@@ -238,10 +244,14 @@ describe('Gerrit', () => {
     expect(threads.length).toEqual(1);
     expect(threads[0].uri.fsPath).toEqual(cryptohomeFilePath);
     expect(threads[0].range.start.line).toEqual(2);
+    expect(threads[0].canReply).toBeFalse(); // last comment is draft so can't reply
+    expect(threads[0].contextValue).toMatch(/<public>/); // first comment is public so the thread is
+    expect(threads[0].contextValue).toMatch(/<unresolved>/); // last comment is unresolved so the thread is
+
     const comments = threads[0].comments;
     expect(comments.length).toEqual(2);
     expect(comments[0].body).toEqual(
-      new vscode.MarkdownString('Unresolved comment on the added line.')
+      new vscode.MarkdownString('Resolved comment on the added line.')
     );
     expect(comments[0].contextValue).toEqual('<public>');
     expect(comments[1].body).toEqual(new vscode.MarkdownString('Draft reply.'));

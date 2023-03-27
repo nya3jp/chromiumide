@@ -25,4 +25,4 @@ export {flushMicrotasks} from './tasks';
 export {Mutable} from './types';
 export {EventReader} from './events';
 
-export {installVscodeDouble} from './doubles';
+export {installFakeConfigs, installVscodeDouble} from './doubles';

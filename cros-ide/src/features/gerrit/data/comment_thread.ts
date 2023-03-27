@@ -4,6 +4,7 @@
 
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {underDevelopment} from '../../../services/config';
 import * as gitDocument from '../../../services/git_document';
 import * as api from '../api';
 import * as git from '../git';
@@ -78,6 +79,12 @@ export class CommentThread {
     // Unresolved can be undefined according to the API documentation,
     // but Gerrit always sent it on the changes the we inspected.
     return this.lastComment.commentInfo.unresolved!;
+  }
+
+  private get canReply(): boolean {
+    return (
+      underDevelopment.gerrit.get() && this.lastComment.commentInfo.isPublic
+    );
   }
 
   /**
@@ -172,7 +179,7 @@ export class CommentThread {
       toVscodeComment(comment)
     );
     vscodeCommentThread.gerritCommentThread = this; // Remember the comment thread
-    vscodeCommentThread.canReply = false;
+    vscodeCommentThread.canReply = this.canReply;
     const revisionNumber = this.revisionNumber;
     // TODO(b:216048068): We should indicate resolved/unresolved with UI style.
     if (this.unresolved) {
@@ -182,10 +189,7 @@ export class CommentThread {
     } else {
       vscodeCommentThread.label = `Patchset ${revisionNumber} / Resolved`;
     }
-    // A comment thread's context is based off the first comment.
-    vscodeCommentThread.contextValue = getCommentContextValue(
-      this.comments?.[0]?.commentInfo
-    );
+    vscodeCommentThread.contextValue = this.getContextValue();
   }
 
   private getDataUri(gitDir: string, filePath: string): vscode.Uri {
@@ -222,6 +226,23 @@ export class CommentThread {
     }
     // Comment thread for the entire file
     return new vscode.Range(0, 0, 0, 0);
+  }
+
+  /**
+   * Examples of the return value:
+   * - "<public><resolved>"
+   * - "<draft><unresolved>"
+   *
+   * public/draft indicates whether the thread (the first comment) has been
+   * published or not.
+   * resolved/unresolved indicates whether the thread is resolved or not.
+   */
+  private getContextValue(): string {
+    const publicOrDraft = getCommentContextValue(this.firstComment.commentInfo);
+    const resolvedOrNot = this.lastComment.commentInfo.unresolved
+      ? '<unresolved>'
+      : '<resolved>';
+    return publicOrDraft + resolvedOrNot;
   }
 }
 

@@ -286,6 +286,24 @@
         "enablement": "config.cros-ide.gerrit.enabled"
       },
       {
+        "command": "cros-ide.gerrit.reply",
+        "category": "CrOS",
+        "title": "Save draft",
+        "enablement": "!commentIsEmpty"
+      },
+      {
+        "command": "cros-ide.gerrit.replyAndResolve",
+        "category": "CrOS",
+        "title": "Save and Resolve",
+        "enablement": "!commentIsEmpty"
+      },
+      {
+        "command": "cros-ide.gerrit.replyAndUnresolve",
+        "category": "CrOS",
+        "title": "Save and Unresolve",
+        "enablement": "!commentIsEmpty"
+      },
+      {
         "command": "cros-ide.showHelpForBoardsPackages",
         "title": "Show Help",
         "icon": "$(question)"
@@ -373,6 +391,22 @@
         {
           "command": "cros-ide.gerrit.collapseAllCommentThreads",
           "group": "inline@3"
+        }
+      ],
+      "comments/commentThread/context": [
+        {
+          "command": "cros-ide.gerrit.reply",
+          "group": "inline@a"
+        },
+        {
+          "command": "cros-ide.gerrit.replyAndResolve",
+          "group": "inline@b",
+          "when": "commentThread =~ /<unresolved>/"
+        },
+        {
+          "command": "cros-ide.gerrit.replyAndUnresolve",
+          "group": "inline@b",
+          "when": "commentThread =~ /<resolved>/"
         }
       ],
       "comments/comment/title": [
@@ -583,6 +617,18 @@
         },
         {
           "command": "cros-ide.chromium.outputDirectories.refresh",
+          "when": "false"
+        },
+        {
+          "command": "cros-ide.gerrit.reply",
+          "when": "false"
+        },
+        {
+          "command": "cros-ide.gerrit.replyAndResolve",
+          "when": "false"
+        },
+        {
+          "command": "cros-ide.gerrit.replyAndUnresolve",
           "when": "false"
         }
       ]
