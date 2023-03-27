@@ -5,7 +5,7 @@
 import 'jasmine';
 import * as commonUtil from '../../../../common/common_util';
 import * as api from '../../../../features/gerrit/api';
-import {CommentThread, Revision} from '../../../../features/gerrit/data';
+import {CommentThread} from '../../../../features/gerrit/data';
 import {FilePathToCommentThreads} from '../../../../features/gerrit/data/revision';
 import * as gerrit from '../../../../features/gerrit/gerrit';
 import * as git from '../../../../features/gerrit/git';
@@ -39,10 +39,16 @@ function commentThread(
   data: CommentInfoLike,
   opts?: {newLine?: number}
 ): CommentThread {
-  const revision = undefined as unknown as Revision;
   data.author = {_account_id: 12345};
   const commentInfo = data as api.CommentInfo;
-  const t = new CommentThread(revision, [commentInfo]);
+  const t = new CommentThread(
+    /* localCommitId = */ 'a',
+    'cros',
+    /* changeId = */ '1',
+    /* changeNumber = */ 1,
+    /* revisionNumber = */ 1,
+    [commentInfo]
+  );
   if (opts?.newLine) {
     t.overwriteShiftForTesting(opts.newLine - data.line!);
   }

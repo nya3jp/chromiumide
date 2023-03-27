@@ -4,19 +4,17 @@
 
 import * as vscode from 'vscode';
 import * as api from '../api';
+import * as git from '../git';
 import * as helpers from '../helpers';
-import {Change, CommentThread} from '.';
 
 /** Gerrit comment */
 export class Comment {
   constructor(
-    readonly commentThread: CommentThread,
+    readonly repoId: git.RepoId,
+    readonly changeNumber: number,
     readonly commentInfo: api.CommentInfo
   ) {}
 
-  get change(): Change {
-    return this.commentThread.change;
-  }
   get authorId(): number | undefined {
     return this.commentInfo.author?._account_id;
   }

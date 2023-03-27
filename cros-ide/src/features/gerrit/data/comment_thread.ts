@@ -9,7 +9,7 @@ import * as api from '../api';
 import * as git from '../git';
 import * as virtualDocument from '../virtual_document';
 import {getCommentContextValue, toVscodeComment} from './comment';
-import {Change, Comment, Revision} from '.';
+import {Comment} from '.';
 
 // TODO(oka): Make this class immutable.
 /**
@@ -21,7 +21,7 @@ import {Change, Comment, Revision} from '.';
  * 3. To clear the comment thread from VSCode, call clearFromVscode
  */
 export class CommentThread {
-  readonly comments: Comment[];
+  private readonly comments: readonly Comment[];
   private vscodeCommentThread?: VscodeCommentThread;
   /**
    * Line shift for repositioning the comment thread from the original
@@ -30,39 +30,40 @@ export class CommentThread {
    */
   private shift = 0;
 
-  constructor(readonly revision: Revision, commentInfos: api.CommentInfo[]) {
-    this.comments = [];
-    for (const commentInfo of commentInfos) {
-      const comment = new Comment(this, commentInfo);
-      this.comments.push(comment);
-    }
-  }
-
-  get change(): Change {
-    return this.revision.change;
+  constructor(
+    private readonly localCommitId: string,
+    readonly repoId: git.RepoId,
+    private readonly changeId: string,
+    readonly changeNumber: number,
+    private readonly revisionNumber: number | 'edit',
+    commentInfos: api.CommentInfo[]
+  ) {
+    this.comments = commentInfos.map(
+      commentInfo => new Comment(repoId, changeNumber, commentInfo)
+    );
   }
 
   get firstComment(): Comment {
     return this.comments[0];
   }
-  get lastComment(): Comment {
+  private get lastComment(): Comment {
     return this.comments[this.comments.length - 1];
   }
 
   /** Original line */
-  get originalLine(): number | undefined {
+  private get originalLine(): number | undefined {
     return this.firstComment.commentInfo.line;
   }
 
   /** Shifted line */
-  get line(): number | undefined {
+  private get line(): number | undefined {
     const ol = this.originalLine;
     if (ol === undefined) return undefined;
     return ol + this.shift;
   }
 
   /** Shifted range */
-  get range(): api.CommentRange | undefined {
+  private get range(): api.CommentRange | undefined {
     const r = this.firstComment.commentInfo.range;
     if (r === undefined) return undefined;
     return {
@@ -71,11 +72,6 @@ export class CommentThread {
       end_line: r.end_line + this.shift,
       end_character: r.end_character,
     };
-  }
-
-  get commitId(): string {
-    // TODO(b:216048068): make sure we have the commit_id
-    return this.firstComment.commentInfo.commit_id!;
   }
 
   /** A thread is unresolved if its last comment is unresolved. */
@@ -131,7 +127,7 @@ export class CommentThread {
    * True if a thread starts after the hunk ends. Such threads should be moved
    * by the size change introduced by the hunk.
    */
-  followsHunk(hunk: git.Hunk): boolean {
+  private followsHunk(hunk: git.Hunk): boolean {
     const ol = this.originalLine;
     if (!ol) return false;
     // Case 1: hunks that insert lines.
@@ -146,7 +142,7 @@ export class CommentThread {
    * Returns whether the comment is in the range between
    * minimum (inclusive) and maximum (exclusive).
    */
-  withinRange(minimum: number, maximum: number): boolean {
+  private withinRange(minimum: number, maximum: number): boolean {
     const ol = this.originalLine;
     return ol !== undefined && ol >= minimum && ol < maximum;
   }
@@ -182,7 +178,7 @@ export class CommentThread {
     ) as VscodeCommentThread;
     vscodeCommentThread.gerritCommentThread = this; // Remember the comment thread
     vscodeCommentThread.canReply = false;
-    const revisionNumber = this.revision.revisionNumber;
+    const revisionNumber = this.revisionNumber;
     // TODO(b:216048068): We should indicate resolved/unresolved with UI style.
     if (this.unresolved) {
       vscodeCommentThread.label = `Patchset ${revisionNumber} / Unresolved`;
@@ -202,11 +198,11 @@ export class CommentThread {
     if (filePath === '/COMMIT_MSG') {
       return gitDocument.commitMessageUri(
         gitDir,
-        this.change.localCommitId,
+        this.localCommitId,
         'gerrit commit msg'
       );
     } else if (filePath === '/PATCHSET_LEVEL') {
-      return virtualDocument.patchSetUri(gitDir, this.change.changeId);
+      return virtualDocument.patchSetUri(gitDir, this.changeId);
     } else {
       return vscode.Uri.file(path.join(gitDir, filePath));
     }

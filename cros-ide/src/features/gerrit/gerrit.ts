@@ -128,8 +128,9 @@ export function activate(
       'cros-ide.gerrit.browseCommentThread',
       async ({
         gerritCommentThread: {
-          change: {repoId, changeNumber},
+          changeNumber,
           firstComment: {commentId},
+          repoId,
         },
       }: VscodeCommentThread) =>
         openExternal(repoId, `c/${changeNumber}/comment/${commentId}`)
@@ -139,8 +140,8 @@ export function activate(
       'cros-ide.gerrit.browseCommentThreadAuthor',
       async ({
         gerritCommentThread: {
-          change: {repoId},
           firstComment: {authorId},
+          repoId,
         },
       }: VscodeCommentThread) => openExternal(repoId, `dashboard/${authorId}`)
     ),
@@ -148,22 +149,15 @@ export function activate(
     vscode.commands.registerCommand(
       'cros-ide.gerrit.browseComment',
       async ({
-        gerritComment: {
-          change: {repoId, changeNumber},
-          commentId,
-        },
+        gerritComment: {changeNumber, commentId, repoId},
       }: VscodeComment) =>
         openExternal(repoId, `c/${changeNumber}/comment/${commentId}`)
     ),
     // TODO(b/268655627): Instrument this command to send metrics.
     vscode.commands.registerCommand(
       'cros-ide.gerrit.browseCommentAuthor',
-      async ({
-        gerritComment: {
-          change: {repoId},
-          authorId,
-        },
-      }: VscodeComment) => openExternal(repoId, `dashboard/${authorId}`)
+      async ({gerritComment: {authorId, repoId}}: VscodeComment) =>
+        openExternal(repoId, `dashboard/${authorId}`)
     )
   );
 

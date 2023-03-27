@@ -3,7 +3,8 @@
 // found in the LICENSE file.
 
 import * as api from '../api';
-import {Change, CommentThread} from '.';
+import * as git from '../git';
+import {CommentThread} from '.';
 
 /**
  * Revision (patchset) of Gerrit
@@ -11,12 +12,17 @@ import {Change, CommentThread} from '.';
 export class Revision {
   readonly commentThreadsMap: FilePathToCommentThreads;
   constructor(
-    readonly change: Change,
+    localCommitId: string,
+    repoId: git.RepoId,
+    changeId: string,
+    changeNumber: number,
     readonly commitId: string,
-    readonly revisionInfo: api.RevisionInfo,
-    readonly commentInfosMap: api.FilePathToCommentInfos
+    private readonly revisionInfo: api.RevisionInfo,
+    private readonly commentInfosMap: api.FilePathToCommentInfos
   ) {
-    this.commentThreadsMap = {};
+    const commentThreadsMap: {
+      [filePath: string]: readonly CommentThread[];
+    } = {};
     for (const [filePath, apiCommentInfos] of Object.entries(commentInfosMap)) {
       // Copy the input to avoid modifying data received from Gerrit API.
       const commentInfos = [...apiCommentInfos];
@@ -42,13 +48,23 @@ export class Revision {
       // Construct the CommentThread array
       const commentThreads = [];
       for (const commentInfos of splitCommentInfos) {
-        commentThreads.push(new CommentThread(this, commentInfos));
+        commentThreads.push(
+          new CommentThread(
+            localCommitId,
+            repoId,
+            changeId,
+            changeNumber,
+            this.revisionNumber,
+            commentInfos
+          )
+        );
       }
-      this.commentThreadsMap[filePath] = commentThreads;
+      commentThreadsMap[filePath] = commentThreads;
     }
+    this.commentThreadsMap = commentThreadsMap;
   }
 
-  get revisionNumber(): number | 'edit' {
+  private get revisionNumber(): number | 'edit' {
     return this.revisionInfo._number;
   }
 
@@ -86,6 +102,6 @@ export class Revision {
  * Like FilePathToCommentInfos, but the comments are partitioned
  * into comment threads represented as arrays of comments.
  */
-export type FilePathToCommentThreads = {
-  [filePath: string]: CommentThread[];
-};
+export type FilePathToCommentThreads = Readonly<{
+  [filePath: string]: readonly CommentThread[];
+}>;

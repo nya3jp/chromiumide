@@ -13,30 +13,34 @@ import {Revision} from '.';
 export class Change {
   readonly revisions: CommitIdToRevision;
   constructor(
-    readonly localCommitId: string,
-    readonly repoId: git.RepoId,
-    readonly changeInfo: api.ChangeInfo,
-    readonly commentInfosMap: api.FilePathToCommentInfos
+    localCommitId: string,
+    repoId: git.RepoId,
+    private readonly changeInfo: api.ChangeInfo,
+    commentInfosMap: api.FilePathToCommentInfos
   ) {
     const revisions = changeInfo.revisions ?? {};
     const splitCommentInfosMap: Map<string, api.FilePathToCommentInfos> =
       helpers.splitPathArrayMap(commentInfosMap, c => c.commit_id!);
-    this.revisions = {};
+    const revisionsMap: {[commitId: string]: Revision} = {};
     for (const [commitId, revisionInfo] of Object.entries(revisions)) {
       const rCommentInfosMap = splitCommentInfosMap.get(commitId) ?? {};
-      this.revisions[commitId] = new Revision(
-        this,
+      revisionsMap[commitId] = new Revision(
+        localCommitId,
+        repoId,
+        this.changeId,
+        this.changeNumber,
         commitId,
         revisionInfo,
         rCommentInfosMap
       );
     }
+    this.revisions = revisionsMap;
   }
 
-  get changeId(): string {
+  private get changeId(): string {
     return this.changeInfo.change_id;
   }
-  get changeNumber(): number {
+  private get changeNumber(): number {
     return this.changeInfo._number;
   }
 
@@ -58,6 +62,6 @@ export class Change {
 /**
  * Map from the commit id to Revision
  */
-type CommitIdToRevision = {
+type CommitIdToRevision = Readonly<{
   [commitId: string]: Revision;
-};
+}>;
