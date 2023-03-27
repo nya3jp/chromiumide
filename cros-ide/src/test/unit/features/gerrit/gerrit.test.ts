@@ -1140,7 +1140,9 @@ describe('Gerrit', () => {
       state.statusManager,
       new GitDirsWatcher('/', subscriptions),
       subscriptions,
-      () => internalError
+      async () => {
+        if (internalError) throw internalError;
+      }
     );
 
     const completeShowChangeEvents = new testing.EventReader(
@@ -1175,6 +1177,45 @@ describe('Gerrit', () => {
     await completeShowChangeEvents.read();
 
     expect(state.statusManager.getStatus('Gerrit')).toEqual(TaskStatus.OK);
+  });
+
+  it('event handling for file save is throttled', async () => {
+    // Instruct event handler to always show an error after a delay.
+    gerrit.activate(
+      state.statusManager,
+      new GitDirsWatcher('/', subscriptions),
+      subscriptions,
+      async () => {
+        // Iterate enough times for events to be all handled.
+        for (let i = 0; i < 10; i++) {
+          await testing.flushMicrotasks();
+        }
+        throw new Error('foo');
+      }
+    );
+
+    const completeShowChangeEvents = new testing.EventReader(
+      gerrit.onDidHandleEventForTesting,
+      subscriptions
+    );
+
+    const fooFilePath = abs('foo.cc');
+
+    const iteration = 4;
+    for (let i = 0; i < iteration; i++) {
+      vscodeEmitters.workspace.onDidSaveTextDocument.fire({
+        uri: vscode.Uri.file(fooFilePath),
+        fileName: fooFilePath,
+      } as vscode.TextDocument);
+    }
+
+    for (let i = 0; i < iteration; i++) {
+      await completeShowChangeEvents.read();
+    }
+
+    // Error is reported only two times, because all but the first and last
+    // events are ignored.
+    expect(metrics.send).toHaveBeenCalledTimes(2);
   });
 });
 

@@ -4,6 +4,7 @@
 
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {JobManager} from '../../common/common_util';
 import * as services from '../../services';
 import {underDevelopment} from '../../services/config';
 import * as gitDocument from '../../services/git_document';
@@ -26,7 +27,7 @@ export function activate(
   statusManager: bgTaskStatus.StatusManager,
   gitDirsWatcher: services.GitDirsWatcher,
   subscriptions?: vscode.Disposable[],
-  internalErrorForTesting?: () => Error | undefined
+  preEventHandleForTesting?: () => Promise<void>
 ): vscode.Disposable {
   if (!subscriptions) {
     subscriptions = [];
@@ -84,13 +85,16 @@ export function activate(
     sink,
     statusBar,
     gitDirsWatcher,
-    internalErrorForTesting
+    preEventHandleForTesting
   );
   subscriptions.push(gerrit);
 
+  const jobManager = new JobManager<void>();
+
   subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(async document => {
-      await gerrit.showChanges(document.fileName);
+      // Avoid performing many git operations concurrently.
+      await jobManager.offer(() => gerrit.showChanges(document.fileName));
       onDidHandleEventForTestingEmitter.fire();
     }),
     vscode.commands.registerCommand(
@@ -181,7 +185,7 @@ class Gerrit implements vscode.Disposable {
     private readonly sink: Sink,
     private readonly statusBar: vscode.StatusBarItem,
     gitDirsWatcher: services.GitDirsWatcher,
-    private readonly internalErrorForTesting?: () => Error | undefined
+    private readonly preEventHandleForTesting?: () => Promise<void>
   ) {
     const gerritComments = new GerritComments(
       gitDirsWatcher,
@@ -227,9 +231,8 @@ class Gerrit implements vscode.Disposable {
     changes?: readonly Change[]
   ): Promise<void> {
     try {
-      if (this.internalErrorForTesting) {
-        const err = this.internalErrorForTesting();
-        if (err) throw err;
+      if (this.preEventHandleForTesting) {
+        await this.preEventHandleForTesting();
       }
 
       const gitDir = await git.findGitDir(filePath, this.sink);
