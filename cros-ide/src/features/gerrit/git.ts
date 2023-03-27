@@ -186,11 +186,12 @@ function parseDiffHunks(gitDiffContent: string): FilePathToHunks {
    * +++ b/ide_tooling/cros-ide/src/features/git.ts
    * @@ -1,2 +3,4 @@
    * `
-   * Note, that when a file is added the old name is `--- a/dev/null`,
-   * so we need to use the `+++` line to obtain the name.
+   * Note, that when a file is added the old name is `--- /dev/null`
+   * and when a file is removed the new name is `+++ /dev/null`,
+   * so we need to check both `+++` and `---` line to obtain the name.
    */
   const gitDiffHunkRegex =
-    /(?:(?:^\+\+\+ b\/(.*)$)|(?:^@@ -([0-9]*)[,]?([0-9]*) \+([0-9]*)[,]?([0-9]*) @@))/gm;
+    /(?:(?:^(?:\+\+\+ b|--- a)\/(.*)$)|(?:^@@ -([0-9]*)[,]?([0-9]*) \+([0-9]*)[,]?([0-9]*) @@))/gm;
   let regexArray: RegExpExecArray | null;
   const hunksMap: FilePathToHunks = {};
   let hunkFilePath = '';

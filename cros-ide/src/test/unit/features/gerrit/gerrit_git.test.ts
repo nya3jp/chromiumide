@@ -113,4 +113,25 @@ describe('Gerrit support', () => {
       ],
     });
   });
+
+  it('handles removed files', () => {
+    const hunkRanges = parseDiffHunks(`diff --git a/a.txt b/a.txt
+deleted file mode 100644
+index 7898192..0000000
+--- a/a.txt
++++ /dev/null
+@@ -1 +0,0 @@
+-a
+`);
+    expect(hunkRanges).toEqual({
+      'a.txt': [
+        Hunk.of({
+          originalStart: 1,
+          originalSize: 1,
+          currentStart: 0,
+          currentSize: 0,
+        }),
+      ],
+    });
+  });
 });
