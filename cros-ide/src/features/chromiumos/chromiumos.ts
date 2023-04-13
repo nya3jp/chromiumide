@@ -8,11 +8,11 @@ import * as services from '../../services';
 import * as config from '../../services/config';
 import * as bgTaskStatus from '../../ui/bg_task_status';
 import * as metrics from '../metrics/metrics';
+import * as boilerplate from '../boilerplate';
 import * as boardsPackages from './boards_packages';
 import {Coverage} from './coverage';
 import * as cppCodeCompletion from './cpp_code_completion';
 import * as crosFormat from './cros_format';
-import {NewFileTemplate} from './new_file_template';
 import {Platform2Gtest} from './platform2_gtest';
 import * as platformEc from './platform_ec';
 import * as targetBoard from './target_board';
@@ -34,7 +34,9 @@ type Context = Omit<vscode.ExtensionContext, 'subscriptions'>;
  */
 export class Chromiumos implements vscode.Disposable {
   private readonly subscriptions: vscode.Disposable[] = [
-    new NewFileTemplate(this.root),
+    this.boilerplateInserter.addBoilerplateGenerator(
+      new boilerplate.ChromiumOSBoilerplateGenerator(this.root)
+    ),
   ];
   dispose() {
     vscode.Disposable.from(...this.subscriptions.reverse()).dispose();
@@ -42,12 +44,13 @@ export class Chromiumos implements vscode.Disposable {
 
   /**
    * @param context The context of the extension itself.
-   * @param root Absolute path to the chormiumos root directory.
+   * @param root Absolute path to the ChromiumOS root directory.
    */
   constructor(
     context: Context,
     private readonly root: string,
     private readonly statusManager: bgTaskStatus.StatusManager,
+    private readonly boilerplateInserter: boilerplate.BoilerplateInserter,
     private readonly cipdRepository: cipd.CipdRepository,
     private readonly chromiumosServices: services.chromiumos.ChromiumosServiceModule
   ) {

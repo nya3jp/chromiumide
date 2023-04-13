@@ -3,9 +3,11 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import * as path from 'path';
 import * as bgTaskStatus from '../../ui/bg_task_status';
 import * as config from '../../services/config';
 import * as metrics from '../metrics/metrics';
+import * as boilerplate from '../boilerplate';
 import * as chromiumBuild from './chromium_build';
 import * as outputDirectories from './output_directories';
 
@@ -23,7 +25,11 @@ type Context = Omit<vscode.ExtensionContext, 'subscriptions'>;
  * This class should be instantiated only when the workspace contains chromium source code.
  */
 export class Chromium implements vscode.Disposable {
-  private readonly subscriptions: vscode.Disposable[] = [];
+  private readonly subscriptions: vscode.Disposable[] = [
+    this.boilerplateInserter.addBoilerplateGenerator(
+      new boilerplate.ChromiumBoilerplateGenerator(path.join(this.root, 'src'))
+    ),
+  ];
   dispose() {
     vscode.Disposable.from(...this.subscriptions.reverse()).dispose();
   }
@@ -35,7 +41,8 @@ export class Chromium implements vscode.Disposable {
   constructor(
     context: Context,
     private readonly root: string,
-    private readonly statusManager: bgTaskStatus.StatusManager
+    private readonly statusManager: bgTaskStatus.StatusManager,
+    private readonly boilerplateInserter: boilerplate.BoilerplateInserter
   ) {
     void (async () => {
       try {

@@ -32,6 +32,7 @@ import * as services from './services';
 import * as config from './services/config';
 import * as gitDocument from './services/git_document';
 import * as bgTaskStatus from './ui/bg_task_status';
+import * as boilerplate from './features/boilerplate';
 import {TaskStatus} from './ui/bg_task_status';
 
 // Install source map if it's available so that error stacktraces show TS
@@ -79,11 +80,15 @@ async function postMetricsActivate(
     cipdRepository
   );
 
+  const boilerplateInserter = new boilerplate.BoilerplateInserter();
+  context.subscriptions.push(boilerplateInserter);
+
   context.subscriptions.push(
-    new ChromiumActivation(context, statusManager),
+    new ChromiumActivation(context, statusManager, boilerplateInserter),
     new ChromiumosActivation(
       context,
       statusManager,
+      boilerplateInserter,
       cipdRepository,
       chromiumosServices
     )
@@ -185,6 +190,7 @@ class ChromiumosActivation implements vscode.Disposable {
   constructor(
     context: vscode.ExtensionContext,
     statusManager: bgTaskStatus.StatusManager,
+    boilerplateInserter: boilerplate.BoilerplateInserter,
     cipdRepository: cipd.CipdRepository,
     chromiumosServices: services.chromiumos.ChromiumosServiceModule
   ) {
@@ -196,6 +202,7 @@ class ChromiumosActivation implements vscode.Disposable {
               context,
               root,
               statusManager,
+              boilerplateInserter,
               cipdRepository,
               chromiumosServices
             )
@@ -222,13 +229,19 @@ class ChromiumActivation implements vscode.Disposable {
 
   constructor(
     context: vscode.ExtensionContext,
-    statusManager: bgTaskStatus.StatusManager
+    statusManager: bgTaskStatus.StatusManager,
+    boilerplateInserter: boilerplate.BoilerplateInserter
   ) {
     this.subscriptions.push(
       this.watcher.onDidChangeRoot(root => {
         this.chromiumFeatures?.dispose();
         this.chromiumFeatures = root
-          ? new features.Chromium(context, root, statusManager)
+          ? new features.Chromium(
+              context,
+              root,
+              statusManager,
+              boilerplateInserter
+            )
           : undefined;
       })
     );
