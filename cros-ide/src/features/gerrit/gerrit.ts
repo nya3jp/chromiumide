@@ -13,6 +13,7 @@ import * as auth from './auth';
 import {
   Change,
   CommentThread,
+  GitFileKey,
   VscodeComment,
   VscodeCommentThread,
 } from './data';
@@ -279,11 +280,7 @@ class Gerrit implements vscode.Disposable {
         this.changes.set(filePath, changes);
       }
 
-      const threadsToDisplay: {
-        shift: number;
-        filePath: string;
-        commentThread: CommentThread;
-      }[] = [];
+      const gitFileToDiffHunks = new Map<GitFileKey, git.Hunk[]>();
 
       for (const {revisions} of this.changes.get(gitDir) ?? []) {
         for (const revision of Object.values(revisions)) {
@@ -293,29 +290,50 @@ class Gerrit implements vscode.Disposable {
             gitDir,
             this.sink
           );
+          if (!commitExists) continue;
 
-          let hunksMap: git.FilePathToHunks = {};
-          if (commitExists) {
-            // TODO: If the local branch is rebased after uploading it for review,
-            // unrestricted `git diff` will include everything that changed
-            // in the entire repo. This can have performance implications.
-            const filePaths = Object.keys(commentThreadsMap).filter(
-              filePath => !api.MAGIC_PATHS.includes(filePath)
+          // TODO: If the local branch is rebased after uploading it for review,
+          // unrestricted `git diff` will include everything that changed
+          // in the entire repo. This can have performance implications.
+          const filePaths = Object.keys(commentThreadsMap).filter(
+            filePath => !api.MAGIC_PATHS.includes(filePath)
+          );
+          const hunksMap = await git.readDiffHunks(
+            gitDir,
+            commitId,
+            filePaths,
+            this.sink
+          );
+          if (!hunksMap) continue;
+
+          for (const [filePath, hunks] of Object.entries(hunksMap)) {
+            gitFileToDiffHunks.set(
+              GitFileKey.create(gitDir, commitId, filePath),
+              hunks
             );
-            hunksMap =
-              (await git.readDiffHunks(
-                gitDir,
-                commitId,
-                filePaths,
-                this.sink
-              )) ?? {};
           }
+        }
+      }
+
+      const threadsToDisplay: {
+        shift: number;
+        filePath: string;
+        commentThread: CommentThread;
+      }[] = [];
+
+      for (const {revisions} of this.changes.get(gitDir) ?? []) {
+        for (const revision of Object.values(revisions)) {
+          const {commitId, commentThreadsMap} = revision;
 
           for (const [filePath, commentThreads] of Object.entries(
             commentThreadsMap
           )) {
             // We still want to show comments that cannot be repositioned correctly.
-            const hunks = hunksMap[filePath] ?? [];
+            const hunks =
+              gitFileToDiffHunks.get(
+                GitFileKey.create(gitDir, commitId, filePath)
+              ) ?? [];
+
             for (const commentThread of commentThreads) {
               const shift = commentThread.getShift(hunks, filePath);
               threadsToDisplay.push({

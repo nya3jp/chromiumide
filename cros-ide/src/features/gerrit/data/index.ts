@@ -5,4 +5,5 @@
 export {Change} from './change';
 export {Comment, VscodeComment} from './comment';
 export {CommentThread, VscodeCommentThread} from './comment_thread';
+export {GitFileKey} from './git_file_key';
 export {Revision} from './revision';
