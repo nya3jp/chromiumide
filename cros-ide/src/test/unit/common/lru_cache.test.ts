@@ -21,6 +21,8 @@ describe('LRU cache', () => {
     expect(cache.get('b')).toEqual(4);
     expect(cache.get('c')).toEqual(3);
 
+    expect(cache.keys().sort()).toEqual(['a', 'b', 'c']);
+
     cache.evict('a');
 
     expect(cache.get('a')).toBeUndefined();

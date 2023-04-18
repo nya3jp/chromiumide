@@ -3,3 +3,4 @@
 // found in the LICENSE file.
 
 export {GerritComments} from './gerrit_comments';
+export {DiffHunksClient} from './local_diff_hunks';

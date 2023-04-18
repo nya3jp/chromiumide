@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as path from 'path';
+
 /**
  * Represents a versioned local git file. This class can be used as the key of a
  * map, because the `create` static function returns the same object if
@@ -29,4 +31,9 @@ export class GitFileKey {
     readonly commitId: string,
     readonly filePath: string
   ) {}
+
+  /** Absolute filepath */
+  fileName(): string {
+    return path.join(this.gitDir, this.filePath);
+  }
 }

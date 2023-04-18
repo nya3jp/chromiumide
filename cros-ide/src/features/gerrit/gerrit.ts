@@ -19,7 +19,7 @@ import {
 } from './data';
 import * as git from './git';
 import * as helpers from './helpers';
-import {GerritComments} from './model';
+import {DiffHunksClient, GerritComments} from './model';
 import {Sink} from './sink';
 import * as virtualDocument from './virtual_document';
 
@@ -96,14 +96,7 @@ export function activate(
   );
   subscriptions.push(gerrit);
 
-  const jobManager = new JobManager<void>();
-
   subscriptions.push(
-    vscode.workspace.onDidSaveTextDocument(async document => {
-      // Avoid performing many git operations concurrently.
-      await jobManager.offer(() => gerrit.showChanges(document.fileName));
-      onDidHandleEventForTestingEmitter.fire();
-    }),
     vscode.commands.registerCommand(
       'cros-ide.gerrit.collapseAllCommentThreads',
       () => {
@@ -187,7 +180,12 @@ class Gerrit implements vscode.Disposable {
     'CrOS IDE Gerrit'
   );
 
-  private readonly subscriptions = [
+  // Throttles `showChanges` requests.
+  private readonly jobManager = new JobManager<void>();
+
+  private readonly gitDiffHunksClient = new DiffHunksClient(this.sink);
+
+  private readonly subscriptions: vscode.Disposable[] = [
     this.commentController,
     vscode.commands.registerCommand(
       'cros-ide.gerrit.reply',
@@ -215,6 +213,12 @@ class Gerrit implements vscode.Disposable {
         );
       }
     ),
+    vscode.workspace.onDidSaveTextDocument(async document => {
+      this.gitDiffHunksClient.evictCacheForDocument(document);
+      // Avoid performing many git operations concurrently.
+      await this.jobManager.offer(() => this.showChanges(document.fileName));
+      onDidHandleEventForTestingEmitter.fire();
+    }),
   ];
 
   private readonly gerritComments;
@@ -298,13 +302,11 @@ class Gerrit implements vscode.Disposable {
           const filePaths = Object.keys(commentThreadsMap).filter(
             filePath => !api.MAGIC_PATHS.includes(filePath)
           );
-          const hunksMap = await git.readDiffHunks(
+          const hunksMap = await this.gitDiffHunksClient.readDiffHunks(
             gitDir,
             commitId,
-            filePaths,
-            this.sink
+            filePaths
           );
-          if (!hunksMap) continue;
 
           for (const [filePath, hunks] of Object.entries(hunksMap)) {
             gitFileToDiffHunks.set(

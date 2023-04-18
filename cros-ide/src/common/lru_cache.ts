@@ -49,6 +49,13 @@ export class LruCache<K, V> {
     this.cache.delete(key);
   }
 
+  /**
+   * Returns keys of the cache.
+   */
+  keys(): K[] {
+    return [...this.cache.keys()];
+  }
+
   // Shrinks the cache if the size >= 2n.
   private maybeShrink() {
     if (this.cache.size < 2 * this.n) return;
