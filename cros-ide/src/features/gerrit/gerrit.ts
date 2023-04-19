@@ -49,9 +49,11 @@ export function activate(
         'cros-ide.gerrit.internal.testAuth',
         async () => {
           const authCookie = await auth.readAuthCookie('cros-internal', sink);
+
+          const client = new api.RawGerritClient();
           // Fetch from some internal Gerrit change
           const infos: api.FilePathToBaseCommentInfos | undefined =
-            await api.fetchOrThrow(
+            await client.fetchOrThrow(
               'cros-internal',
               'changes/I6743130cd3a84635a66f54f81fa839060f3fcb39/comments',
               authCookie

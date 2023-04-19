@@ -34,6 +34,8 @@ export class GerritComments implements vscode.Disposable {
     this.onDidUpdateCommentsEmitter,
   ];
 
+  private readonly client = new api.GerritClient();
+
   constructor(
     private gitDirsWatcher: GitDirsWatcher,
     private readonly sink: Sink,
@@ -82,7 +84,7 @@ export class GerritComments implements vscode.Disposable {
     // Fetch current changes.
     let changes: Change[];
     try {
-      const cs = await fetchChangesOrThrow(gitDir, this.sink);
+      const cs = await this.fetchChangesOrThrow(gitDir, this.sink);
       if (!cs) {
         this.sink.appendLine('No changes found');
         return;
@@ -119,6 +121,92 @@ export class GerritComments implements vscode.Disposable {
     });
   }
 
+  /**
+   * Retrieves the changes from Gerrit Rest API.
+   * It can return `undefined` when changes were not obtained.
+   * It can throw an error from HTTPS access by `api.getOrThrow`.
+   */
+  private async fetchChangesOrThrow(
+    gitDir: string,
+    sink: Sink
+  ): Promise<Change[] | undefined> {
+    const repoId = await git.getRepoId(gitDir, sink);
+    if (repoId === undefined) return;
+    const authCookie = await auth.readAuthCookie(repoId, sink);
+    const gitLogInfos = await git.readGitLog(gitDir, sink);
+    if (gitLogInfos.length === 0) return;
+
+    // Fetch the user's account info
+    const myAccountInfo = await this.client.fetchMyAccountInfoOrThrow(
+      repoId,
+      authCookie
+    );
+    if (!myAccountInfo) {
+      sink.appendLine('Calling user info could not be fetched from Gerrit');
+      // Don't skip here, because we want to show public information
+      // even when authentication has failed
+    }
+
+    const changes: Change[] = [];
+    for (const {localCommitId, changeId} of gitLogInfos) {
+      // Fetch a change
+      const changeInfo = await this.client.fetchChangeOrThrow(
+        repoId,
+        changeId,
+        authCookie
+      );
+      if (!changeInfo) {
+        sink.appendLine(`Not found on Gerrit: Change ${changeId}`);
+        continue;
+      }
+
+      // Fetch public comments
+      const publicCommentInfosMap =
+        await this.client.fetchPublicCommentsOrThrow(
+          repoId,
+          changeId,
+          authCookie
+        );
+      if (!publicCommentInfosMap) {
+        sink.appendLine(
+          `Comments for ${changeId} could not be fetched from Gerrit`
+        );
+        continue;
+      }
+
+      // Fetch draft comments
+      let draftCommentInfosMap: api.FilePathToCommentInfos | undefined;
+      if (myAccountInfo) {
+        draftCommentInfosMap = await this.client.fetchDraftCommentsOrThrow(
+          repoId,
+          changeId,
+          myAccountInfo,
+          authCookie
+        );
+        if (!draftCommentInfosMap) {
+          sink.appendLine(
+            `Drafts for ${changeId} could not be fetched from Gerrit`
+          );
+          // Don't skip here, because we want to show public information
+          // even when authentication has failed
+        }
+      }
+
+      const commentInfosMap = api.mergeCommentInfos(
+        publicCommentInfosMap,
+        draftCommentInfosMap
+      );
+      const change = new Change(
+        localCommitId,
+        repoId,
+        changeInfo,
+        commentInfosMap
+      );
+      changes.push(change);
+    }
+    return changes;
+  }
+
   private requestRefresh(): void {
     for (const curGitDir of this.gitDirsWatcher.visibleGitDirs) {
       this.requestFetch(curGitDir, new Ticket());
@@ -138,86 +226,4 @@ export class GerritComments implements vscode.Disposable {
   dispose() {
     vscode.Disposable.from(...this.subscriptions.reverse()).dispose();
   }
-}
-
-/**
- * Retrieves the changes from Gerrit Rest API.
- * It can return `undefined` when changes were not obtained.
- * It can throw an error from HTTPS access by `api.getOrThrow`.
- */
-async function fetchChangesOrThrow(
-  gitDir: string,
-  sink: Sink
-): Promise<Change[] | undefined> {
-  const repoId = await git.getRepoId(gitDir, sink);
-  if (repoId === undefined) return;
-  const authCookie = await auth.readAuthCookie(repoId, sink);
-  const gitLogInfos = await git.readGitLog(gitDir, sink);
-  if (gitLogInfos.length === 0) return;
-
-  // Fetch the user's account info
-  const myAccountInfo = await api.fetchMyAccountInfoOrThrow(repoId, authCookie);
-  if (!myAccountInfo) {
-    sink.appendLine('Calling user info could not be fetched from Gerrit');
-    // Don't skip here, because we want to show public information
-    // even when authentication has failed
-  }
-
-  const changes: Change[] = [];
-  for (const {localCommitId, changeId} of gitLogInfos) {
-    // Fetch a change
-    const changeInfo = await api.fetchChangeOrThrow(
-      repoId,
-      changeId,
-      authCookie
-    );
-    if (!changeInfo) {
-      sink.appendLine(`Not found on Gerrit: Change ${changeId}`);
-      continue;
-    }
-
-    // Fetch public comments
-    const publicCommentInfosMap = await api.fetchPublicCommentsOrThrow(
-      repoId,
-      changeId,
-      authCookie
-    );
-    if (!publicCommentInfosMap) {
-      sink.appendLine(
-        `Comments for ${changeId} could not be fetched from Gerrit`
-      );
-      continue;
-    }
-
-    // Fetch draft comments
-    let draftCommentInfosMap: api.FilePathToCommentInfos | undefined;
-    if (myAccountInfo) {
-      draftCommentInfosMap = await api.fetchDraftCommentsOrThrow(
-        repoId,
-        changeId,
-        myAccountInfo,
-        authCookie
-      );
-      if (!draftCommentInfosMap) {
-        sink.appendLine(
-          `Drafts for ${changeId} could not be fetched from Gerrit`
-        );
-        // Don't skip here, because we want to show public information
-        // even when authentication has failed
-      }
-    }
-
-    const commentInfosMap = api.mergeCommentInfos(
-      publicCommentInfosMap,
-      draftCommentInfosMap
-    );
-    const change = new Change(
-      localCommitId,
-      repoId,
-      changeInfo,
-      commentInfosMap
-    );
-    changes.push(change);
-  }
-  return changes;
 }
