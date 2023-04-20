@@ -1,5 +1,15 @@
 # Change Log
 
+## 0.12.0 (April 2023)
+
+- Gerrit integration
+  - Various stability bug fixes.
+  - Reply support.
+- Chromium support
+  - Output directory management.
+  - Links in OWNERS file.
+  - Boilerplate insertion for .cc and .h files.
+
 ## 0.10.0 (March 2023)
 
 - Fix for duplicated Gerrit comments.
