@@ -4,8 +4,8 @@
 
 import {CircularProgress, Container, Stack, Typography} from '@mui/material';
 import {DataGrid, GridRowParams, GridToolbar} from '@mui/x-data-grid';
-import {BuildsBrowserState} from '../../../../src/features/chromiumos/device_management/builds/browser/builds_browser_model';
-import {PrebuildInfo} from '../../../../src/features/chromiumos/device_management/builds/build_model';
+import {BuildsBrowserState} from '../../../../src/features/device_management/builds/browser/builds_browser_model';
+import {PrebuildInfo} from '../../../../src/features/device_management/builds/build_model';
 
 const BUILD_TABLE_COLUMNS = [
   {

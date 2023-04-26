@@ -5,12 +5,12 @@
 import 'jasmine';
 import * as vscode from 'vscode';
 import {FakeChrootService} from '../../../../../testing/fakes/fake_chroot_service';
-import * as testing from './../../../../../../test/testing';
-import {Source} from './../../../../../../common/common_util';
 import * as model from '../../../../../../features/device_management/flash/flash_device_model';
 import {FlashDeviceService} from '../../../../../../features/device_management/flash/flash_device_service';
-import * as chroot from './../../../../../../services/chromiumos/chroot';
 import * as sshSession from '../../../../../../features/device_management/ssh_session';
+import * as testing from './../../../../../../test/testing';
+import {Source} from './../../../../../../common/common_util';
+import * as chroot from './../../../../../../services/chromiumos/chroot';
 import {ChrootService} from './../../../../../../services/chromiumos/chroot';
 import {VoidOutputChannel} from './../../../../../testing/fakes/output_channel';
 

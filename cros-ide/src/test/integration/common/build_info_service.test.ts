@@ -5,8 +5,8 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import {CnsFileCache} from '../../../common/cns_file_cache';
-import {VoidOutputChannel} from './../../testing/fakes/output_channel';
 import {BuildInfoService} from '../../../features/device_management/builds/build_info_service';
+import {VoidOutputChannel} from './../../testing/fakes/output_channel';
 
 describe('BuildInfoService', () => {
   const cacheDir = fs.mkdtempSync(os.tmpdir() + '/');

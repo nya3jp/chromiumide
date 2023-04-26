@@ -7,8 +7,8 @@ import * as metrics from '../../metrics/metrics';
 import * as v2 from '../v2';
 import * as sshConfig from '../ssh_config';
 import * as sshUtil from '../ssh_util';
-import {CommandContext, promptNewHostname} from './common';
 import {underDevelopment} from '../../../services/config';
+import {CommandContext, promptNewHostname} from './common';
 
 export async function addDevice(context: CommandContext): Promise<void> {
   metrics.send({

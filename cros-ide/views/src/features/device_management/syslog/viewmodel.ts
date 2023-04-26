@@ -5,7 +5,7 @@
 import {
   SyslogEntry,
   SyslogSeverity,
-} from '../../../../../src/features/chromiumos/device_management/syslog/model';
+} from '../../../../../src/features/device_management/syslog/model';
 /**
  * Filter on a syslog entry,
  * meaning the conjunction of component conditions.
