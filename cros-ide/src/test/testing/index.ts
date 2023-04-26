@@ -5,7 +5,7 @@
 export {cleanState} from './clean_state';
 export {
   FakeExec,
-  Handler,
+  type Handler,
   exactMatch,
   installFakeExec,
   lazyHandler,
@@ -22,7 +22,7 @@ export {ThrottledJobRunner} from './parallelize';
 export {BlockingPromise} from './promises';
 export {Git} from './git';
 export {flushMicrotasks} from './tasks';
-export {Mutable} from './types';
+export type {Mutable} from './types';
 export {EventReader} from './events';
 
 export {installFakeConfigs, installVscodeDouble} from './doubles';
