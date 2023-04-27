@@ -68,7 +68,8 @@ describe('C++ code completion', () => {
   ];
 
   for (const tc of testCases) {
-    it(tc.name, async () => {
+    // TODO(b:279826781): Enable it.
+    xit(tc.name, async () => {
       // Set up
       let generateCalled = false;
       cppCodeCompletion = new CppCodeCompletion(

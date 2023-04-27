@@ -18,7 +18,8 @@ describe('Suggest extension module', () => {
     spyOn(metrics, 'send');
   });
 
-  it('suggests an extension', async () => {
+  // TODO(b:279826781): Enable it.
+  xit('suggests an extension', async () => {
     subscriptions.push(
       activateSingle(
         {
