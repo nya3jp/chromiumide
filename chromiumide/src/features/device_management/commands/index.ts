@@ -19,6 +19,7 @@ import {connectToDeviceForShell} from './connect_ssh';
 import {connectToDeviceForScreen} from './connect_vnc';
 import {copyHostname} from './copy_hostname';
 import {crosfleetLogin} from './crosfleet_login';
+import {deployToDevice} from './deploy_package';
 import {addDevice} from './device_add';
 import {deleteDevice} from './device_delete';
 import {flashPrebuiltImage} from './flash_prebuilt_image';
@@ -132,6 +133,14 @@ function registerChromiumosCommands(
         'chromiumide.deviceManagement.flashPrebuiltImage',
         (item?: provider.DeviceItem) =>
           flashPrebuiltImage(context, chrootService, item)
+      )
+    );
+
+    subscriptions.push(
+      vscodeRegisterCommand(
+        'chromiumide.deviceManagement.deployToDevice',
+        (item?: provider.DeviceItem) =>
+          deployToDevice(context, chrootService, item)
       )
     );
 

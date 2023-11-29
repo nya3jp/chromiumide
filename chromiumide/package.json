@@ -132,6 +132,12 @@
         "icon": "$(cloud-download)"
       },
       {
+        "command": "chromiumide.deviceManagement.deployToDevice",
+        "category": "CrOS",
+        "title": "Deploy Package to Device",
+        "icon": "$(package)"
+      },
+      {
         "command": "chromiumide.deviceManagement.crosfleetLogin",
         "category": "CrOS",
         "title": "Log in to crosfleet"
@@ -613,6 +619,16 @@
         },
         {
           "command": "chromiumide.deviceManagement.flashPrebuiltImage",
+          "when": "view == devices && viewItem =~ /^device-/",
+          "group": "2_operation@1"
+        },
+        {
+          "command": "chromiumide.deviceManagement.deployToDevice",
+          "when": "view == devices && viewItem =~ /^device-/",
+          "group": "inline@3"
+        },
+        {
+          "command": "chromiumide.deviceManagement.deployToDevice",
           "when": "view == devices && viewItem =~ /^device-/",
           "group": "2_operation@1"
         },

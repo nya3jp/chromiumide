@@ -15,6 +15,20 @@ export type Package = ParsedPackageName & {
 };
 
 /**
+ *  Common compare function to be used with sort().
+ *  Prioritize packages that have been cros-workon started, then sorted in alphabetical order by
+ *  their full name i.e. <category>/<name>.
+ */
+export const packageCmp = (a: Package, b: Package): number => {
+  const aStarted = a.workon === 'started';
+  const bStarted = b.workon === 'started';
+  if (aStarted !== bStarted) {
+    return aStarted ? -1 : 1;
+  }
+  return getQualifiedPackageName(a).localeCompare(getQualifiedPackageName(b));
+};
+
+/**
  * Reads the package infos available for the board. It runs a few cros
  * commands to compute the result.
  */
