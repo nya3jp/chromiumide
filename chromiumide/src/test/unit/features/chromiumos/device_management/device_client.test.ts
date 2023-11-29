@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import {
   DeviceClient,
   DeviceAttributes,
+  TEST_ONLY,
 } from '../../../../../features/device_management/device_client';
 import {DeviceCategory} from '../../../../../features/device_management/device_repository';
 import {SshIdentity} from '../../../../../features/device_management/ssh_identity';
@@ -13,12 +14,7 @@ import {ChromiumosServiceModule} from '../../../../../services/chromiumos';
 import * as testing from '../../../../testing';
 import {FakeDeviceRepository} from './fake_device_repository';
 
-describe('Device client', () => {
-  testing.installVscodeDouble();
-
-  const hostname = 'dut1';
-  const {fakeExec} = testing.installFakeExec();
-  const LSB_RELEASE = `DEVICETYPE=CHROMEBOOK
+const LSB_RELEASE_PREBUILT_RELEASE = `DEVICETYPE=CHROMEBOOK
 CHROMEOS_RELEASE_NAME=Chrome OS
 CHROMEOS_AUSERVER=https://tools.google.com/service/update2
 CHROMEOS_DEVSERVER=
@@ -39,6 +35,90 @@ GOOGLE_RELEASE=14901.0.0
 CHROMEOS_RELEASE_UNIBUILD=1
 `;
 
+const LSB_RELEASE_PREBUILT_SNAPSHOT = `CHROMEOS_RELEASE_APPID={9023C063-08D6-4A4F-908C-BCF97DE8BA69}
+CHROMEOS_BOARD_APPID={9023C063-08D6-4A4F-908C-BCF97DE8BA69}
+CHROMEOS_CANARY_APPID={90F229CE-83E2-4FAF-8479-E368A34938B1}
+DEVICETYPE=CHROMEBOOK
+CHROMEOS_RELEASE_NAME=Chromium OS
+CHROMEOS_AUSERVER=http://chromeos-ci-ps-us-central1-a-x32-382-ijgz:8080/update
+CHROMEOS_DEVSERVER=http://chromeos-ci-ps-us-central1-a-x32-382-ijgz:8080
+CHROMEOS_ARC_VERSION=11288992
+CHROMEOS_ARC_ANDROID_SDK_VERSION=30
+CHROMEOS_RELEASE_BUILDER_PATH=trogdor-snapshot/R122-15739.0.0-93122-8759326004410150929
+CHROMEOS_RELEASE_KEYSET=devkeys
+CHROMEOS_RELEASE_TRACK=testimage-channel
+CHROMEOS_RELEASE_BUILD_TYPE=Test Build - root
+CHROMEOS_RELEASE_DESCRIPTION=15739.0.0 (Test Build - root) developer-build trogdor
+CHROMEOS_RELEASE_BOARD=trogdor
+CHROMEOS_RELEASE_BRANCH_NUMBER=0
+CHROMEOS_RELEASE_BUILD_NUMBER=15739
+CHROMEOS_RELEASE_CHROME_MILESTONE=122
+CHROMEOS_RELEASE_PATCH_NUMBER=0
+CHROMEOS_RELEASE_VERSION=15739.0.0
+GOOGLE_RELEASE=15739.0.0
+CHROMEOS_RELEASE_UNIBUILD=1
+`;
+
+const LSB_RELEASE_LOCAL = `CHROMEOS_RELEASE_APPID={9023C063-08D6-4A4F-908C-BCF97DE8BA69}
+CHROMEOS_BOARD_APPID={9023C063-08D6-4A4F-908C-BCF97DE8BA69}
+CHROMEOS_CANARY_APPID={90F229CE-83E2-4FAF-8479-E368A34938B1}
+DEVICETYPE=CHROMEBOOK
+CHROMEOS_RELEASE_NAME=Chromium OS
+CHROMEOS_AUSERVER=http://hscham1.tok.corp.google.com:8080/update
+CHROMEOS_DEVSERVER=http://hscham1.tok.corp.google.com:8080
+CHROMEOS_ARC_VERSION=11014719
+CHROMEOS_ARC_ANDROID_SDK_VERSION=30
+CHROMEOS_RELEASE_KEYSET=devkeys
+CHROMEOS_RELEASE_TRACK=testimage-channel
+CHROMEOS_RELEASE_BUILD_TYPE=Test Build - root
+CHROMEOS_RELEASE_DESCRIPTION=15661.0.0 (Test Build - root) developer-build trogdor
+CHROMEOS_RELEASE_BOARD=trogdor
+CHROMEOS_RELEASE_BRANCH_NUMBER=0
+CHROMEOS_RELEASE_BUILD_NUMBER=15661
+CHROMEOS_RELEASE_CHROME_MILESTONE=120
+CHROMEOS_RELEASE_PATCH_NUMBER=0
+CHROMEOS_RELEASE_VERSION=15661.0.0
+GOOGLE_RELEASE=15661.0.0
+CHROMEOS_RELEASE_UNIBUILD=1
+`;
+
+describe('Device client parses lsb-release', () => {
+  const parseLsbRelease = TEST_ONLY.parseLsbRelease;
+
+  it('with prebuilt release image', () => {
+    expect(parseLsbRelease(LSB_RELEASE_PREBUILT_RELEASE)).toEqual({
+      board: 'hatch',
+      builderPath: 'hatch-release/R104-14901.0.0',
+      imageType: 'release',
+      chromeosMajorVersion: 14901,
+    });
+  });
+
+  it('with prebuilt snapshot image', () => {
+    expect(parseLsbRelease(LSB_RELEASE_PREBUILT_SNAPSHOT)).toEqual({
+      board: 'trogdor',
+      builderPath: 'trogdor-snapshot/R122-15739.0.0-93122-8759326004410150929',
+      imageType: 'snapshot',
+      chromeosMajorVersion: 15739,
+    });
+  });
+
+  it('with local image', () => {
+    expect(parseLsbRelease(LSB_RELEASE_LOCAL)).toEqual({
+      board: 'trogdor',
+      builderPath: undefined,
+      imageType: 'local',
+      chromeosMajorVersion: 15661,
+    });
+  });
+});
+
+describe('Device client', () => {
+  testing.installVscodeDouble();
+
+  const hostname = 'dut1';
+  const {fakeExec} = testing.installFakeExec();
+
   const subscriptions: vscode.Disposable[] = [];
 
   beforeEach(async () => {
@@ -46,7 +126,7 @@ CHROMEOS_RELEASE_UNIBUILD=1
     fakeExec.installStdout(
       'ssh',
       jasmine.arrayContaining([`root@${hostname}`, 'cat /etc/lsb-release']),
-      LSB_RELEASE,
+      LSB_RELEASE_PREBUILT_RELEASE,
       jasmine.anything()
     );
   });
@@ -67,7 +147,15 @@ CHROMEOS_RELEASE_UNIBUILD=1
       new SshIdentity(testing.getExtensionUri(), new ChromiumosServiceModule()),
       vscode.window.createOutputChannel('void'),
       new Map<string, DeviceAttributes>([
-        [hostname, {board: 'board1', builderPath: 'board1-release/R1-2.0.0'}],
+        [
+          hostname,
+          {
+            board: 'board1',
+            builderPath: 'board1-release/R1-2.0.0',
+            imageType: 'release',
+            chromeosMajorVersion: 2,
+          },
+        ],
       ])
     );
 
@@ -80,6 +168,8 @@ CHROMEOS_RELEASE_UNIBUILD=1
     expect(attributes).toEqual({
       board: 'board1',
       builderPath: 'board1-release/R1-2.0.0',
+      imageType: 'release',
+      chromeosMajorVersion: 2,
     });
     expect(await onDidChangeDeviceClientReader.times()).toEqual(0);
   });
@@ -111,6 +201,8 @@ CHROMEOS_RELEASE_UNIBUILD=1
         hostname: hostname,
         board: 'hatch',
         builderPath: 'hatch-release/R104-14901.0.0',
+        imageType: 'release',
+        chromeosMajorVersion: 14901,
       },
     ]);
     expect(await onDidChangeDeviceClientReader.times()).toEqual(1);
@@ -118,6 +210,8 @@ CHROMEOS_RELEASE_UNIBUILD=1
     expect(attributes).toEqual({
       board: 'hatch',
       builderPath: 'hatch-release/R104-14901.0.0',
+      imageType: 'release',
+      chromeosMajorVersion: 14901,
     });
 
     await client.getDeviceAttributes(hostname);
@@ -146,6 +240,8 @@ CHROMEOS_RELEASE_UNIBUILD=1
         hostname: hostname,
         board: 'hatch',
         builderPath: 'hatch-release/R104-14901.0.0',
+        imageType: 'release',
+        chromeosMajorVersion: 14901,
       },
     ]);
     expect(await onDidChangeDeviceClientReader.times()).toEqual(1);
@@ -153,6 +249,8 @@ CHROMEOS_RELEASE_UNIBUILD=1
     expect(attributes).toEqual({
       board: 'hatch',
       builderPath: 'hatch-release/R104-14901.0.0',
+      imageType: 'release',
+      chromeosMajorVersion: 14901,
     });
 
     await client.getDeviceAttributes(hostname);
@@ -170,7 +268,15 @@ CHROMEOS_RELEASE_UNIBUILD=1
       new SshIdentity(testing.getExtensionUri(), new ChromiumosServiceModule()),
       vscode.window.createOutputChannel('void'),
       new Map<string, DeviceAttributes>([
-        [hostname, {board: 'board1', builderPath: 'board1-release/R1-2.0.0'}],
+        [
+          hostname,
+          {
+            board: 'board1',
+            builderPath: 'board1-release/R1-2.0.0',
+            imageType: 'release',
+            chromeosMajorVersion: 2,
+          },
+        ],
       ])
     );
 
@@ -187,6 +293,8 @@ CHROMEOS_RELEASE_UNIBUILD=1
     expect(await client.getDeviceAttributes(hostname)).toEqual({
       board: 'board1',
       builderPath: 'board1-release/R1-2.0.0',
+      imageType: 'release',
+      chromeosMajorVersion: 2,
     });
     expect(await onDidChangeDeviceClientReader.times()).toEqual(0);
 
@@ -202,6 +310,8 @@ CHROMEOS_RELEASE_UNIBUILD=1
         hostname: hostname,
         board: 'hatch',
         builderPath: 'hatch-release/R104-14901.0.0',
+        imageType: 'release',
+        chromeosMajorVersion: 14901,
       },
     ]);
 
@@ -209,6 +319,8 @@ CHROMEOS_RELEASE_UNIBUILD=1
     expect(await client.getDeviceAttributes(hostname)).toEqual({
       board: 'hatch',
       builderPath: 'hatch-release/R104-14901.0.0',
+      imageType: 'release',
+      chromeosMajorVersion: 14901,
     });
     expect(await onDidChangeDeviceClientReader.times()).toEqual(1);
 
@@ -246,6 +358,8 @@ CHROMEOS_RELEASE_UNIBUILD=1
         hostname: hostname,
         board: 'hatch',
         builderPath: 'hatch-release/R104-14901.0.0',
+        imageType: 'release',
+        chromeosMajorVersion: 14901,
       },
     ]);
 
@@ -253,6 +367,8 @@ CHROMEOS_RELEASE_UNIBUILD=1
     expect(await client.getDeviceAttributes(hostname)).toEqual({
       board: 'hatch',
       builderPath: 'hatch-release/R104-14901.0.0',
+      imageType: 'release',
+      chromeosMajorVersion: 14901,
     });
     expect(await onDidChangeDeviceClientReader.times()).toEqual(1);
   });

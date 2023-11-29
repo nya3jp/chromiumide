@@ -87,7 +87,15 @@ CHROMEOS_RELEASE_UNIBUILD=1
       new SshIdentity(testing.getExtensionUri(), new ChromiumosServiceModule()),
       vscode.window.createOutputChannel('void'),
       new Map<string, DeviceAttributes>([
-        [hostname, {board: 'board1', builderPath: 'board1-release/R1-2.0.0'}],
+        [
+          hostname,
+          {
+            board: 'board1',
+            builderPath: 'board1-release/R1-2.0.0',
+            imageType: 'release',
+            chromeosMajorVersion: 2,
+          },
+        ],
       ])
     );
 
@@ -112,6 +120,8 @@ CHROMEOS_RELEASE_UNIBUILD=1
         hostname: hostname,
         board: 'hatch',
         builderPath: 'hatch-release/R104-14901.0.0',
+        imageType: 'release',
+        chromeosMajorVersion: 14901,
       },
     ]);
   });
@@ -134,7 +144,15 @@ CHROMEOS_RELEASE_UNIBUILD=1
       new SshIdentity(testing.getExtensionUri(), new ChromiumosServiceModule()),
       vscode.window.createOutputChannel('void'),
       new Map<string, DeviceAttributes>([
-        [hostname, {board: 'board1', builderPath: 'board1-release/R1-2.0.0'}],
+        [
+          hostname,
+          {
+            board: 'board1',
+            builderPath: 'board1-release/R1-2.0.0',
+            imageType: 'release',
+            chromeosMajorVersion: 2,
+          },
+        ],
       ])
     );
 

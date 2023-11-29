@@ -12,6 +12,8 @@ import * as sshUtil from './ssh_util';
 export interface DeviceAttributes {
   board: string;
   builderPath: string | undefined;
+  imageType: string;
+  chromeosMajorVersion: number;
 }
 
 type DeviceAttributesWithHostname = DeviceAttributes & {
@@ -19,7 +21,12 @@ type DeviceAttributesWithHostname = DeviceAttributes & {
 };
 
 function equalAttributes(a: DeviceAttributes, b: DeviceAttributes): boolean {
-  return a.board === b.board && a.builderPath === b.builderPath;
+  return (
+    a.board === b.board &&
+    a.builderPath === b.builderPath &&
+    a.imageType === b.imageType &&
+    a.chromeosMajorVersion === b.chromeosMajorVersion
+  );
 }
 
 /**
@@ -147,5 +154,35 @@ function parseLsbRelease(content: string): DeviceAttributes {
   const builderPathMatch = /CHROMEOS_RELEASE_BUILDER_PATH=(.*)/.exec(content);
   const builderPath = builderPathMatch ? builderPathMatch[1] : undefined;
 
-  return {board, builderPath};
+  let imageType;
+  if (builderPath) {
+    const imageTypeMatch = /^.*-(.*)\/.+$/.exec(builderPath);
+    if (!imageTypeMatch) {
+      throw new Error(
+        'Release builder path is not in form <board>-<imageType>/<version>'
+      );
+    }
+    imageType = imageTypeMatch[1];
+  } else {
+    imageType = 'local';
+  }
+
+  // CHROMEOS_RELEASE_VERSION should be present on both prebuilt and manually built images.
+  const chromeosReleaseVersionMatch =
+    /CHROMEOS_RELEASE_VERSION=(\d+).\d+.\d+/.exec(content);
+  if (!chromeosReleaseVersionMatch) {
+    throw new Error(
+      `CHROMEOS_RELEASE_VERSION is missing or is not in correct format (XXX-YYYYY.Z.W), content = ${content}`
+    );
+  }
+  const chromeosMajorVersion = parseInt(chromeosReleaseVersionMatch[1]);
+
+  return {
+    board,
+    builderPath,
+    imageType,
+    chromeosMajorVersion,
+  };
 }
+
+export const TEST_ONLY = {parseLsbRelease};
