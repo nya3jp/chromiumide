@@ -171,3 +171,29 @@ export async function ensureSshSession(
 
   return port;
 }
+
+export async function showMissingInternalRepoErrorMessage(
+  command: string
+): Promise<void> {
+  const openGuide = 'Open guide';
+  const openFolder = 'Open folder';
+
+  switch (
+    await vscode.window.showErrorMessage(
+      `${command} requires internal chromiumos source code. Please set it up following the official guide, and open a folder in chromiumos repository.`,
+      openGuide,
+      openFolder
+    )
+  ) {
+    case openGuide:
+      await vscode.env.openExternal(
+        vscode.Uri.parse(
+          'https://chromium.googlesource.com/chromiumos/docs/+/HEAD/developer_guide.md#get-the-source-code'
+        )
+      );
+      break;
+    case openFolder:
+      await vscode.commands.executeCommand('vscode.openFolder');
+      break;
+  }
+}
