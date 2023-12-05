@@ -86,7 +86,7 @@ export async function addLease(context: CommandContext): Promise<void> {
       },
       async (_progress, token) => {
         try {
-          await context.crosfleetRunner.requestLease({
+          await context.crosfleetRunner.requestLeaseOrThrow({
             token: token,
             durationInMinutes: Number(durationStr),
             [filter.key]: filterValue,
