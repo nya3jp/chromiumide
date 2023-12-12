@@ -36,7 +36,10 @@ export class BoardItem implements Item {
 
   static create(parent: Breadcrumbs, board: BoardOrHost): BoardItem {
     const existing = this.knownBoardItems.get(parent)?.get(board);
-    if (existing) return existing;
+    if (existing) {
+      existing.decorateTreeItem();
+      return existing;
+    }
     const res = new this(parent, board);
     if (!this.knownBoardItems.has(parent)) {
       this.knownBoardItems.set(parent, new Map());
@@ -51,29 +54,29 @@ export class BoardItem implements Item {
   ) {
     this.breadcrumbs = parent.pushed(board.toString());
 
-    const treeItem = new vscode.TreeItem(
+    this.treeItem = new vscode.TreeItem(
       board.toString(),
       vscode.TreeItemCollapsibleState.Collapsed
     );
 
-    const isHost = board.isHost;
-    const isDefault = config.board.get() === board.toString();
+    this.decorateTreeItem();
+  }
 
-    treeItem.iconPath = isHost
+  private decorateTreeItem() {
+    const isHost = this.board.isHost;
+    const isDefault = config.board.get() === this.board.toString();
+
+    this.treeItem.iconPath = isHost
       ? new vscode.ThemeIcon('device-desktop')
       : new vscode.ThemeIcon('circuit-board');
 
-    if (isDefault) {
-      treeItem.description = 'default';
-    }
+    this.treeItem.description = isDefault ? 'default' : '';
 
-    treeItem.contextValue = isDefault
+    this.treeItem.contextValue = isDefault
       ? ViewItemContext.BOARD_DEFAULT
       : isHost
       ? ViewItemContext.BOARD_HOST
       : ViewItemContext.BOARD;
-
-    this.treeItem = treeItem;
   }
 
   async refreshChildren(ctx: Context): Promise<void | Error> {

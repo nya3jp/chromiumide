@@ -99,6 +99,23 @@ class TreeView<T> implements vscode.TreeView<T> {
         }
       | undefined
   ): Promise<void> {
+    return this.revealInner(element, options);
+  }
+
+  /**
+   * Internal implementation of reveal. When element is undefined, it reveals the first level items
+   * (which are revealed by default) only.
+   */
+  private async revealInner(
+    element?: T,
+    options?:
+      | {
+          select?: boolean | undefined;
+          focus?: boolean | undefined;
+          expand?: number | boolean | undefined;
+        }
+      | undefined
+  ): Promise<void> {
     if (!this.treeDataProvider.getParent) {
       fail('Missing getParent is not supported in injected TreeView');
       return;
@@ -126,7 +143,7 @@ class TreeView<T> implements vscode.TreeView<T> {
 
     // The VSCode API reads: By default revealed element is selected. In order to not to select, set
     // the option `select` to `false`.
-    if (options?.select !== false) {
+    if (element && options?.select !== false) {
       this.selection = [element];
       this.onDidChangeSelectionEmitter.fire({selection: this.selection});
     }
@@ -140,10 +157,19 @@ class TreeView<T> implements vscode.TreeView<T> {
   }
 
   private async refresh(elements: T[]) {
-    for (const element of elements) {
-      await this.reveal(element, {select: false, focus: false, expand: false});
+    // If no elements are given, we still need to reveal the first level items.
+    if (!elements.length) {
+      await this.revealInner();
+      return;
     }
-    return;
+
+    for (const element of elements) {
+      await this.reveal(element, {
+        select: false,
+        focus: false,
+        expand: false,
+      });
+    }
   }
 
   dispose() {

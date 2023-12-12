@@ -128,9 +128,58 @@ describe('Boards and packages', () => {
   });
 
   it('refreshes when default board changes', async () => {
-    const {boardsAndPackages} = state;
+    const {boardsAndPackages, chromiumosRoot, chroot} = state;
+
+    // Prepare betty and kukui board.
+    await testing.putFiles(chroot, {
+      'build/betty/fake': 'x',
+      'build/kukui/fake': 'x',
+    });
+
+    // Prepare cros command outputs.
+    testing.fakes.installFakeCrosClient(fakeExec, {
+      chromiumosRoot,
+      boards: [
+        {
+          name: 'betty',
+          packages: {
+            all: [],
+            workedOn: [],
+            allWorkon: [],
+          },
+        },
+        {
+          name: 'kukui',
+          packages: {
+            all: [],
+            workedOn: [],
+            allWorkon: [],
+          },
+        },
+      ],
+    });
 
     const treeDataProvider = boardsAndPackages.getTreeDataProviderForTesting();
+
+    const assertContextValue = async (
+      breadcrumbs: Breadcrumbs,
+      contextValue: string
+    ) => {
+      // Fake TreeView asynchronously refreshes the view and it doesn't provide any event to tell
+      // when it finishes, hence the polling.
+      await testing.flushMicrotasksUntil(
+        async () =>
+          (await treeDataProvider.getTreeItem(breadcrumbs)).contextValue ===
+          contextValue,
+        /* ms = */ 100
+      );
+      expect(
+        (await treeDataProvider.getTreeItem(breadcrumbs)).contextValue
+      ).toEqual(contextValue);
+    };
+
+    await assertContextValue(Breadcrumbs.from('betty'), ViewItemContext.BOARD);
+    await assertContextValue(Breadcrumbs.from('kukui'), ViewItemContext.BOARD);
 
     const reader = new testing.EventReader(
       treeDataProvider.onDidChangeTreeData!,
@@ -141,6 +190,22 @@ describe('Boards and packages', () => {
 
     // Confirm an event to refresh the tree is fired.
     await reader.read();
+
+    await assertContextValue(
+      Breadcrumbs.from('betty'),
+      ViewItemContext.BOARD_DEFAULT
+    );
+    await assertContextValue(Breadcrumbs.from('kukui'), ViewItemContext.BOARD);
+
+    await config.board.update('kukui');
+
+    await reader.read();
+
+    await assertContextValue(Breadcrumbs.from('betty'), ViewItemContext.BOARD);
+    await assertContextValue(
+      Breadcrumbs.from('kukui'),
+      ViewItemContext.BOARD_DEFAULT
+    );
   });
 
   it('refreshes on workon', async () => {
