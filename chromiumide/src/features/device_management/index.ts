@@ -55,7 +55,8 @@ export function activate(
     deviceClient
   );
   const deviceTreeDataProvider = new provider.DeviceTreeDataProvider(
-    deviceRepository
+    deviceRepository,
+    deviceClient
   );
 
   context.subscriptions.push(

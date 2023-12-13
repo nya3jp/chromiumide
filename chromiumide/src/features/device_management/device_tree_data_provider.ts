@@ -4,13 +4,30 @@
 
 import * as vscode from 'vscode';
 import * as dateFns from 'date-fns';
+import * as client from './device_client';
 import * as repository from './device_repository';
 
 export enum ItemKind {
+  INFO,
   DEVICE,
   CATEGORY,
   PLACEHOLDER,
   LOGIN,
+}
+
+export type DeviceInfoKey = 'board' | 'model' | 'builder path';
+
+export class DeviceInfoItem extends vscode.TreeItem {
+  readonly kind = ItemKind.INFO;
+  override readonly contextValue: string;
+  readonly value: string;
+
+  constructor(key: DeviceInfoKey, value: string) {
+    super(value);
+    this.description = `(${key})`;
+    this.value = value;
+    this.contextValue = key;
+  }
 }
 
 export class DeviceItem extends vscode.TreeItem {
@@ -18,8 +35,10 @@ export class DeviceItem extends vscode.TreeItem {
   readonly hostname: string;
   override readonly iconPath = new vscode.ThemeIcon('device-desktop');
 
-  constructor(device: repository.Device) {
-    super(device.hostname, vscode.TreeItemCollapsibleState.None);
+  constructor(readonly device: repository.Device) {
+    // Expand by default to show device info. There are at most three items now (board, model,
+    // builder path) so the view is not too cramped. Revisit the choice if more items are added.
+    super(device.hostname, vscode.TreeItemCollapsibleState.Expanded);
     this.hostname = device.hostname;
   }
 }
@@ -27,7 +46,7 @@ export class DeviceItem extends vscode.TreeItem {
 export class OwnedDeviceItem extends DeviceItem {
   override readonly contextValue = 'device-owned';
 
-  constructor(device: repository.OwnedDevice) {
+  constructor(override readonly device: repository.OwnedDevice) {
     super(device);
   }
 }
@@ -35,13 +54,12 @@ export class OwnedDeviceItem extends DeviceItem {
 export class LeasedDeviceItem extends DeviceItem {
   override readonly contextValue = 'device-leased';
 
-  constructor(device: repository.LeasedDevice) {
+  constructor(override readonly device: repository.LeasedDevice) {
     super(device);
-    this.description = `${device.board ?? '???'}/${device.model ?? '???'}`;
     const now = new Date();
     if (device.deadline) {
       const distance = dateFns.differenceInMinutes(device.deadline, now);
-      this.description += ` (${distance}m remaining)`;
+      this.description = ` (${distance}m remaining)`;
     }
   }
 }
@@ -84,6 +102,7 @@ export class LoginItem extends vscode.TreeItem {
 }
 
 type Item =
+  | DeviceInfoItem
   | OwnedDeviceItem
   | LeasedDeviceItem
   | CategoryItem
@@ -106,10 +125,16 @@ export class DeviceTreeDataProvider
     this.onDidChangeTreeDataEmitter,
   ];
 
-  constructor(private readonly deviceRepository: repository.DeviceRepository) {
+  constructor(
+    private readonly deviceRepository: repository.DeviceRepository,
+    private readonly deviceClient: client.DeviceClient
+  ) {
     // Subscribe for device repository updates.
     this.subscriptions.push(
       deviceRepository.onDidChange(() => {
+        this.onDidChangeTreeDataEmitter.fire();
+      }),
+      deviceClient.onDidChange(() => {
         this.onDidChangeTreeDataEmitter.fire();
       })
     );
@@ -176,6 +201,25 @@ export class DeviceTreeDataProvider
       }
       return items;
     }
+
+    if (parent.kind === ItemKind.DEVICE) {
+      const items: Item[] = [];
+      const lsbRelease = await this.deviceClient.readLsbRelease(
+        parent.hostname
+      );
+      if (lsbRelease instanceof Error) return [];
+
+      items.push(new DeviceInfoItem('board', lsbRelease.board));
+
+      if (parent instanceof LeasedDeviceItem && parent.device.model) {
+        items.push(new DeviceInfoItem('model', parent.device.model));
+      }
+      if (lsbRelease.builderPath) {
+        items.push(new DeviceInfoItem('builder path', lsbRelease.builderPath));
+      }
+      return items;
+    }
+
     return [];
   }
 
