@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as vscode from 'vscode';
+
 /**
  * Ensure all currently pending microtasks and all microtasks transitively
  * queued by them have finished.
@@ -12,6 +14,34 @@
 export async function flushMicrotasks(): Promise<void> {
   return new Promise(resolve => {
     setImmediate(resolve);
+  });
+}
+
+/**
+ * Returns a promise that is resolved after timeout or it is cancelled.
+ */
+async function cancellableSetTimeout(
+  timeoutMillis: number,
+  token: vscode.CancellationToken
+): Promise<void> {
+  return new Promise(resolve => {
+    const subscriptions: vscode.Disposable[] = [];
+
+    const resolver = () => {
+      vscode.Disposable.from(...subscriptions.splice(0)).dispose();
+      resolve();
+    };
+
+    const timeoutId = setTimeout(resolver, timeoutMillis);
+
+    subscriptions.push(
+      token.onCancellationRequested(() => {
+        if (token.isCancellationRequested) {
+          clearTimeout(timeoutId);
+          resolver();
+        }
+      })
+    );
   });
 }
 
@@ -29,12 +59,21 @@ export async function flushMicrotasksUntil(
   condition: () => Promise<boolean>,
   timeoutMillis: number
 ): Promise<void> {
+  const cancelSource = new vscode.CancellationTokenSource();
+
+  let done = false;
+  const timer = (async () => {
+    await cancellableSetTimeout(timeoutMillis, cancelSource.token);
+    done = true;
+  })();
+
   const conditionWaiter = (async () => {
-    while (!(await condition())) {
+    while (!done && !(await condition())) {
       await flushMicrotasks();
     }
+    cancelSource.cancel();
+    cancelSource.dispose();
   })();
-  const timer = new Promise(resolve => setTimeout(resolve, timeoutMillis));
 
-  await Promise.race([conditionWaiter, timer]);
+  await Promise.all([conditionWaiter, timer]);
 }
