@@ -7,7 +7,6 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as services from '../../../services';
 import {Metrics} from '../../metrics/metrics';
-import * as deviceClient from '../device_client';
 import * as provider from '../device_tree_data_provider';
 import * as prebuiltUtil from '../prebuilt_util';
 import {
@@ -196,14 +195,9 @@ export async function flashPrebuiltImage(
     return;
   }
 
-  const client = new deviceClient.DeviceClient(
-    context.deviceRepository,
-    context.sshIdentity,
-    context.output
-  );
-
-  const defaultBoard = await retrieveBoardWithProgress(client, hostname);
-
+  const lsbRelease = await context.deviceClient.readLsbRelease(hostname);
+  const defaultBoard =
+    lsbRelease instanceof Error ? undefined : lsbRelease.board;
   const board = await vscode.window.showInputBox({
     title: 'Board Name to Flash',
     value: defaultBoard,
@@ -263,20 +257,4 @@ export async function flashPrebuiltImage(
     `env BOTO_CONFIG=${source.root}/${BOTO_PATH} cros flash ssh://${hostname} ${imagePath}`
   );
   terminal.show();
-}
-
-async function retrieveBoardWithProgress(
-  client: deviceClient.DeviceClient,
-  hostname: string
-): Promise<string | undefined> {
-  return vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Window,
-      title: 'Flash Prebuilt Image: Auto-detecting board name',
-    },
-    async () => {
-      const result = await client.readLsbRelease(hostname);
-      return result instanceof Error ? undefined : result.board;
-    }
-  );
 }

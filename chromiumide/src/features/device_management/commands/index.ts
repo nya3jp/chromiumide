@@ -8,6 +8,7 @@ import * as services from '../../../services';
 import {underDevelopment} from '../../../services/config';
 import * as abandonedDevices from '../abandoned_devices';
 import * as crosfleet from '../crosfleet';
+import * as client from '../device_client';
 import * as repository from '../device_repository';
 import * as provider from '../device_tree_data_provider';
 import {SshIdentity} from '../ssh_identity';
@@ -38,7 +39,8 @@ export function registerCommands(
   output: vscode.OutputChannel,
   deviceRepository: repository.DeviceRepository,
   crosfleetRunner: crosfleet.CrosfleetRunner,
-  abandonedDevices: abandonedDevices.AbandonedDevices
+  abandonedDevices: abandonedDevices.AbandonedDevices,
+  deviceClient: client.DeviceClient
 ): vscode.Disposable {
   const vncSessions = new Map<string, vnc.VncSession>();
   const sshSessions = new Map<string, ssh.SshSession>();
@@ -57,6 +59,7 @@ export function registerCommands(
     sshSessions,
     abandonedDevices,
     sshIdentity,
+    deviceClient,
   };
 
   return vscode.Disposable.from(

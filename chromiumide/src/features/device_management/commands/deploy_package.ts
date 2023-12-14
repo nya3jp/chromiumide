@@ -11,7 +11,6 @@ import {
   Package,
   packageCmp,
 } from '../../chromiumos/boards_and_packages/package';
-import * as deviceClient from '../device_client';
 import {DeviceItem} from '../device_tree_data_provider';
 import {
   CommandContext,
@@ -19,10 +18,6 @@ import {
   promptKnownHostnameIfNeeded,
   showMissingInternalRepoErrorMessage,
 } from './common';
-
-type ClientInfo = {
-  board: string;
-};
 
 class QuickPickItemWithDescription implements vscode.QuickPickItem {
   constructor(
@@ -59,18 +54,24 @@ export async function deployToDevice(
   );
   if (!hostname) return;
 
-  const client = new deviceClient.DeviceClient(
-    context.deviceRepository,
-    context.sshIdentity,
-    context.output
-  );
-
-  const clientInfo = await retrieveClientInfoWithProgress(client, hostname);
+  const lsbRelease = await context.deviceClient.readLsbRelease(hostname);
+  const board =
+    lsbRelease instanceof Error
+      ? await vscode.window.showInputBox({
+          title: "Device's Board Name",
+          value: '',
+          prompt: 'Failed to get board from device, please input board name',
+          ignoreFocusOut: true,
+        })
+      : lsbRelease.board;
+  if (!board) {
+    return;
+  }
 
   const targetPackage = await promptTargetPackageWithCache(
-    clientInfo.board,
+    board,
     GLOBAL_BOARD_TO_PACKAGE_CACHE,
-    () => loadPackagesOnBoardOrThrow(clientInfo.board, context, chrootService)
+    () => loadPackagesOnBoardOrThrow(board, context, chrootService)
   );
   if (!targetPackage) return;
 
@@ -200,23 +201,4 @@ async function loadPackagesOnBoardOrThrow(
     );
   }
   return allPackages.sort(packageCmp);
-}
-
-async function retrieveClientInfoWithProgress(
-  client: deviceClient.DeviceClient,
-  hostname: string
-): Promise<ClientInfo> {
-  return vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Window,
-      title: 'Deploy Package: Auto-detecting board name',
-    },
-    async () => {
-      const result = await client.readLsbRelease(hostname);
-      if (result instanceof Error) throw result;
-      return {
-        board: result.board,
-      };
-    }
-  );
 }

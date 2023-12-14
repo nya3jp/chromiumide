@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import * as netUtil from '../../../common/net_util';
 import * as abandonedDevices from '../abandoned_devices';
 import * as crosfleet from '../crosfleet';
+import * as client from '../device_client';
 import * as repository from '../device_repository';
 import * as provider from '../device_tree_data_provider';
 import * as sshConfig from '../ssh_config';
@@ -25,6 +26,7 @@ export interface CommandContext {
   readonly sshSessions: Map<string, ssh.SshSession>;
   readonly abandonedDevices: abandonedDevices.AbandonedDevices;
   readonly sshIdentity: SshIdentity;
+  readonly deviceClient: client.DeviceClient;
 }
 
 export async function promptNewHostname(
