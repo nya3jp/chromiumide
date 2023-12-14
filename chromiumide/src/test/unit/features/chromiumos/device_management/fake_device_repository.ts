@@ -37,4 +37,8 @@ export class FakeDeviceRepository
   async getDevices(): Promise<Device[]> {
     return this.devices;
   }
+
+  async getHostnames(): Promise<string[]> {
+    return (await this.getDevices()).map(device => device.hostname);
+  }
 }

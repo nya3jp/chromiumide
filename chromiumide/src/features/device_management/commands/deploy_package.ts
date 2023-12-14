@@ -60,6 +60,7 @@ export async function deployToDevice(
   if (!hostname) return;
 
   const client = new deviceClient.DeviceClient(
+    context.deviceRepository,
     context.sshIdentity,
     context.output
   );

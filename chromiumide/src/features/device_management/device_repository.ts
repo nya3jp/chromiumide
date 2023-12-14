@@ -253,4 +253,8 @@ export class DeviceRepository {
     const leasedDevices = await this.leased.getDevices();
     return [...ownedDevices, ...leasedDevices];
   }
+
+  async getHostnames(): Promise<string[]> {
+    return (await this.getDevices()).map(device => device.hostname);
+  }
 }

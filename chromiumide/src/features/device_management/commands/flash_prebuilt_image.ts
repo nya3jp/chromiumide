@@ -197,6 +197,7 @@ export async function flashPrebuiltImage(
   }
 
   const client = new deviceClient.DeviceClient(
+    context.deviceRepository,
     context.sshIdentity,
     context.output
   );
