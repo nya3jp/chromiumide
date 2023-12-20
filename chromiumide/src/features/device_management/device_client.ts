@@ -31,8 +31,12 @@ export class DeviceClient implements vscode.Disposable {
   >();
   readonly onDidChange = this.onDidChangeEmitter.event;
 
+  private readonly onDidRefreshEmitter = new vscode.EventEmitter<void>();
+  readonly onDidRefresh = this.onDidRefreshEmitter.event;
+
   private readonly subscriptions: vscode.Disposable[] = [
     this.onDidChangeEmitter,
+    this.onDidRefreshEmitter,
   ];
 
   constructor(
@@ -86,6 +90,7 @@ export class DeviceClient implements vscode.Disposable {
     if (updatedDevicesAttributes.length > 0) {
       this.onDidChangeEmitter.fire(updatedDevicesAttributes);
     }
+    this.onDidRefreshEmitter.fire();
   }
 
   /*

@@ -13,7 +13,6 @@ import {ChromiumosServiceModule} from '../../../../../services/chromiumos';
 import * as testing from '../../../../testing';
 import {FakeDeviceRepository} from './fake_device_repository';
 
-// TODO(hscham): add test case for regular refresh to do nothing if device metadata stays the same.
 describe('Device client', () => {
   testing.installVscodeDouble();
 
@@ -72,12 +71,17 @@ CHROMEOS_RELEASE_UNIBUILD=1
       ])
     );
 
-    // TODO(hscham): add eventReader for client.onDidChange to assert event not fired.
+    const onDidChangeDeviceClientReader = new testing.EventReader(
+      client.onDidChange
+    );
+    subscriptions.push(onDidChangeDeviceClientReader);
+
     const attributes = await client.getDeviceAttributes(hostname);
     expect(attributes).toEqual({
       board: 'board1',
       builderPath: 'board1-release/R1-2.0.0',
     });
+    expect(await onDidChangeDeviceClientReader.times()).toEqual(0);
   });
 
   it('gets device attributes uncached', async () => {
@@ -101,7 +105,7 @@ CHROMEOS_RELEASE_UNIBUILD=1
 
     // Check event was fired with updated device attributes.
     const updatedDevicesAttributes = await onDidChangeDeviceClientReader.read();
-    expect(updatedDevicesAttributes.length === 1);
+    expect(updatedDevicesAttributes.length).toEqual(1);
     expect(updatedDevicesAttributes).toEqual([
       {
         hostname: hostname,
@@ -109,14 +113,15 @@ CHROMEOS_RELEASE_UNIBUILD=1
         builderPath: 'hatch-release/R104-14901.0.0',
       },
     ]);
+    expect(await onDidChangeDeviceClientReader.times()).toEqual(1);
 
     expect(attributes).toEqual({
       board: 'hatch',
       builderPath: 'hatch-release/R104-14901.0.0',
     });
 
-    // TODO(hscham): add eventReader for client.onDidChange to assert event not fired when
-    // getDevicettributes is called again.
+    await client.getDeviceAttributes(hostname);
+    expect(await onDidChangeDeviceClientReader.times()).toEqual(1);
   });
 
   it('gets device attributes not in repository', async () => {
@@ -135,7 +140,7 @@ CHROMEOS_RELEASE_UNIBUILD=1
 
     // Check event was fired with updated device attributes.
     const updatedDevicesAttributes = await onDidChangeDeviceClientReader.read();
-    expect(updatedDevicesAttributes.length === 1);
+    expect(updatedDevicesAttributes.length).toEqual(1);
     expect(updatedDevicesAttributes).toEqual([
       {
         hostname: hostname,
@@ -143,14 +148,15 @@ CHROMEOS_RELEASE_UNIBUILD=1
         builderPath: 'hatch-release/R104-14901.0.0',
       },
     ]);
+    expect(await onDidChangeDeviceClientReader.times()).toEqual(1);
 
     expect(attributes).toEqual({
       board: 'hatch',
       builderPath: 'hatch-release/R104-14901.0.0',
     });
 
-    // TODO(hscham): add eventReader for client.onDidChange to assert event not fired when
-    // getDevicettributes is called again.
+    await client.getDeviceAttributes(hostname);
+    expect(await onDidChangeDeviceClientReader.times()).toEqual(1);
   });
 
   it('refreshes device metadata every minute', async () => {
@@ -172,19 +178,25 @@ CHROMEOS_RELEASE_UNIBUILD=1
       client.onDidChange
     );
     subscriptions.push(onDidChangeDeviceClientReader);
+    const onDidRefreshDeviceClientReader = new testing.EventReader(
+      client.onDidRefresh
+    );
+    subscriptions.push(onDidRefreshDeviceClientReader);
 
     // Cache is used.
     expect(await client.getDeviceAttributes(hostname)).toEqual({
       board: 'board1',
       builderPath: 'board1-release/R1-2.0.0',
     });
+    expect(await onDidChangeDeviceClientReader.times()).toEqual(0);
 
     // After one minute and wait for refresh (by reading the lsb-release on device) to finish.
     jasmine.clock().tick(1 * 60 * 1000);
     const updatedDevicesAttributes = await onDidChangeDeviceClientReader.read();
+    expect(await onDidChangeDeviceClientReader.times()).toEqual(1);
 
     // Check event was fired with updated device attributes.
-    expect(updatedDevicesAttributes.length === 1);
+    expect(updatedDevicesAttributes.length).toEqual(1);
     expect(updatedDevicesAttributes).toEqual([
       {
         hostname: hostname,
@@ -193,12 +205,16 @@ CHROMEOS_RELEASE_UNIBUILD=1
       },
     ]);
 
-    // Cache have been updated.
-    // TODO(hscham): add eventReader for client.onDidChange to assert event not fired.
+    // Cache have been updated and were used to get device attributes. Does not trigger update.
     expect(await client.getDeviceAttributes(hostname)).toEqual({
       board: 'hatch',
       builderPath: 'hatch-release/R104-14901.0.0',
     });
+    expect(await onDidChangeDeviceClientReader.times()).toEqual(1);
+
+    // Check that the next refresh() call does nothing since attributes have not changed.
+    await onDidRefreshDeviceClientReader.read();
+    expect(await onDidChangeDeviceClientReader.times()).toEqual(1);
   });
 
   it('refreshes device metadata the first time', async () => {
@@ -221,9 +237,10 @@ CHROMEOS_RELEASE_UNIBUILD=1
     // After one minute and wait for refresh (by reading the lsb-release on device) to finish.
     jasmine.clock().tick(1 * 60 * 1000);
     const updatedDevicesAttributes = await onDidChangeDeviceClientReader.read();
+    expect(await onDidChangeDeviceClientReader.times()).toEqual(1);
 
     // Check event was fired with updated device attributes.
-    expect(updatedDevicesAttributes.length === 1);
+    expect(updatedDevicesAttributes.length).toEqual(1);
     expect(updatedDevicesAttributes).toEqual([
       {
         hostname: hostname,
@@ -233,10 +250,10 @@ CHROMEOS_RELEASE_UNIBUILD=1
     ]);
 
     // Cache have been updated.
-    // TODO(hscham): add eventReader for client.onDidChange to assert event not fired.
     expect(await client.getDeviceAttributes(hostname)).toEqual({
       board: 'hatch',
       builderPath: 'hatch-release/R104-14901.0.0',
     });
+    expect(await onDidChangeDeviceClientReader.times()).toEqual(1);
   });
 });

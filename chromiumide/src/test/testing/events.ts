@@ -16,6 +16,7 @@ export class EventReader<T> implements vscode.Disposable {
 
   private readonly queue: T[] = [];
   private waiter?: (x: T) => void;
+  private timesInternal = 0;
 
   constructor(event: vscode.Event<T>, subscriptions?: vscode.Disposable[]) {
     if (subscriptions) {
@@ -24,6 +25,7 @@ export class EventReader<T> implements vscode.Disposable {
     this.subscriptions.push(
       event(x => {
         this.queue.push(x);
+        this.timesInternal += 1;
         this.notify();
       })
     );
@@ -52,6 +54,14 @@ export class EventReader<T> implements vscode.Disposable {
     return new Promise(resolve => {
       this.waiter = resolve;
     });
+  }
+
+  /**
+   * Returns the number of times this event has been fired since construction, i.e. does not reset
+   * between calls.
+   */
+  times(): number {
+    return this.timesInternal;
   }
 
   /**
