@@ -26,29 +26,7 @@ export class Https {
     url: string,
     options: https.RequestOptions = {}
   ): Promise<string> {
-    return new Promise((resolve, reject) => {
-      https
-        .get(url, {...options, method: 'GET'}, res => {
-          const chunks: Uint8Array[] = [];
-          if (res.statusCode !== 200) {
-            reject(
-              new HttpsError(
-                'GET',
-                url,
-                Buffer.concat(chunks).toString(),
-                res.statusCode
-              )
-            );
-          }
-          res.on('data', data => chunks.push(data));
-          res.on('end', () => {
-            resolve(Buffer.concat(chunks).toString());
-          });
-        })
-        .on('error', error => {
-          reject(new HttpsError('GET', url, error.message));
-        });
-    });
+    return this.httpsRequest(url, options, 'GET');
   }
 
   /**
@@ -60,35 +38,7 @@ export class Https {
     url: string,
     options: https.RequestOptions = {}
   ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      https
-        .request(url, {...options, method: 'DELETE'}, res => {
-          const chunks: Uint8Array[] = [];
-          if (
-            !res.statusCode ||
-            res.statusCode < 200 ||
-            300 <= res.statusCode
-          ) {
-            reject(
-              new HttpsError(
-                'DELETE',
-                url,
-                Buffer.concat(chunks).toString(),
-                res.statusCode
-              )
-            );
-            return;
-          }
-          res.on('data', data => chunks.push(data));
-          res.on('end', () => {
-            resolve();
-          });
-        })
-        .on('error', error => {
-          reject(new HttpsError('DELETE', url, error.message));
-        })
-        .end();
-    });
+    await this.httpsRequest(url, options, 'DELETE');
   }
 
   /**
@@ -105,7 +55,6 @@ export class Https {
     const postDataString = JSON.stringify(postData);
 
     const opts = {
-      method: 'PUT',
       ...options,
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
@@ -114,34 +63,7 @@ export class Https {
       },
     };
 
-    return new Promise((resolve, reject) => {
-      const req = https
-        .request(url, opts, res => {
-          const chunks: Uint8Array[] = [];
-          res.on('data', data => chunks.push(data));
-          res.on('end', () => {
-            const status = res.statusCode!;
-            if (200 <= status && status < 300) {
-              resolve(Buffer.concat(chunks).toString());
-              return;
-            }
-            reject(
-              new HttpsError(
-                'PUT',
-                url,
-                Buffer.concat(chunks).toString(),
-                res.statusCode
-              )
-            );
-          });
-        })
-        .on('error', error => {
-          reject(new HttpsError('PUT', url, error.message));
-        });
-
-      req.write(postDataString);
-      req.end();
-    });
+    return this.httpsRequest(url, opts, 'PUT', postDataString);
   }
 
   /**
@@ -158,7 +80,6 @@ export class Https {
     const postDataString = JSON.stringify(postData);
 
     const opts = {
-      method: 'POST',
       ...options,
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
@@ -167,20 +88,31 @@ export class Https {
       },
     };
 
+    return this.httpsRequest(url, opts, 'POST', postDataString);
+  }
+
+  static async httpsRequest(
+    url: string,
+    opts: https.RequestOptions,
+    method: 'PUT' | 'POST' | 'DELETE' | 'GET',
+    writable?: string
+  ): Promise<string> {
+    const chunks: Uint8Array[] = [];
     return new Promise((resolve, reject) => {
       const req = https
-        .request(url, opts, res => {
-          const chunks: Uint8Array[] = [];
+        .request(url, {...opts, method: method}, res => {
           res.on('data', data => chunks.push(data));
           res.on('end', () => {
-            const status = res.statusCode!;
-            if (200 <= status && status < 300) {
+            if (
+              res.statusCode &&
+              200 <= res.statusCode &&
+              res.statusCode < 300
+            ) {
               resolve(Buffer.concat(chunks).toString());
-              return;
             }
             reject(
               new HttpsError(
-                'POST',
+                method,
                 url,
                 Buffer.concat(chunks).toString(),
                 res.statusCode
@@ -189,10 +121,12 @@ export class Https {
           });
         })
         .on('error', error => {
-          reject(new HttpsError('POST', url, error.message));
+          reject(new HttpsError(method, url, error.message));
         });
 
-      req.write(postDataString);
+      if (writable) {
+        req.write(writable);
+      }
       req.end();
     });
   }
