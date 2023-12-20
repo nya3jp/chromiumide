@@ -1,0 +1,247 @@
+// Copyright 2023 The ChromiumOS Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+import * as fs from 'fs';
+import * as semver from 'semver';
+import {execute} from './common';
+
+// This script updates all the package versions. The registry we use poses security restriction not
+// to use packages updated within 1 week and for this reason `npm update` doesn't work as is. That's
+// why we need this script.
+
+// Usage: npx ts-node tools/update.ts
+
+const MANUALLY_UPDATED_PACKAGES = [
+  // Should use the same node and vscode versions as in the engines section in package.json.
+  '@types/node',
+  '@types/vscode',
+];
+
+async function npmJson<T>(...args: string[]): Promise<T> {
+  const output = await npm(...args, '--json');
+  return JSON.parse(output);
+}
+
+async function npm(...args: string[]): Promise<string> {
+  return await execute('npm', args);
+}
+
+type List = {
+  dependencies: {
+    [key: string]: {
+      version: string;
+    };
+  };
+};
+
+type InfoTime = {
+  modified: string;
+  created: string;
+  [version: string]: string;
+};
+
+// 1 week plus buffer time ago.
+const RECENT_DATE: Date = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+
+type PackageSpec = {
+  name: string;
+  version: semver.SemVer;
+  dev: boolean;
+};
+
+/**
+ * Finds the latest stable version that would exist in the registry.
+ */
+function findLatestStableVersion(infoTime: InfoTime): semver.SemVer {
+  let best: semver.SemVer | undefined;
+
+  for (const [version, time] of Object.entries(infoTime)) {
+    if (version === 'modified' || version === 'created') {
+      continue;
+    }
+    const sv = new semver.SemVer(version);
+
+    if (sv.prerelease.length > 0) {
+      continue;
+    }
+
+    const date = new Date(time);
+    if (date.getTime() >= RECENT_DATE.getTime()) {
+      continue;
+    }
+    if (!best || best.compare(sv) < 0) {
+      best = sv;
+    }
+  }
+  if (!best) {
+    throw new Error(`Version published before ${RECENT_DATE} not found`);
+  }
+  return best;
+}
+
+/**
+ * Installs new packages ensuring tests pass. If any of the tests fail, all the versions are
+ * reverted. Returns true if the new packages have been installed.
+ */
+async function update(packageSpecs: PackageSpec[]): Promise<boolean> {
+  const packageJsonContent = await fs.promises.readFile('package.json', 'utf8');
+  const packageLockJsonContent = await fs.promises.readFile(
+    'package-lock.json',
+    'utf8'
+  );
+
+  try {
+    for (const spec of packageSpecs) {
+      await npm(
+        'install',
+        ...(spec.dev ? ['--save-dev'] : []),
+        `${spec.name}@${spec.version}`
+      );
+    }
+  } catch (e: unknown) {
+    console.error(`Failed to update ${packageSpecs}: ${e}`);
+    return false;
+  }
+
+  // Run test.
+  try {
+    await npm('test');
+    return true;
+  } catch (_e: unknown) {
+    console.error(`Test failed for ${packageSpecs}; reverting the update`);
+  }
+
+  // Revert the update.
+  await fs.promises.writeFile('package.json', packageJsonContent);
+  await fs.promises.writeFile('package-lock.json', packageLockJsonContent);
+  await npm('ci');
+
+  return false;
+}
+
+/**
+ * Updates packages and returns the new package specs for updated packages.
+ */
+async function updateAll(packageSpecs: PackageSpec[]): Promise<PackageSpec[]> {
+  // Put foo and @types/foo in the same category and update them together.
+  const categorizedNewPackages = new Map<string, PackageSpec[]>();
+
+  await Promise.all(
+    packageSpecs.map(async ({name, version, dev}) => {
+      if (MANUALLY_UPDATED_PACKAGES.includes(name)) {
+        console.log(`Skipping ${name}, which should be manually updated`);
+        return;
+      }
+
+      const infoTime = await npmJson<InfoTime>('view', name, 'time');
+      const newVersion = findLatestStableVersion(infoTime);
+
+      if (version.compare(newVersion) >= 0) {
+        return;
+      }
+
+      const category = name.startsWith('@types/')
+        ? name.substring('@types/'.length)
+        : name;
+
+      if (!categorizedNewPackages.has(category)) {
+        categorizedNewPackages.set(category, []);
+      }
+      const newPackageSpecs = categorizedNewPackages.get(category)!;
+
+      newPackageSpecs.push({
+        name,
+        version: newVersion,
+        dev,
+      });
+    })
+  );
+
+  const updatedPackages = [];
+  for (const packageSpecs of categorizedNewPackages.values()) {
+    if (await update(packageSpecs)) {
+      updatedPackages.push(...packageSpecs);
+    }
+  }
+  return updatedPackages;
+}
+
+function commitMessage(
+  oldPackageSpecs: PackageSpec[],
+  newPackageSpecs: PackageSpec[]
+): string {
+  const names = [];
+  for (const spec of newPackageSpecs) {
+    names.push(spec.name);
+  }
+  names.sort();
+
+  const changes = [];
+  for (const name of names) {
+    const oldSpec = oldPackageSpecs.find(spec => spec.name === name)!;
+    const newSpec = newPackageSpecs.find(spec => spec.name === name)!;
+
+    changes.push(`* ${name}: ${oldSpec.version} -> ${newSpec.version}`);
+  }
+
+  return `ide: update packages
+
+Commit generated by tools/update.ts .
+
+Updated packages:
+
+${changes.join('\n')}
+
+BUG=b:293991702
+TEST=npm t
+`;
+}
+
+async function main() {
+  if (!process.cwd().endsWith('chromiumide')) {
+    throw new Error('This script should be run from the chromiumide directory');
+  }
+
+  await npm('ci');
+
+  const allDeps = (await npmJson<List>('list')).dependencies;
+  const prodDeps = (await npmJson<List>('list', '--omit', 'dev')).dependencies;
+
+  const packageSpecs: PackageSpec[] = [];
+
+  for (const [name, {version}] of Object.entries(allDeps)) {
+    const dev = !prodDeps[name];
+    packageSpecs.push({
+      name,
+      version: new semver.SemVer(version),
+      dev,
+    });
+  }
+
+  const newPackageSpecs = await updateAll(packageSpecs);
+
+  if (newPackageSpecs.length === 0) {
+    console.log('No packages updated; you are done');
+    return;
+  }
+
+  await execute('git', [
+    'commit',
+    '-a',
+    '-m',
+    commitMessage(packageSpecs, newPackageSpecs),
+  ]);
+
+  console.log(
+    `${newPackageSpecs.length} packages updated; please upload generated commit`
+  );
+}
+
+if (require.main === module) {
+  main().catch(e => {
+    console.error(e);
+    // eslint-disable-next-line no-process-exit
+    process.exit(1);
+  });
+}
