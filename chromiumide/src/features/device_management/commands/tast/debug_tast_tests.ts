@@ -120,7 +120,7 @@ export async function debugTastTests(
   }
 
   try {
-    await debugSelectedTests(context, hostname, testNames);
+    await debugSelectedTests(context, target, testNames);
     return new DebugTastTestsResult();
   } catch (err) {
     showPromptWithOpenLogChoice(context, 'Failed to run tests.', true);
@@ -135,7 +135,7 @@ export async function debugTastTests(
  */
 async function debugSelectedTests(
   context: CommandContext,
-  hostname: string,
+  target: string,
   testNames: string[]
 ): Promise<void> {
   const dlvPort = 2345;
@@ -153,7 +153,7 @@ async function debugSelectedTests(
         new vscode.ShellExecution(
           `cros_sdk tast run -failfortests -attachdebugger=local:${dlvPort} ${extraArgs.join(
             ' '
-          )} ${hostname} ${testNames.join(' ')}`
+          )} ${target} ${testNames.join(' ')}`
         ),
         '$prep-tast-debugger'
       );
