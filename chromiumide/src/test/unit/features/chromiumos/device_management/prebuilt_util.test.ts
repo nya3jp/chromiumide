@@ -4,6 +4,7 @@
 
 import * as commonUtil from '../../../../../common/common_util';
 import * as prebuiltUtil from '../../../../../features/device_management/prebuilt_util';
+import {Metrics} from '../../../../../features/metrics/metrics';
 import * as services from '../../../../../services';
 import * as testing from '../../../../testing';
 import * as fakes from '../../../../testing/fakes';
@@ -104,5 +105,22 @@ bcbb260575b8ad07f82e3f748e671a9adfcbfd71 refs/heads/stabilize-10032.111.B
       async () => FAKE_STDOUT
     );
     expect(milestones).toEqual([104, 103, 102, 101, 100]);
+  });
+
+  it('report error when failed to get ChromiumOS manifest', async () => {
+    spyOn(Metrics, 'send');
+    const milestones = await prebuiltUtil.getChromeMilestones(async () => {
+      throw new Error(
+        'GET https://chromium.googlesource.com/chromiumos/manifest/+refs?format=TEXT: status code: 404: body'
+      );
+    });
+    expect(milestones).toEqual([]);
+    expect(Metrics.send).toHaveBeenCalledOnceWith({
+      category: 'error',
+      group: 'device',
+      name: 'device_management_fetch_manifest_refs_error',
+      description:
+        'GET https://chromium.googlesource.com/chromiumos/manifest/+refs?format=TEXT: status code: 404: body',
+    });
   });
 });

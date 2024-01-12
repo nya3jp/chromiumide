@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import * as https from 'https';
 import * as vscode from 'vscode';
+import {Https} from '../../common/https';
 import * as services from '../../services';
+import {Metrics} from '../metrics/metrics';
 
 export type ImageVersion = {
   chromeMilestone: number;
@@ -43,32 +44,31 @@ function compareCrosVersions(a: ImageVersion, b: ImageVersion): number {
 export async function getChromeMilestones(
   getManifestRefs = fetchChromiumOsManifestRefs
 ): Promise<number[]> {
-  const output = await getManifestRefs();
+  const output = await getManifestRefs().catch(error => {
+    // If failed to get manifest content, return '', and parseChromiumOsManifestRefs will return an
+    // empty list, so that user can continue with the image path selection process by manually
+    // inputing the milestone they want.
+    // Report error to metrics for investigation.
+    Metrics.send({
+      category: 'error',
+      group: 'device',
+      name: 'device_management_fetch_manifest_refs_error',
+      description: error.message,
+    });
+    return '';
+  });
   const milestones = parseChromiumOsManifestRefs(output);
   // The ChromiumOS manifest contains only the milestones after branch point, but there is always a
   // newer milestone in development (i.e. release and postsubmit builders for it exist).
   // See go/chrome-cycle.
-  milestones.unshift(milestones[0] + 1);
+  if (milestones.length > 0) milestones.unshift(milestones[0] + 1);
   return milestones;
 }
 
-function fetchChromiumOsManifestRefs(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    https
-      .get(
-        'https://chromium.googlesource.com/chromiumos/manifest/+refs?format=TEXT',
-        res => {
-          const body: Buffer[] = [];
-          res.on('data', (chunk: Buffer) => {
-            body.push(chunk);
-          });
-          res.on('end', () => {
-            resolve(Buffer.concat(body).toString());
-          });
-        }
-      )
-      .on('error', e => reject(e));
-  });
+async function fetchChromiumOsManifestRefs(): Promise<string> {
+  return await Https.getOrThrow(
+    'https://chromium.googlesource.com/chromiumos/manifest/+refs?format=TEXT'
+  );
 }
 
 function parseChromiumOsManifestRefs(output: string): number[] {

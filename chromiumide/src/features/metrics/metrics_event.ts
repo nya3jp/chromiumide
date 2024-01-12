@@ -209,11 +209,9 @@ interface DebuggingEvent extends EventBase {
   tests_count: number;
 }
 
-type DeviceManagementEvent = EventBase & {
-  category: 'interactive';
-  group: 'device';
-} & (
+type DeviceManagementEvent = EventBase & {group: 'device'} & (
     | {
+        category: 'interactive';
         name:
           | 'device_management_abandon_lease'
           | 'device_management_add_device'
@@ -231,12 +229,18 @@ type DeviceManagementEvent = EventBase & {
           | 'device_management_syslog_viewer_open';
       }
     | {
+        category: 'interactive';
         name: 'device_management_flash_prebuilt_image';
         image_type: string;
       }
     | {
+        category: 'interactive';
         name: 'device_management_copy_device_attribute';
         attribute: string;
+      }
+    | {
+        category: 'error';
+        name: 'device_management_fetch_manifest_refs_error';
       }
   );
 
