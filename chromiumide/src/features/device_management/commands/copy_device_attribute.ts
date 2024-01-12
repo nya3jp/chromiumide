@@ -20,3 +20,18 @@ export async function copyHostname(
 
   await vscode.env.clipboard.writeText(item.hostname);
 }
+
+export async function copyAttribute(
+  context: CommandContext,
+  item: provider.DeviceAttributeItem
+): Promise<void> {
+  Metrics.send({
+    category: 'interactive',
+    group: 'device',
+    name: 'device_management_copy_device_attribute',
+    description: 'copy device attribute',
+    attribute: item.contextValue,
+  });
+
+  await vscode.env.clipboard.writeText(item.value);
+}

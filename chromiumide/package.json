@@ -166,6 +166,21 @@
         "title": "Copy Hostname"
       },
       {
+        "command": "chromiumide.deviceManagement.copyBoard",
+        "category": "CrOS",
+        "title": "Copy Board"
+      },
+      {
+        "command": "chromiumide.deviceManagement.copyModel",
+        "category": "CrOS",
+        "title": "Copy Model"
+      },
+      {
+        "command": "chromiumide.deviceManagement.copyBuilderPath",
+        "category": "CrOS",
+        "title": "Copy Builder Path"
+      },
+      {
         "command": "chromiumide.deviceManagement.debugTastTests",
         "category": "CrOS",
         "title": "Debug tast tests",
@@ -648,6 +663,21 @@
           "group": "8_copy"
         },
         {
+          "command": "chromiumide.deviceManagement.copyBoard",
+          "when": "view == devices && viewItem == board",
+          "group": "8_copy"
+        },
+        {
+          "command": "chromiumide.deviceManagement.copyModel",
+          "when": "view == devices && viewItem == model",
+          "group": "8_copy"
+        },
+        {
+          "command": "chromiumide.deviceManagement.copyBuilderPath",
+          "when": "view == devices && viewItem == 'builder path'",
+          "group": "8_copy"
+        },
+        {
           "command": "chromiumide.deviceManagement.deleteDevice",
           "when": "view == devices && viewItem == device-owned",
           "group": "inline@9"
@@ -758,6 +788,18 @@
         },
         {
           "command": "chromiumide.deviceManagement.copyHostname",
+          "when": "false"
+        },
+        {
+          "command": "chromiumide.deviceManagement.copyBoard",
+          "when": "false"
+        },
+        {
+          "command": "chromiumide.deviceManagement.copyModel",
+          "when": "false"
+        },
+        {
+          "command": "chromiumide.deviceManagement.copyBuilderPath",
           "when": "false"
         },
         {

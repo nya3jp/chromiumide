@@ -234,6 +234,10 @@ type DeviceManagementEvent = EventBase & {
         name: 'device_management_flash_prebuilt_image';
         image_type: string;
       }
+    | {
+        name: 'device_management_copy_device_attribute';
+        attribute: string;
+      }
   );
 
 type ExtensionSuggestionEvent = EventBase & {

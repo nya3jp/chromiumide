@@ -18,7 +18,7 @@ import {addExistingHostsCommand} from './add_existing_hosts';
 import {CommandContext} from './common';
 import {connectToDeviceForShell} from './connect_ssh';
 import {connectToDeviceForScreen} from './connect_vnc';
-import {copyHostname} from './copy_hostname';
+import {copyAttribute, copyHostname} from './copy_device_attribute';
 import {crosfleetLogin} from './crosfleet_login';
 import {deployToDevice} from './deploy_package';
 import {addDevice} from './device_add';
@@ -107,6 +107,18 @@ export function registerCommands(
     vscodeRegisterCommand(
       'chromiumide.deviceManagement.copyHostname',
       (item: provider.DeviceItem) => copyHostname(context, item)
+    ),
+    vscodeRegisterCommand(
+      'chromiumide.deviceManagement.copyBoard',
+      (item: provider.DeviceAttributeItem) => copyAttribute(context, item)
+    ),
+    vscodeRegisterCommand(
+      'chromiumide.deviceManagement.copyModel',
+      (item: provider.DeviceAttributeItem) => copyAttribute(context, item)
+    ),
+    vscodeRegisterCommand(
+      'chromiumide.deviceManagement.copyBuilderPath',
+      (item: provider.DeviceAttributeItem) => copyAttribute(context, item)
     ),
     vscodeRegisterCommand('chromiumide.deviceManagement.openLogs', () => {
       output.show();
