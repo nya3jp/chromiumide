@@ -16,6 +16,7 @@ import * as crosFormat from './cros_format';
 import * as ebuild from './ebuild';
 import {Platform2Gtest} from './platform2_gtest';
 import * as platformEc from './platform_ec';
+import * as suggestAutosetgov from './suggest_autosetgov';
 import * as targetBoard from './target_board';
 import {Tast} from './tast';
 import * as tricium from './tricium';
@@ -144,6 +145,10 @@ export class Chromiumos implements vscode.Disposable {
 
       if (config.tast.enabled.get()) {
         this.subscriptions.push(new Tast(chrootService, gitDirsWatcher));
+      }
+
+      if (config.autosetgov.check.get()) {
+        this.subscriptions.push(new suggestAutosetgov.Recommender());
       }
     }
   }

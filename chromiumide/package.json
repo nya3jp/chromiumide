@@ -847,6 +847,11 @@
     "configuration": {
       "title": "ChromiumIDE",
       "properties": {
+        "chromiumide.autosetgov.check": {
+          "type": "boolean",
+          "markdownDescription": "Check if CPU governor control option is set for cros build-packages",
+          "default": true
+        },
         "chromiumide.board": {
           "type": "string",
           "description": "The board to use for generating C++ cross references and autocompletion"

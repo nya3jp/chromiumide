@@ -237,6 +237,10 @@ export const testCoverage = {
   enabled: new ConfigValue<boolean>('testCoverage.enabled'),
 };
 
+export const autosetgov = {
+  check: new ConfigValue<boolean>('autosetgov.check'),
+};
+
 export const TEST_ONLY = {
   CHROMIUMIDE_PREFIX,
 };

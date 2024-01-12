@@ -257,6 +257,14 @@ type ExtensionSuggestionEvent = EventBase & {
         name: 'misc_installed_suggested_extension';
         extension: string;
       }
+    | {
+        category: 'background';
+        name: 'misc_autosetgov_suggested';
+      }
+    | {
+        category: 'interactive';
+        name: 'misc_autosetgov_activated';
+      }
   );
 
 type EbuildEvent = EventBase & {
