@@ -106,10 +106,10 @@ describe('Gerrit', () => {
 
     const commitId = await git.getCommitId();
 
-    FakeGerrit.initialize().setChange({
-      id: changeId,
-      info: changeInfo(changeId, [commitId]),
-      comments: {
+    FakeGerrit.initialize({accountsMe: AUTHOR}).setChange(
+      changeId,
+      changeInfo(changeId, [commitId]),
+      {
         'cryptohome/cryptohome.cc': [
           unresolvedCommentInfo({
             line: 3,
@@ -117,8 +117,8 @@ describe('Gerrit', () => {
             commitId,
           }),
         ],
-      },
-    });
+      }
+    );
 
     gerrit.activate(
       state.statusManager,
@@ -204,16 +204,16 @@ describe('Gerrit', () => {
       updated: '2022-10-13 05:43:50.000000000',
     });
 
-    FakeGerrit.initialize({accountsMe: AUTHOR}).setChange({
-      id: changeId,
-      info: changeInfo(changeId, [commitId]),
-      comments: {
+    FakeGerrit.initialize({accountsMe: AUTHOR}).setChange(
+      changeId,
+      changeInfo(changeId, [commitId]),
+      {
         'cryptohome/cryptohome.cc': [firstComment],
       },
-      drafts: {
+      {
         'cryptohome/cryptohome.cc': [draftReplyComment],
-      },
-    });
+      }
+    );
 
     gerrit.activate(
       state.statusManager,
@@ -293,12 +293,12 @@ describe('Gerrit', () => {
     const reviewCommitId = await git.getCommitId('HEAD@{1}');
     const amendedCommitId = await git.getCommitId();
 
-    FakeGerrit.initialize().setChange({
-      id: changeId,
-      info: changeInfo(changeId, [reviewCommitId]),
+    FakeGerrit.initialize({accountsMe: AUTHOR}).setChange(
+      changeId,
+      changeInfo(changeId, [reviewCommitId]),
       // Based on crrev.com/c/3980425
       // Contains four comments: on a line, on a file, on the commit message, and patchset level.
-      comments: {
+      {
         '/COMMIT_MSG': [
           unresolvedCommentInfo({
             line: 7,
@@ -324,8 +324,8 @@ describe('Gerrit', () => {
             commitId: reviewCommitId,
           }),
         ],
-      },
-    });
+      }
+    );
 
     gerrit.activate(
       state.statusManager,
@@ -457,10 +457,10 @@ describe('Gerrit', () => {
     const commitId1 = await git.getCommitId('HEAD@{1}');
     const commitId2 = await git.getCommitId();
 
-    FakeGerrit.initialize().setChange({
-      id: changeId,
-      info: changeInfo(changeId, [commitId1, commitId2]),
-      comments: {
+    FakeGerrit.initialize({accountsMe: AUTHOR}).setChange(
+      changeId,
+      changeInfo(changeId, [commitId1, commitId2]),
+      {
         'cryptohome/cryptohome.cc': [
           unresolvedCommentInfo({
             line: 15,
@@ -473,8 +473,8 @@ describe('Gerrit', () => {
             commitId: commitId2,
           }),
         ],
-      },
-    });
+      }
+    );
 
     gerrit.activate(
       state.statusManager,
@@ -549,10 +549,10 @@ describe('Gerrit', () => {
 
     const commitId = await git.getCommitId();
 
-    FakeGerrit.initialize().setChange({
-      id: changeId,
-      info: changeInfo(changeId, [commitId]),
-      comments: {
+    FakeGerrit.initialize({accountsMe: AUTHOR}).setChange(
+      changeId,
+      changeInfo(changeId, [commitId]),
+      {
         'foo.cc': [
           // Comment on B
           unresolvedCommentInfo({
@@ -561,8 +561,8 @@ describe('Gerrit', () => {
             commitId,
           }),
         ],
-      },
-    });
+      }
+    );
 
     gerrit.activate(
       state.statusManager,
@@ -625,11 +625,10 @@ describe('Gerrit', () => {
 
     const commitId = await git.getCommitId();
 
-    const fakeGerrit = FakeGerrit.initialize().setChange({
-      id: changeId,
-      info: changeInfo(changeId, [commitId]),
-      comments: {},
-    });
+    const fakeGerrit = FakeGerrit.initialize({accountsMe: AUTHOR}).setChange(
+      changeId,
+      changeInfo(changeId, [commitId])
+    );
 
     gerrit.activate(
       state.statusManager,
@@ -653,18 +652,14 @@ describe('Gerrit', () => {
 
     expect(state.commentController.threads.length).toEqual(0);
 
-    fakeGerrit.setChange({
-      id: changeId,
-      info: changeInfo(changeId, [commitId]),
-      comments: {
-        'foo.cc': [
-          unresolvedCommentInfo({
-            line: 2,
-            message: 'Hello',
-            commitId,
-          }),
-        ],
-      },
+    fakeGerrit.setChange(changeId, changeInfo(changeId, [commitId]), {
+      'foo.cc': [
+        unresolvedCommentInfo({
+          line: 2,
+          message: 'Hello',
+          commitId,
+        }),
+      ],
     });
 
     jasmine.clock().tick(POLL_INTERVAL_MILLIS * 1.5);
@@ -728,32 +723,24 @@ describe('Gerrit', () => {
     const commitId1 = await git.getCommitId('HEAD@{1}');
     const commitId2 = await git.getCommitId();
 
-    FakeGerrit.initialize()
-      .setChange({
-        id: changeId1,
-        info: changeInfo(changeId1, [commitId1]),
-        comments: {
-          'cryptohome/cryptohome.cc': [
-            unresolvedCommentInfo({
-              line: 3,
-              message: 'Unresolved comment on the added line.',
-              commitId: commitId1,
-            }),
-          ],
-        },
+    FakeGerrit.initialize({accountsMe: AUTHOR})
+      .setChange(changeId1, changeInfo(changeId1, [commitId1]), {
+        'cryptohome/cryptohome.cc': [
+          unresolvedCommentInfo({
+            line: 3,
+            message: 'Unresolved comment on the added line.',
+            commitId: commitId1,
+          }),
+        ],
       })
-      .setChange({
-        id: changeId2,
-        info: changeInfo(changeId2, [commitId2]),
-        comments: {
-          'cryptohome/cryptohome.cc': [
-            unresolvedCommentInfo({
-              line: 6,
-              message: 'Comment on the second change',
-              commitId: commitId2,
-            }),
-          ],
-        },
+      .setChange(changeId2, changeInfo(changeId2, [commitId2]), {
+        'cryptohome/cryptohome.cc': [
+          unresolvedCommentInfo({
+            line: 6,
+            message: 'Comment on the second change',
+            commitId: commitId2,
+          }),
+        ],
       });
 
     gerrit.activate(
@@ -835,10 +822,10 @@ describe('Gerrit', () => {
 
     const commitId = await git.getCommitId();
 
-    FakeGerrit.initialize().setChange({
-      id: changeId,
-      info: changeInfo(changeId, [commitId]),
-      comments: {
+    FakeGerrit.initialize({accountsMe: AUTHOR}).setChange(
+      changeId,
+      changeInfo(changeId, [commitId]),
+      {
         'cryptohome/cryptohome.cc': [
           unresolvedCommentInfo({
             line: 3,
@@ -846,8 +833,8 @@ describe('Gerrit', () => {
             commitId: commitId,
           }),
         ],
-      },
-    });
+      }
+    );
 
     gerrit.activate(
       state.statusManager,
@@ -895,9 +882,7 @@ describe('Gerrit', () => {
       'gerrit_does_not_throw_errors_when_the_change_is_not_in_Gerrit'
     );
 
-    FakeGerrit.initialize().setChange({
-      id: changeId,
-    });
+    FakeGerrit.initialize({accountsMe: AUTHOR});
 
     gerrit.activate(
       state.statusManager,
@@ -952,10 +937,10 @@ describe('Gerrit', () => {
 
     const commitId = await git.getCommitId();
 
-    FakeGerrit.initialize({internal: true}).setChange({
-      id: changeId,
-      info: changeInfo(changeId, [commitId]),
-      comments: {
+    FakeGerrit.initialize({accountsMe: AUTHOR, internal: true}).setChange(
+      changeId,
+      changeInfo(changeId, [commitId]),
+      {
         'cryptohome/cryptohome.cc': [
           unresolvedCommentInfo({
             line: 3,
@@ -963,8 +948,8 @@ describe('Gerrit', () => {
             commitId,
           }),
         ],
-      },
-    });
+      }
+    );
 
     gerrit.activate(
       state.statusManager,
@@ -1049,10 +1034,10 @@ describe('Gerrit', () => {
     const commitId1 = await git.getCommitId();
     const commitId2 = '1111111111111111111111111111111111111111';
 
-    FakeGerrit.initialize().setChange({
-      id: changeId,
-      info: changeInfo(changeId, [commitId1, commitId2]),
-      comments: {
+    FakeGerrit.initialize({accountsMe: AUTHOR}).setChange(
+      changeId,
+      changeInfo(changeId, [commitId1, commitId2]),
+      {
         'cryptohome/cryptohome.cc': [
           unresolvedCommentInfo({
             line: 15,
@@ -1065,8 +1050,8 @@ describe('Gerrit', () => {
             commitId: commitId2,
           }),
         ],
-      },
-    });
+      }
+    );
 
     gerrit.activate(
       state.statusManager,
@@ -1300,10 +1285,10 @@ ADD
       };
     };
 
-    FakeGerrit.initialize().setChange({
-      id: changeId,
-      info: changeInfo(changeId, [commitId]),
-      comments: {
+    FakeGerrit.initialize({accountsMe: AUTHOR}).setChange(
+      changeId,
+      changeInfo(changeId, [commitId]),
+      {
         'foo.txt': [
           unresolvedCommentInfo({
             message: 'case 00 - comment on a file',
@@ -1369,8 +1354,8 @@ ADD
             commitId,
           }),
         ],
-      },
-    });
+      }
+    );
 
     gerrit.activate(
       state.statusManager,
@@ -1438,10 +1423,10 @@ ADD
 
     const commitId = await git.getCommitId();
 
-    FakeGerrit.initialize({accountsMe: AUTHOR}).setChange({
-      id: changeId,
-      info: changeInfo(changeId, [commitId]),
-      comments: {
+    FakeGerrit.initialize({accountsMe: AUTHOR}).setChange(
+      changeId,
+      changeInfo(changeId, [commitId]),
+      {
         'foo.txt': [
           unresolvedCommentInfo({
             line: 1,
@@ -1459,8 +1444,8 @@ ADD
             commitId,
           }),
         ],
-      },
-    });
+      }
+    );
 
     gerrit.activate(
       state.statusManager,

@@ -9,7 +9,7 @@ import * as git from '../../../../features/gerrit/git';
 import * as fakeData from './fake_data';
 
 export type FakeGerritInitialOpts = Readonly<{
-  accountsMe?: api.AccountInfo;
+  accountsMe: api.AccountInfo;
   internal?: boolean;
 }>;
 
@@ -45,30 +45,29 @@ export class FakeGerrit {
   private readonly idToChangeInfo = new Map<
     string,
     {
-      info?: api.ChangeInfo;
-      comments?: api.FilePathToBaseCommentInfos;
-      drafts?: api.FilePathToBaseCommentInfos;
+      info: api.ChangeInfo;
+      comments: api.FilePathToBaseCommentInfos;
+      drafts: api.FilePathToBaseCommentInfos;
     }
   >();
 
-  static initialize(opts?: FakeGerritInitialOpts): FakeGerrit {
+  static initialize(opts: FakeGerritInitialOpts): FakeGerrit {
     return new this(opts);
   }
 
   /**
    * Processes `internal` option and sets up `/a/accounts/me`.
    */
-  private constructor(opts?: FakeGerritInitialOpts) {
+  private constructor(opts: FakeGerritInitialOpts) {
     this.baseUrl = opts?.internal ? CHROME_INTERNAL_GERRIT : CHROMIUM_GERRIT;
 
     this.reqOpts = opts?.internal ? CHROME_INTERNAL_OPTIONS : CHROMIUM_OPTIONS;
 
-    this.httpsGetSpy = spyOn(Https, 'getOrThrow')
-      .withArgs(`${this.baseUrl}/a/accounts/me`, this.reqOpts)
-      .and.resolveTo(apiString(opts?.accountsMe));
+    this.httpsGetSpy = spyOn(Https, 'getOrThrow');
     this.httpsDeleteSpy = spyOn(Https, 'deleteOrThrow');
     this.httpsPutSpy = spyOn(Https, 'putJsonOrThrow');
 
+    this.registerFakeGet(opts.accountsMe);
     this.registerFakeDelete();
     this.registerFakePut();
   }
@@ -77,29 +76,47 @@ export class FakeGerrit {
    * Sets up `/changes/<changeId>?o=ALL_REVISIONS`, `/changes/<changeId>/comments`,
    * and `/a/changes/<changeId>/drafts`.
    */
-  setChange(c: {
-    id: string;
-    info?: api.ChangeInfo;
-    comments?: api.FilePathToBaseCommentInfos;
-    drafts?: api.FilePathToBaseCommentInfos;
-  }): FakeGerrit {
-    const {id, info, comments, drafts} = c;
-
+  setChange(
+    id: string,
+    info: api.ChangeInfo,
+    comments: api.FilePathToBaseCommentInfos = {},
+    drafts: api.FilePathToBaseCommentInfos = {}
+  ): FakeGerrit {
     this.idToChangeInfo.set(id, {info, comments, drafts});
-
-    this.httpsGetSpy
-      .withArgs(`${this.baseUrl}/changes/${c.id}?o=ALL_REVISIONS`, this.reqOpts)
-      .and.callFake(async () => apiString(this.idToChangeInfo.get(c.id)?.info))
-      .withArgs(`${this.baseUrl}/changes/${c.id}/comments`, this.reqOpts)
-      .and.callFake(async () =>
-        apiString(this.idToChangeInfo.get(c.id)?.comments)
-      )
-      .withArgs(`${this.baseUrl}/a/changes/${c.id}/drafts`, this.reqOpts)
-      .and.callFake(async () =>
-        apiString(this.idToChangeInfo.get(c.id)?.drafts)
-      );
-
     return this;
+  }
+
+  private registerFakeGet(accountsMe: api.AccountInfo): void {
+    this.httpsGetSpy
+      .withArgs(`${this.baseUrl}/a/accounts/me`, this.reqOpts)
+      .and.resolveTo(apiString(accountsMe));
+
+    const urlRe = new RegExp(`${this.baseUrl}/((a/)?changes/(\\w*)[\\?/](.*))`);
+    this.httpsGetSpy
+      .withArgs(jasmine.stringMatching(urlRe), this.reqOpts)
+      .and.callFake(async (url, _opts) => {
+        const match = urlRe.exec(url);
+        if (!match)
+          return Promise.reject(
+            `Unexpected call to Https.getOrThrow, url: ${url}`
+          );
+        const id = match[3];
+        const changeInfo = this.idToChangeInfo.get(id);
+        if (!changeInfo) return undefined;
+        const path = match[1];
+        switch (path) {
+          case `changes/${id}?o=ALL_REVISIONS`:
+            return apiString(changeInfo.info);
+          case `changes/${id}/comments`:
+            return apiString(changeInfo.comments);
+          case `a/changes/${id}/drafts`:
+            return apiString(changeInfo.drafts);
+          default:
+            return Promise.reject(
+              `Unexpected call to Https.getOrThrow, url: ${url}`
+            );
+        }
+      });
   }
 
   private registerFakeDelete(): void {
@@ -222,9 +239,6 @@ export class FakeGerrit {
 }
 
 /** Build Gerrit API response from typed input. */
-function apiString(data?: Object): string | undefined {
-  if (!data) {
-    return undefined;
-  }
+function apiString(data: Object): string {
   return ')]}\n' + JSON.stringify(data);
 }
