@@ -126,7 +126,7 @@ export class CppCodeCompletion implements vscode.Disposable {
     if (generators.length === 0) {
       if (runByUser) {
         void vscode.window.showErrorMessage(
-          'Compilation database generator not found; confirm the active file on editor is a C++ file'
+          `Compilation database generator not found; confirm the active file on editor (${document.fileName}) is a C++ file`
         );
       }
       return;
