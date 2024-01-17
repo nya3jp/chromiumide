@@ -5,7 +5,7 @@
 import * as fs from 'fs';
 import * as https from 'https';
 import * as path from 'path';
-import {Https} from '../../../common/https';
+import {Https, HttpsError} from '../../../common/https';
 import * as netUtil from '../../../common/net_util';
 
 const TEST_DATA = '../../../../src/test/testdata/https/';
@@ -55,7 +55,7 @@ describe('http get request', () => {
     await expectAsync(
       Https.getOrThrow(`https://localhost:${port}/`, requestOptions)
     ).toBeRejectedWith(
-      new Error(`GET https://localhost:${port}/: status code: 403: `)
+      new HttpsError('GET', `https://localhost:${port}/`, '', 403)
     );
   });
 
@@ -86,7 +86,13 @@ describe('http get request', () => {
     // due to a self-signed certificated.
     await expectAsync(
       Https.getOrThrow(`https://localhost:${port}/`)
-    ).toBeRejectedWith(new Error('self-signed certificate'));
+    ).toBeRejectedWith(
+      new HttpsError(
+        'GET',
+        `https://localhost:${port}/`,
+        'self-signed certificate'
+      )
+    );
   });
 });
 
@@ -123,7 +129,7 @@ describe('http delete request', () => {
     await expectAsync(
       Https.deleteOrThrow(`https://localhost:${port}/`, requestOptions)
     ).toBeRejectedWith(
-      new Error(`DELETE https://localhost:${port}/: status code: 403: `)
+      new HttpsError('DELETE', `https://localhost:${port}/`, '', 403)
     );
   });
 
@@ -139,7 +145,7 @@ describe('http delete request', () => {
     await expectAsync(
       Https.deleteOrThrow(`https://localhost:${port}/`, requestOptions)
     ).toBeRejectedWith(
-      new Error(`DELETE https://localhost:${port}/: status code: 404: `)
+      new HttpsError('DELETE', `https://localhost:${port}/`, '', 404)
     );
   });
 
@@ -156,7 +162,13 @@ describe('http delete request', () => {
     // due to a self-signed certificated.
     await expectAsync(
       Https.deleteOrThrow(`https://localhost:${port}/`)
-    ).toBeRejectedWith(new Error('self-signed certificate'));
+    ).toBeRejectedWith(
+      new HttpsError(
+        'DELETE',
+        `https://localhost:${port}/`,
+        'self-signed certificate'
+      )
+    );
   });
 });
 
@@ -193,7 +205,7 @@ describe('http put request', () => {
     await expectAsync(
       Https.putJsonOrThrow(`https://localhost:${port}/`, 'hi', requestOptions)
     ).toBeRejectedWith(
-      new Error(`PUT https://localhost:${port}/: status code: 403: `)
+      new HttpsError('PUT', `https://localhost:${port}/`, '', 403)
     );
   });
 
@@ -209,7 +221,7 @@ describe('http put request', () => {
     await expectAsync(
       Https.putJsonOrThrow(`https://localhost:${port}/`, 'hi', requestOptions)
     ).toBeRejectedWith(
-      new Error(`PUT https://localhost:${port}/: status code: 404: `)
+      new HttpsError('PUT', `https://localhost:${port}/`, '', 404)
     );
   });
 
@@ -226,7 +238,13 @@ describe('http put request', () => {
     // due to a self-signed certificated.
     await expectAsync(
       Https.putJsonOrThrow(`https://localhost:${port}/`, 'hi')
-    ).toBeRejectedWith(new Error('self-signed certificate'));
+    ).toBeRejectedWith(
+      new HttpsError(
+        'PUT',
+        `https://localhost:${port}/`,
+        'self-signed certificate'
+      )
+    );
   });
 });
 
@@ -263,7 +281,7 @@ describe('http post request', () => {
     await expectAsync(
       Https.postJsonOrThrow(`https://localhost:${port}/`, 'hi', requestOptions)
     ).toBeRejectedWith(
-      new Error(`POST https://localhost:${port}/: status code: 403: `)
+      new HttpsError('POST', `https://localhost:${port}/`, '', 403)
     );
   });
 
@@ -279,7 +297,7 @@ describe('http post request', () => {
     await expectAsync(
       Https.postJsonOrThrow(`https://localhost:${port}/`, 'hi', requestOptions)
     ).toBeRejectedWith(
-      new Error(`POST https://localhost:${port}/: status code: 404: `)
+      new HttpsError('POST', `https://localhost:${port}/`, '', 404)
     );
   });
 
@@ -296,6 +314,12 @@ describe('http post request', () => {
     // due to a self-signed certificated.
     await expectAsync(
       Https.postJsonOrThrow(`https://localhost:${port}/`, 'hi')
-    ).toBeRejectedWith(new Error('self-signed certificate'));
+    ).toBeRejectedWith(
+      new HttpsError(
+        'POST',
+        `https://localhost:${port}/`,
+        'self-signed certificate'
+      )
+    );
   });
 });

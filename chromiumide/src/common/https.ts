@@ -4,12 +4,23 @@
 
 import * as https from 'https';
 
+export class HttpsError extends Error {
+  constructor(
+    readonly method: string,
+    readonly url: string,
+    readonly chunks: string,
+    readonly statusCode?: number
+  ) {
+    super(`${method} ${url}: status code: ${statusCode ?? 'NA'}: ${chunks}`);
+  }
+}
+
 export class Https {
   /**
    * Fetches a raw string from https.
    *
    * Returns the response if it is successful or undefined on 404 error.
-   * Everything else throws an error.
+   * Everything else throws an HttpsError.
    */
   static async getOrThrow(
     url: string,
@@ -18,30 +29,35 @@ export class Https {
     return new Promise((resolve, reject) => {
       https
         .get(url, {...options, method: 'GET'}, res => {
-          const body: Uint8Array[] = [];
+          const chunks: Uint8Array[] = [];
           if (res.statusCode === 404) {
             resolve(undefined);
           }
           if (res.statusCode !== 200) {
             reject(
-              new Error(
-                `GET ${url}: status code: ${res.statusCode}: ${body.toString()}`
+              new HttpsError(
+                'GET',
+                url,
+                Buffer.concat(chunks).toString(),
+                res.statusCode
               )
             );
           }
-          res.on('data', data => body.push(data));
+          res.on('data', data => chunks.push(data));
           res.on('end', () => {
-            resolve(Buffer.concat(body).toString());
+            resolve(Buffer.concat(chunks).toString());
           });
         })
-        .on('error', reject);
+        .on('error', error => {
+          reject(new HttpsError('GET', url, error.message));
+        });
     });
   }
 
   /**
    * Sends a delete request.
    *
-   * Throws an error if the response is not successful (the status code is not 2xx).
+   * Throws an HttpsError if the response is not successful (the status code is not 2xx).
    */
   static async deleteOrThrow(
     url: string,
@@ -50,27 +66,30 @@ export class Https {
     return new Promise((resolve, reject) => {
       https
         .request(url, {...options, method: 'DELETE'}, res => {
-          const body: Uint8Array[] = [];
+          const chunks: Uint8Array[] = [];
           if (
             !res.statusCode ||
             res.statusCode < 200 ||
             300 <= res.statusCode
           ) {
             reject(
-              new Error(
-                `DELETE ${url}: status code: ${
-                  res.statusCode
-                }: ${body.toString()}`
+              new HttpsError(
+                'DELETE',
+                url,
+                Buffer.concat(chunks).toString(),
+                res.statusCode
               )
             );
             return;
           }
-          res.on('data', data => body.push(data));
+          res.on('data', data => chunks.push(data));
           res.on('end', () => {
             resolve();
           });
         })
-        .on('error', reject)
+        .on('error', error => {
+          reject(new HttpsError('DELETE', url, error.message));
+        })
         .end();
     });
   }
@@ -78,8 +97,8 @@ export class Https {
   /**
    * Sends PUT request over https.
    *
-   * Returns the response if it is successful (200).
-   * Otherwise throws an error.
+   * Returns the response if it is successful (2xx).
+   * Otherwise throws an HttpsError.
    */
   static async putJsonOrThrow(
     url: string,
@@ -101,22 +120,27 @@ export class Https {
     return new Promise((resolve, reject) => {
       const req = https
         .request(url, opts, res => {
-          const body: Uint8Array[] = [];
-          res.on('data', data => body.push(data));
+          const chunks: Uint8Array[] = [];
+          res.on('data', data => chunks.push(data));
           res.on('end', () => {
             const status = res.statusCode!;
             if (200 <= status && status < 300) {
-              resolve(Buffer.concat(body).toString());
+              resolve(Buffer.concat(chunks).toString());
               return;
             }
             reject(
-              new Error(
-                `PUT ${url}: status code: ${res.statusCode}: ${body.toString()}`
+              new HttpsError(
+                'PUT',
+                url,
+                Buffer.concat(chunks).toString(),
+                res.statusCode
               )
             );
           });
         })
-        .on('error', reject);
+        .on('error', error => {
+          reject(new HttpsError('PUT', url, error.message));
+        });
 
       req.write(postDataString);
       req.end();
@@ -126,8 +150,8 @@ export class Https {
   /**
    * Sends POST request over https.
    *
-   * Returns the response if it is successful (200).
-   * Otherwise throws an error.
+   * Returns the response if it is successful (2xx).
+   * Otherwise throws an HttpsError.
    */
   static async postJsonOrThrow(
     url: string,
@@ -149,24 +173,27 @@ export class Https {
     return new Promise((resolve, reject) => {
       const req = https
         .request(url, opts, res => {
-          const body: Uint8Array[] = [];
-          res.on('data', data => body.push(data));
+          const chunks: Uint8Array[] = [];
+          res.on('data', data => chunks.push(data));
           res.on('end', () => {
             const status = res.statusCode!;
             if (200 <= status && status < 300) {
-              resolve(Buffer.concat(body).toString());
+              resolve(Buffer.concat(chunks).toString());
               return;
             }
             reject(
-              new Error(
-                `POST ${url}: status code: ${
-                  res.statusCode
-                }: ${body.toString()}`
+              new HttpsError(
+                'POST',
+                url,
+                Buffer.concat(chunks).toString(),
+                res.statusCode
               )
             );
           });
         })
-        .on('error', reject);
+        .on('error', error => {
+          reject(new HttpsError('POST', url, error.message));
+        });
 
       req.write(postDataString);
       req.end();
