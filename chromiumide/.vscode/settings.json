@@ -1,5 +1,8 @@
 // Place your settings in this file to overwrite default and user settings.
 {
+  "files.associations": {
+    "js-green-licenses.json": "jsonc"
+  },
   "files.exclude": {
     ".vscode-test": true,
     ".wireit": true,
