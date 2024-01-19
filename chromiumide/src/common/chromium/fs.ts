@@ -7,8 +7,9 @@ import * as path from 'path';
 
 // Matches the following line:
 // "url": "https://chromium.googlesource.com/chromium/src.git",
+// where the url value may have a (python string) f/r/u/b prefix.
 const CHROMIUM_GCLIENT_RE =
-  /"url"\s*:\s*"https:\/\/chromium\.googlesource\.com\/chromium\/src\.git"\s*,/m;
+  /"url"\s*:\s*[frub]?"https:\/\/chromium\.googlesource\.com\/chromium\/src\.git"\s*,/m;
 
 async function isChromiumRoot(dir: string): Promise<boolean> {
   // We don't use `gclient revinfo --filter=src`, because it's slow (takes 7
