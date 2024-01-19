@@ -4,6 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as process from 'process';
 import * as vscode from 'vscode';
 import {getCrosPath} from '../../../common/chromiumos/cros_client';
 import {Source, exec} from '../../../common/common_util';
@@ -267,6 +268,7 @@ async function flashImageToDevice(
             // cros flash cannot find python path with sys.executable in gs.py without this provided
             // explicitly in environment variable.
             PYTHONEXECUTABLE: '/usr/bin/python3',
+            PATH: process.env['PATH'],
           },
         }
       );
