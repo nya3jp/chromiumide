@@ -2,10 +2,50 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import {getChromeMilestones} from '../../../common/image_version';
+import {
+  CROS_IMAGE_VERSION_RE_SRC,
+  getChromeMilestones,
+  parseFullCrosVersion,
+} from '../../../common/image_version';
 import {Metrics} from '../../../features/metrics/metrics';
 import * as testing from '../../testing';
 import * as fakes from '../../testing/fakes';
+
+describe('Match CrOS version with', () => {
+  const versionRe = new RegExp(`^(${CROS_IMAGE_VERSION_RE_SRC})$`);
+
+  it('release version string', () => {
+    const release_image_version = 'R120-15661.0.0';
+    const match = versionRe.exec(release_image_version);
+    expect(match![1]).toEqual(release_image_version);
+    expect(parseFullCrosVersion(match![1])).toEqual({
+      chromeMilestone: 120,
+      chromeOsMajor: 15661,
+      chromeOsMinor: 0,
+      chromeOsPatch: 0,
+      snapshotId: undefined,
+      buildId: undefined,
+    });
+  });
+
+  it('postsubmit version string', () => {
+    const postsubmit_image_version = 'R123-15758.0.0-61547-8757885692586480689';
+    const match = versionRe.exec(postsubmit_image_version);
+    expect(match![1]).toEqual(postsubmit_image_version);
+    expect(parseFullCrosVersion(match![1])).toEqual({
+      chromeMilestone: 123,
+      chromeOsMajor: 15758,
+      chromeOsMinor: 0,
+      chromeOsPatch: 0,
+      snapshotId: '61547',
+      buildId: '8757885692586480689',
+    });
+  });
+  it('non-image-version string', () => {
+    const non_image_version = 'foo';
+    expect(versionRe.exec(non_image_version)).toEqual(null);
+  });
+});
 
 describe('Get chrome milestones', () => {
   const {fakeExec} = testing.installFakeExec();

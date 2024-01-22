@@ -5,8 +5,29 @@
 import {Metrics} from '../features/metrics/metrics';
 import {Https} from './https';
 
-export const CROS_IMAGE_VERSION_RE =
-  /R(\d+)-(\d+)\.(\d+)\.(\d+)(?:-(\d+)-(\d+))?/;
+/*
+ * Regex to parse a CrOS image string in form Rxxx-yyyyy.zzz.www (release image) or
+ * Rxxx-yyyyy.zzz.www-aaaaa-bbbbbbbbbbbbbb (non-release prebuilt image with snapshot and build id,
+ * such as snapshot, postsubmit, and cq images).
+ *
+ * It could be combined with other pattern e.g.
+ * for a string consists only of the image:
+ *   const crosImageOnlyRe = new Regexp(`^${CROS_IMAGE_VERSION_RE_SRC}$`);
+ * or for a builder path:
+ *   const builderImageRe = new Regexp(`${board}-${builder}/${CROS_IMAGE_VERSION_RE_SRC}$`);
+ *
+ * If a parsed ImageVersion object is wanted, enclose it with () to capture the string and pass the
+ * matched persion to `parseFullCrOSVersion()`, e.g.
+ *   const builderImageRe = new Regexp(`hatch-release/(${CROS_IMAGE_VERSION_RE_SRC})$`);
+ *   const match = builderImageRe.exec('hatch-release/R1-2.3.4');
+ *   // Returns {chromeMilestone: 1, chromeOsMajor: 2, chromeOsMinor: 3, chromeOsPatch: 4}.
+ *   if (match) return parseFullCrosVersion(match[1]);
+ */
+export const CROS_IMAGE_VERSION_RE_SRC = /R\d+-\d+\.\d+\.\d+(?:-\d+-\d+)?/
+  .source;
+
+const CROS_IMAGE_VERSION_CAPTURE_RE =
+  /^R(\d+)-(\d+)\.(\d+)\.(\d+)(?:-(\d+)-(\d+))?$/;
 
 export type ImageVersion = {
   chromeMilestone: number;
@@ -86,8 +107,7 @@ function parseChromiumOsManifestRefs(output: string): number[] {
 }
 
 export function parseFullCrosVersion(s: string): ImageVersion {
-  const versionRegexp = new RegExp(`^${CROS_IMAGE_VERSION_RE.source}$`);
-  const match = versionRegexp.exec(s);
+  const match = CROS_IMAGE_VERSION_CAPTURE_RE.exec(s);
   if (!match) {
     throw new Error(`Invalid CrOS version string: ${s}`);
   }
