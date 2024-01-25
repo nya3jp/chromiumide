@@ -1,5 +1,16 @@
 # Change Log
 
+## 0.26.0 (January 2024)
+
+- Chromium
+  - Fixed Chromium repository detection when .gclient strings are unicoded
+- DUT management
+  - New feature: click to deploy package
+  - Easier image flashing with Chrome milestones list
+  - Device attributes (board, model, builder path) are now shown as sub-items
+- ChromiumOS build
+  - Suggests autoseting cpu governor for build\_packages command
+
 ## 0.24.0 (November 2023)
 
 - Chromium
