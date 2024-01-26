@@ -17,6 +17,7 @@ type FeatureGroup =
   | 'chromium.gtest'
   | 'chromium.outputDirectories'
   | 'codesearch'
+  | 'code_server'
   | 'coverage'
   | 'cipd'
   | 'cppxrefs'
@@ -153,6 +154,12 @@ type CodesearchEvent = EventBase & {
         selected_text: string;
       }
   );
+
+type CodeServerEvent = EventBase & {
+  group: 'code_server';
+  category: 'interactive';
+  name: 'code_server_migration_open_guide';
+};
 
 type CoverageEvent = EventBase &
   (
@@ -453,6 +460,7 @@ export type Event =
   | ChromiumOutputDirectoriesEvent
   | CipdEvent
   | CodesearchEvent
+  | CodeServerEvent
   | CoverageEvent
   | CppCodeCompletionEvent
   | CrosFormatEvent

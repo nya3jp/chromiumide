@@ -15,6 +15,7 @@ import * as commonUtil from './common/common_util';
 import {vscodeRegisterCommand} from './common/vscode/commands';
 import * as features from './features';
 import * as boilerplate from './features/boilerplate';
+import {CodeServer} from './features/code_server';
 import * as codesearch from './features/codesearch';
 import * as crosLint from './features/cros_lint';
 import * as deviceManagement from './features/device_management';
@@ -100,7 +101,8 @@ async function postMetricsActivate(
       boilerplateInserter,
       cipdRepository,
       chromiumosServices
-    )
+    ),
+    new CodeServer()
   );
 
   context.subscriptions.push(

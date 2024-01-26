@@ -158,8 +158,21 @@ export type VscodeProperties = ReturnType<typeof newVscodeProperties>;
  * not undefined on the real vscode namespace.
  */
 function newVscodeProperties() {
-  // TODO(oka): Add debug, env, extensions, scm, and tasks namespaces.
+  // TODO(oka): Add debug, extensions, scm, and tasks namespaces.
   return {
+    env: {
+      appName: 'Fake VSCode',
+      appRoot: '',
+      // clipboard is omitted here because the injected vscode provides fake clipboard
+      // implementation.
+      language: 'en-US',
+      machineId: '',
+      remoteName: undefined as string | undefined,
+      sessionId: '',
+      shell: '',
+      uiKind: vscode.UIKind.Desktop,
+      uriScheme: '',
+    },
     window: {
       activeTerminal: undefined as vscode.Terminal | undefined,
       activeTextEditor: undefined as vscode.TextEditor | undefined,
@@ -284,7 +297,7 @@ export function installVscodeDouble(): {
     const double = {
       commands: vscodeSpy.commands,
       comments: vscodeSpy.comments,
-      env: buildNamespace(theVscode.env, vscodeSpy.env, {}, {}),
+      env: buildNamespace(theVscode.env, vscodeSpy.env, {}, vscodeGetters.env),
       extensions: buildNamespace(
         theVscode.extensions,
         vscodeSpy.extensions,
