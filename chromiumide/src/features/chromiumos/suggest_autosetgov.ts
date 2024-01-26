@@ -50,7 +50,7 @@ export class Recommender implements vscode.Disposable {
       return;
     }
     const choice = await vscode.window.showInformationMessage(
-      'Do you want to disable CPU powersaving mode while `cros build-packages` is running? If you choose Yes, a file to instruct it will be created in your chromite config directory.',
+      'Do you want to disable CPU powersaving mode while `cros build-packages` is running to speed up the build ([reference](https://groups.google.com/a/chromium.org/g/chromium-os-dev/c/HfED4NJ9W3M))? If you choose Yes, a file to instruct it will be created in your chromite config directory.',
       YES,
       NEVER,
       LATER
