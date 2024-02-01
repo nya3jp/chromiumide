@@ -15,7 +15,7 @@ describe('Metrics util: get git repo name', () => {
     });
 
     expect(
-      metricsUtil.getGitRepoName(
+      await metricsUtil.getGitRepoName(
         `${tempDir.path}/src/platform2/bar/baz.cc`,
         tempDir.path
       )
@@ -29,11 +29,30 @@ describe('Metrics util: get git repo name', () => {
     });
 
     expect(
-      metricsUtil.getGitRepoName(
+      await metricsUtil.getGitRepoName(
         `${tempDir.path}/src/platform2/bar/baz.cc`,
         tempDir.path
       )
     ).toEqual('src/platform2');
+  });
+
+  it('in chromium repository', async () => {
+    const GCLIENT_CONTENT = `solutions = [
+  {
+    "name": "src",
+    "url": "https://chromium.googlesource.com/chromium/src.git",
+    "managed": False,
+    "custom_deps": {},
+    "custom_vars": {},
+  },
+]
+`;
+
+    await testing.putFiles(tempDir.path, {'.gclient': GCLIENT_CONTENT});
+
+    expect(
+      await metricsUtil.getGitRepoName(`${tempDir.path}/src/chrome/BUILD.gn`)
+    ).toEqual('chromium');
   });
 
   it('invalid path', async () => {
@@ -43,7 +62,7 @@ describe('Metrics util: get git repo name', () => {
     });
 
     expect(
-      metricsUtil.getGitRepoName(
+      await metricsUtil.getGitRepoName(
         `${tempDir.path}/src/platform2/bar/baz.cc`,
         tempDir.path
       )

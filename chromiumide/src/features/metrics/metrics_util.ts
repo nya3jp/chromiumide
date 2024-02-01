@@ -5,6 +5,7 @@
 import * as fs from 'fs';
 import * as https from 'https';
 import * as os from 'os';
+import {chromiumRoot} from '../../common/chromium/fs';
 import * as commonUtil from '../../common/common_util';
 import * as metricsEvent from './metrics_event';
 
@@ -43,12 +44,19 @@ function getCrOSPath(path: string): string | undefined {
   return commonUtil.sourceDir(chroot);
 }
 
-// Return git repository name by looking for closest .git directory, undefined if none.
-export function getGitRepoName(
+/*
+ * Return 'chromium' in Chromium repository, or a CrOS git repository name by looking for closest
+ * git directory.
+ * Undefined if neither the case.
+ */
+export async function getGitRepoName(
   filePath: string,
   crosPath: string | undefined = getCrOSPath(filePath)
-): string | undefined {
+): Promise<string | undefined> {
   if (!crosPath) {
+    if (await chromiumRoot(filePath)) {
+      return 'chromium';
+    }
     return undefined;
   }
 

@@ -140,7 +140,7 @@ export class Analytics {
     );
   }
 
-  private getCurrentGitRepo(): string | undefined {
+  private getCurrentOpenedPath(): string | undefined {
     const editor = vscode.window.activeTextEditor;
     if (editor) {
       return editor.document.fileName;
@@ -155,14 +155,14 @@ export class Analytics {
   /**
    * Send event as query. Does not wait for its response.
    */
-  send(event: metricsEvent.Event): void {
+  async send(event: metricsEvent.Event): Promise<void> {
     if (!this.shouldSend()) {
       return;
     }
 
-    const filePath = this.getCurrentGitRepo();
+    const filePath = this.getCurrentOpenedPath();
     const gitRepo = filePath
-      ? metricsUtils.getGitRepoName(filePath)
+      ? await metricsUtils.getGitRepoName(filePath)
       : undefined;
     const query = metricsUtils.eventToRequestBodyGA4(
       event,
@@ -189,7 +189,7 @@ export class Metrics {
       this.analytics = Analytics.create();
     }
     void (async () => {
-      (await this.analytics!).send(event);
+      await (await this.analytics!).send(event);
     })();
   }
 }
