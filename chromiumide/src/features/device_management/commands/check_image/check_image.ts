@@ -17,6 +17,10 @@ import {flashPrebuiltImage} from '../flash_prebuilt_image';
 import {CompatibilityChecker} from './compatibility';
 import {CheckerInput, CheckerConfig, CheckerOutput} from './types';
 
+const FLASH_ANY_IMAGE_OPTION = 'Yes, show flash image menu.';
+const OPEN_VERSION_THRESHOLD_OPTION =
+  'No, open extension config to change version skew threshold.';
+
 /*
  * Runs cros-debug flag and CrOS image version check on device image.
  * TODO(hscham): Suggest new image to flash if deemed incompatible.
@@ -57,18 +61,27 @@ export async function checkDeviceImageCompatibilityOrSuggest(
     });
     return;
   }
+
+  // TODO(hscham) Implement a simpler choice where user can choose from a list of images with item
+  // 'Yes, choose from list of suggested images.'
+  const options = [FLASH_ANY_IMAGE_OPTION];
+  if (output.results.version.status === 'FAILED') {
+    // Add option to open extension setting to update threshold only if the version check fails.
+    options.push(OPEN_VERSION_THRESHOLD_OPTION);
+  }
+
   const option = await vscode.window.showWarningMessage(
     resultSummary.title,
     {
       detail: `${resultSummary.details}\nFlash device with a different image?`,
-      // TODO(hscham) Implement a simpler choice where user can choose from a list of images with item
-      // 'Yes, choose from list of suggested images.'
       modal: true,
     },
-    'Yes, show flash image menu.'
+    ...options
   );
-  if (option === 'Yes, show flash image menu.') {
+  if (option === FLASH_ANY_IMAGE_OPTION) {
     await flashPrebuiltImage(context, chrootService, hostname);
+  } else if (option === OPEN_VERSION_THRESHOLD_OPTION) {
+    void deviceManagement.imageVersionMaxSkew.openSettings();
   }
   return;
 }

@@ -85,6 +85,13 @@ class ConfigValue<T> {
       .update(this.section, value, target);
   }
 
+  openSettings(): void {
+    void vscode.commands.executeCommand(
+      'workbench.action.openSettings',
+      `@id:${this.prefix}.${this.section}`
+    );
+  }
+
   /**
    * Registers a listener that is called whenever the config was affected and may have been changed.
    */
