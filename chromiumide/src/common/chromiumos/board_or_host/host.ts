@@ -13,8 +13,6 @@ export class Host implements CommonInterface {
 
   private constructor() {}
 
-  readonly isHost = true;
-
   map<T>(_f: (board: string) => T, v: T): T {
     return v;
   }

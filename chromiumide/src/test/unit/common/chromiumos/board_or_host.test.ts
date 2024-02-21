@@ -7,6 +7,7 @@ import {
   HOST,
   Board,
   HOST_AS_STRING,
+  Host,
 } from '../../../../common/chromiumos/board_or_host';
 
 describe('BoardOrHost', () => {
@@ -35,9 +36,11 @@ describe('BoardOrHost', () => {
     }
   });
 
-  it('has accessors', () => {
-    expect(host.isHost).toBeTrue();
-    expect(betty.isHost).toBeFalse();
+  it('is instanceof correct class', () => {
+    expect(host instanceof Host).toBeTrue();
+    expect(host instanceof Board).toBeFalse();
+    expect(betty instanceof Host).toBeFalse();
+    expect(betty instanceof Board).toBeTrue();
   });
 
   it('has map method', () => {

@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import {BoardOrHost} from '../../../../common/chromiumos/board_or_host';
+import {BoardOrHost, Host} from '../../../../common/chromiumos/board_or_host';
 import {getQualifiedPackageName} from '../../../../common/chromiumos/portage/ebuild';
 import * as config from '../../../../services/config';
 import {ViewItemContext} from '../constant';
@@ -63,7 +63,7 @@ export class BoardItem implements Item {
   }
 
   private decorateTreeItem() {
-    const isHost = this.board.isHost;
+    const isHost = this.board instanceof Host;
     const isDefault = config.board.get() === this.board.toString();
 
     this.treeItem.iconPath = isHost

@@ -19,8 +19,6 @@ export class Board implements CommonInterface {
     }
   }
 
-  readonly isHost = false;
-
   static newBoard(name: string): Board {
     const existing = this.knownBoards.get(name);
     if (existing) return existing;
