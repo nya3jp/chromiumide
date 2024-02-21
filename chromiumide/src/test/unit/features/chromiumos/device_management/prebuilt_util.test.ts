@@ -80,4 +80,31 @@ gs://chromeos-image-archive/xyz-postsubmit/R102-10010.0.0-10100-1000000000000100
       'R99-10000.0.0-10001-1000000000000000000',
     ]);
   });
+
+  it('does not throw error on no result found', async () => {
+    await testing.buildFakeChroot(tempDir.path);
+
+    fakes.installChrootCommandHandler(
+      fakeExec,
+      tempDir.path as commonUtil.Source,
+      'gsutil',
+      ['ls', 'gs://chromeos-image-archive/xyz-postsubmit/*/image.zip'],
+      async args =>
+        new commonUtil.AbnormalExitError(
+          'gsutil',
+          args,
+          1,
+          '',
+          'CommandException: One or more URLs matched no objects'
+        )
+    );
+
+    const versions = await prebuiltUtil.listPrebuiltVersions(
+      'xyz',
+      'postsubmit',
+      services.chromiumos.ChrootService.maybeCreate(tempDir.path, false)!,
+      new fakes.VoidOutputChannel()
+    );
+    expect(versions).toEqual([]);
+  });
 });

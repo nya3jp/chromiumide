@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import {AbnormalExitError} from '../../common/common_util';
 import {
   compareCrosVersions,
   parseFullCrosVersion,
@@ -43,6 +44,13 @@ export async function listPrebuiltVersions(
     }
   );
   if (result instanceof Error) {
+    // A special case for the command ending abnormally. Return [] if there is not matching file.
+    if (
+      result instanceof AbnormalExitError &&
+      result.stderr.includes('One or more URLs matched no objects')
+    ) {
+      return [];
+    }
     throw result;
   }
 
