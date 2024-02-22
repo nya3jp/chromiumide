@@ -13,6 +13,7 @@ import {activate as activateSharedFeatures} from '../shared/app/extension';
 import * as cipd from './common/cipd';
 import * as commonUtil from './common/common_util';
 import {vscodeRegisterCommand} from './common/vscode/commands';
+import {DriverImpl} from './driver';
 import * as features from './features';
 import * as boilerplate from './features/boilerplate';
 import {CodeServer} from './features/code_server';
@@ -154,7 +155,7 @@ async function postMetricsActivate(
     );
   }
 
-  activateSharedFeatures(context);
+  activateSharedFeatures(context, new DriverImpl());
 
   // We want to know if some users flip enablement bit.
   // If the feature is disabled it could mean that it's annoying.

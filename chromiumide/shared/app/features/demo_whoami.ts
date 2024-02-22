@@ -3,23 +3,25 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import * as driver from '../../driver';
+import {getDriver} from '../common/driver_repository';
+
+const driver = getDriver();
 
 /**
- * Show random UUID when a command is invoked.
+ * Shows the username of the current user.
  *
  * This is a feature for experimenting internal IDE integration and should be removed after a real
  * feature is integrated.
  */
-export class DemoRandomUuid implements vscode.Disposable {
+export class DemoWhoami implements vscode.Disposable {
   private readonly subscriptions = [
     // TODO(oka): Fix the warning by using the vscodeRegisterCommand method instead.
     // eslint-disable-next-line no-restricted-syntax
     vscode.commands.registerCommand(
-      'chromiumideShared.demo.showRandomUuid',
-      () => {
-        void vscode.window.showInformationMessage(
-          `ChromiumIDE Demo: Random UUID is ${driver.node.crypto.randomUUID()}`
+      'chromiumideShared.demo.whoami',
+      async () => {
+        await vscode.window.showInformationMessage(
+          `ChromiumIDE Demo: Your username is ${await driver.whoami()}.`
         );
       }
     ),

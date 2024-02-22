@@ -3,11 +3,18 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import {DemoRandomUuid} from './features/demo_random_uuid';
+import {Driver} from '../driver';
+import {registerDriver} from './common/driver_repository';
+import {DemoWhoami} from './features/demo_whoami';
 
 /**
  * Activates features shared between internal IDE and VSCode.
  */
-export function activate(context: vscode.ExtensionContext): void {
-  context.subscriptions.push(new DemoRandomUuid());
+export function activate(
+  context: vscode.ExtensionContext,
+  driver: Driver
+): void {
+  registerDriver(driver);
+
+  context.subscriptions.push(new DemoWhoami());
 }
