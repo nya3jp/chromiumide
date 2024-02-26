@@ -49,12 +49,9 @@ function matchInputAsImageVersion(input: string): ImageVersion | undefined {
 /*
  * Return full path of local image to flash with, or undefined if user exits prematurely.
  */
-async function showAllLocalImagesInputBox(
+export async function showAllLocalImagesInputBox(
   board: string,
-  chrootService: services.chromiumos.ChrootService,
-  options?: {
-    title?: string;
-  }
+  chrootService: services.chromiumos.ChrootService
 ): Promise<string | undefined> {
   const imagesDir = path.join(
     chrootService.chromiumosRoot,
@@ -79,7 +76,7 @@ async function showAllLocalImagesInputBox(
 
   const image = await vscode.window.showQuickPick(images, {
     ignoreFocusOut: true,
-    ...options,
+    title: `Image version: available images in src/build/images/${board}/`,
   });
   if (!image) return undefined;
   return path.join(imagesDir, image, 'chromiumos_test_image.bin');
@@ -99,8 +96,11 @@ class ChromeMilestoneItem extends SimplePickItem {
 /*
  * A full ChromeOS version. This would be the final image choice passed to the cros flash command.
  */
-class ChromeOsVersionItem extends SimplePickItem {
-  constructor(readonly fullVersion: string) {
+export class ChromeOsVersionItem extends SimplePickItem {
+  constructor(
+    readonly fullVersion: string,
+    override readonly description?: string
+  ) {
     super(fullVersion);
   }
 }
@@ -239,7 +239,7 @@ async function showImageVersionInputBoxWithDynamicSuggestions(
   });
 }
 
-async function flashImageToDevice(
+export async function flashImageToDevice(
   hostname: string,
   imagePath: string,
   deviceClient: DeviceClient,
@@ -349,9 +349,7 @@ export async function flashPrebuiltImage(
 
   const imagePath =
     imageType === 'local'
-      ? await showAllLocalImagesInputBox(board, chrootService, {
-          title: `Image version: available images in src/build/images/${board}/`,
-        })
+      ? await showAllLocalImagesInputBox(board, chrootService)
       : await showImageVersionInputBoxWithDynamicSuggestions(
           board,
           imageType as prebuiltUtil.PrebuiltImageType,

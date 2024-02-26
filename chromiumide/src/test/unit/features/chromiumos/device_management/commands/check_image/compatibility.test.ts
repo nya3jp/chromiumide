@@ -3,36 +3,7 @@
 // found in the LICENSE file.
 
 import {CompatibilityChecker} from '../../../../../../../features/device_management/commands/check_image/compatibility';
-import {
-  CheckerConfig,
-  CheckerInput,
-} from '../../../../../../../features/device_management/commands/check_image/types';
-
-const CONFIG: CheckerConfig = {versionMaxSkew: 7};
-
-const BOARD_NAME = 'foo';
-
-function getTestingInput(
-  imageType: string,
-  imageCrosMajor: number,
-  localDebugFlag: boolean | undefined | Error,
-  localCrosMajor: number | Error
-): CheckerInput {
-  return {
-    targetPackage: {category: 'chromeos-base', name: 'bar'},
-    device: {
-      board: BOARD_NAME,
-      builderPath: `${BOARD_NAME}-${imageType}/R1-${imageCrosMajor}.0.0`,
-      imageType: imageType,
-      chromeosMajorVersion: imageCrosMajor,
-      chromeosReleaseVersion: `${imageCrosMajor}.0.0`,
-    },
-    local: {
-      debugFlag: localDebugFlag,
-      chromeosMajorVersion: localCrosMajor,
-    },
-  };
-}
+import {CONFIG, getTestingInput} from './common';
 
 describe('check image compatibility when', () => {
   it('failed to get use flags', () => {
