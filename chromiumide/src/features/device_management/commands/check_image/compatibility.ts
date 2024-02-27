@@ -53,14 +53,18 @@ export class CompatibilityChecker {
         `failed to get local CrOS major version: ${this.input.local.chromeosMajorVersion.message}`
       );
     }
-    return this.result(
+    const passed =
       Math.abs(
         this.input.local.chromeosMajorVersion -
           this.input.device.chromeosMajorVersion
-      ) <= this.config.versionMaxSkew
-        ? 'PASSED'
-        : 'FAILED',
-      `device image has CrOS major version ${this.input.device.chromeosMajorVersion} and local repo has most recent prebuilt version ${this.input.local.chromeosMajorVersion}. Maximum acceptable difference is ${this.config.versionMaxSkew} (configurable in extension setting).`
+      ) <= this.config.versionMaxSkew;
+    return this.result(
+      passed ? 'PASSED' : 'FAILED',
+      `device CrOS major version ${this.input.device.chromeosMajorVersion} ${
+        passed ? 'is' : 'not'
+      } in range local version ${this.input.local.chromeosMajorVersion} ± ${
+        this.config.versionMaxSkew
+      } (configurable in extension setting).`
     );
   }
 

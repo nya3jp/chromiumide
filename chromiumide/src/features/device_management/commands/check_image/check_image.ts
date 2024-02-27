@@ -34,15 +34,46 @@ export enum CheckOutcome {
   OPEN_VERSION_MAX_SKEW_CONFIG = 'open settings for version max skew',
 }
 
+export enum ResultDisplayMode {
+  MODAL_MESSAGE,
+  MESSAGE,
+  QUICKPICK,
+}
+
 /*
  * Runs cros-debug flag and CrOS image version check on device image.
- * User may choose to flash device from list of suggested image or manually select one via the usual
- * flash image steps.
+ * On failure, user may choose to flash device from list of suggested image or manually select one
+ * via the usual flash image steps.
+ *
+ * Callsite can customize how result and follow-up action will be deplayed and collected depending
+ * on the application:
+ *   1. modal message: as a modal dialogue box that the user must addressed. Full check result will
+ *      be shown. This should only be used when it is called as a stand-alone command since it is
+ *      very disruptive.
+ *   2. non-modal message: a small dialogue box at the corner. Full check result will be shown only
+ *      if it fails. User can easily ignore it. This is suitable for running as non-urgent
+        background checks.
+ *   3. quick-pick: a quick pick menu. Only details of the failing subcheck(s) will be shown and
+        only if the check fails. This is suitable for running as a part of another interactive
+        command.
+ * They may also customize the message for ignoring the warning and not flash a new image.
+ * See `reportResultAndPromptActionOnFailedCheck`.
+ *
+ * Return the outcome of check (passed, or user action otherwise).
+ *
+ * TODO(hscham): call image check at extension activation time and when new device is added. These
+ * would run in background and result will be displayed in MESSAGE mode.
  */
 export async function checkDeviceImageCompatibilityOrSuggest(
   context: CommandContext,
   chrootService: chromiumos.ChrootService,
-  deviceHostname?: string
+  deviceHostname?: string,
+  targetPackage: ParsedPackageName = {
+    category: 'chromeos-base',
+    name: 'libchrome',
+  },
+  mode = ResultDisplayMode.MODAL_MESSAGE,
+  ignoreWarningOption: string = PostFailedImageCheckOptions.DEFAULT_IGNORE_WARNING_OPTION
 ): Promise<CheckOutcome | Error> {
   const hostname = await promptKnownHostnameIfNeeded(
     'Target Device',
@@ -61,12 +92,18 @@ export async function checkDeviceImageCompatibilityOrSuggest(
       return await checkDeviceImageCompatibility(
         context,
         chrootService,
-        hostname
+        hostname,
+        targetPackage
       );
     }
   );
 
-  const option = await reportResultAndPromptActionOnFailedCheck(input, output);
+  const option = await reportResultAndPromptActionOnFailedCheck(
+    input,
+    output,
+    mode,
+    ignoreWarningOption
+  );
 
   // No follow-up action required if check passed.
   if (output.passed) return CheckOutcome.PASSED;
@@ -116,10 +153,7 @@ async function checkDeviceImageCompatibility(
   context: CommandContext,
   chrootService: chromiumos.ChrootService,
   hostname: string,
-  targetPackage: ParsedPackageName = {
-    category: 'chromeos-base',
-    name: 'libchrome',
-  }
+  targetPackage: ParsedPackageName
 ): Promise<{
   config: CheckerConfig;
   input: CheckerInput;
@@ -178,7 +212,8 @@ async function checkDeviceImageCompatibility(
 
 function stringifyCheckerOutput(
   input: CheckerInput,
-  result: CheckerOutput
+  result: CheckerOutput,
+  showPassingResult: boolean
 ): {
   title: string;
   details: string;
@@ -190,6 +225,7 @@ function stringifyCheckerOutput(
   }!`;
 
   const details = [result.results.debugFlag, result.results.version]
+    .filter(x => (showPassingResult ? true : x.status !== 'PASSED'))
     .map(x => `${x.status}: ${x.description}`)
     .join('\n');
 
@@ -203,15 +239,27 @@ function stringifyCheckerOutput(
  */
 async function reportResultAndPromptActionOnFailedCheck(
   input: CheckerInput,
-  output: CheckerOutput
+  output: CheckerOutput,
+  mode: ResultDisplayMode,
+  ignoreWarningOption: string
 ): Promise<PostFailedImageCheckOptions | undefined> {
-  const resultSummary = stringifyCheckerOutput(input, output);
+  const resultSummary = stringifyCheckerOutput(
+    input,
+    output,
+    // Simplify results (skip details of sub-test that passed) in quickpick mode since they will be
+    // shown in placeholder which has limited space.
+    mode !== ResultDisplayMode.QUICKPICK
+  );
 
+  // Show result when check passes only in modal message mode.
+  // The other two modes implied it is not a stand alone command and should not interrupt workflow.
   if (output.passed) {
-    await vscode.window.showInformationMessage(resultSummary.title, {
-      detail: resultSummary.details,
-      modal: true,
-    });
+    if (mode === ResultDisplayMode.MODAL_MESSAGE) {
+      await vscode.window.showInformationMessage(resultSummary.title, {
+        detail: resultSummary.details,
+        modal: true,
+      });
+    }
     return;
   }
 
@@ -246,18 +294,53 @@ async function reportResultAndPromptActionOnFailedCheck(
   }
   // Add ignore error/failure option to the end.
   options.push({
-    title: PostFailedImageCheckOptions.DEFAULT_IGNORE_WARNING_OPTION,
+    title: ignoreWarningOption,
     isCloseAffordance: true,
   });
 
-  return (
-    await vscode.window.showWarningMessage(
-      resultSummary.title,
+  let option;
+  if (mode === ResultDisplayMode.MODAL_MESSAGE) {
+    // In modal message box, show title and details (with prompt) separately.
+    option = (
+      await vscode.window.showWarningMessage(
+        resultSummary.title,
+        {
+          detail: [
+            resultSummary.details,
+            'Flash device with a different image?',
+          ].join('\n'),
+          modal: true,
+        },
+        ...options
+      )
+    )?.title;
+  } else if (mode === ResultDisplayMode.MESSAGE) {
+    // In non-modal message box, show title, details, and prompt as one message.
+    option = await vscode.window.showWarningMessage(
+      [
+        resultSummary.title,
+        resultSummary.details,
+        'Flash device with a different image?',
+      ].join('\n'),
+      ...options.map(item => item.title)
+    );
+  } else {
+    // In quickpick, show only title and prompt as title.
+    // Supply additional details on why the check fails in the place holder.
+    option = await vscode.window.showQuickPick(
+      options.map(item => item.title),
       {
-        detail: `${resultSummary.details}\nFlash device with a different image?`,
-        modal: true,
-      },
-      ...options
-    )
-  )?.title as PostFailedImageCheckOptions;
+        title: [
+          resultSummary.title,
+          'Flash device with a different image first?',
+        ].join('\n'),
+        ignoreFocusOut: true,
+        placeHolder: resultSummary.details,
+      }
+    );
+  }
+  if (option === ignoreWarningOption) {
+    return PostFailedImageCheckOptions.DEFAULT_IGNORE_WARNING_OPTION;
+  }
+  return option as PostFailedImageCheckOptions;
 }
