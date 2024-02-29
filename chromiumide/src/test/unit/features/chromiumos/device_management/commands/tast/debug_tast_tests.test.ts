@@ -11,7 +11,7 @@ import {
 } from '../../../../../../../features/device_management/commands/tast/debug_tast_tests';
 import {ChrootService} from '../../../../../../../services/chromiumos';
 import * as testing from '../../../../../../testing';
-import {prepareCommonFakes} from './common';
+import {prepareCommonFakes} from '../common';
 
 describe('debugTastTests', () => {
   const {vscodeSpy, vscodeEmitters, vscodeGetters} =
@@ -38,9 +38,10 @@ describe('debugTastTests', () => {
       vscodeSpy,
       {
         chromiumos,
-        activeTextEditor: {
-          path: 'src/platform/tast-tests/src/go.chromium.org/tast-tests/cros/local/bundles/cros/example/chrome_fixture.go',
-          text: `func init() {
+        tastTestConfig: {
+          activeTextEditor: {
+            path: 'src/platform/tast-tests/src/go.chromium.org/tast-tests/cros/local/bundles/cros/example/chrome_fixture.go',
+            text: `func init() {
   testing.AddTest(&testing.Test{
     Func: ChromeFixture,
   })
@@ -48,9 +49,10 @@ describe('debugTastTests', () => {
 
 func ChromeFixture(ctx context.Context, s *testing.State) {}
 `,
+          },
+          tastListResult: 'example.ChromeFixture\n',
+          testsToPick: ['example.ChromeFixture'],
         },
-        tastListResult: 'example.ChromeFixture\n',
-        testsToPick: ['example.ChromeFixture'],
       },
       subscriptions
     );

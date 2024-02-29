@@ -13,7 +13,7 @@ import {ChrootService} from '../../../../../../../services/chromiumos';
 import * as testing from '../../../../../../testing';
 import {installChrootCommandHandler} from '../../../../../../testing/fakes';
 import {arrayWithPrefix} from '../../../../../testing/jasmine/asymmetric_matcher';
-import {prepareCommonFakes} from './common';
+import {prepareCommonFakes} from '../common';
 
 describe('runTastTests', () => {
   const {vscodeSpy, vscodeEmitters, vscodeGetters} =
@@ -39,9 +39,10 @@ describe('runTastTests', () => {
       vscodeSpy,
       {
         chromiumos,
-        activeTextEditor: {
-          path: 'src/platform/tast-tests/src/go.chromium.org/tast-tests/cros/local/bundles/cros/example/chrome_fixture.go',
-          text: `func init() {
+        tastTestConfig: {
+          activeTextEditor: {
+            path: 'src/platform/tast-tests/src/go.chromium.org/tast-tests/cros/local/bundles/cros/example/chrome_fixture.go',
+            text: `func init() {
   testing.AddTest(&testing.Test{
     Func: ChromeFixture,
   })
@@ -49,10 +50,11 @@ describe('runTastTests', () => {
 
 func ChromeFixture(ctx context.Context, s *testing.State) {}
 `,
+          },
+          tastListResult: 'example.ChromeFixture\n',
+          // No tests to pick. If there is only one runnable test, it will be run automatically.
+          testsToPick: [],
         },
-        tastListResult: 'example.ChromeFixture\n',
-        // No tests to pick. If there is only one runnable test, it will be run automatically.
-        testsToPick: [],
       },
       subscriptions
     );
@@ -118,9 +120,10 @@ func ChromeFixture(ctx context.Context, s *testing.State) {}
       vscodeSpy,
       {
         chromiumos,
-        activeTextEditor: {
-          path: 'src/platform/tast-tests/src/go.chromium.org/tast-tests/cros/local/bundles/cros/fake/x.go',
-          text: `func init() {
+        tastTestConfig: {
+          activeTextEditor: {
+            path: 'src/platform/tast-tests/src/go.chromium.org/tast-tests/cros/local/bundles/cros/fake/x.go',
+            text: `func init() {
   testing.AddTest(&testing.Test{
     Func: X,
     Params: []testing.Params{{
@@ -135,12 +138,13 @@ func ChromeFixture(ctx context.Context, s *testing.State) {}
 
 func X(ctx context.Context, s *testing.State) {}
 `,
-        },
-        tastListResult: `fake.X.pass
+          },
+          tastListResult: `fake.X.pass
 fake.X.fail
 fake.X.skip
 `,
-        testsToPick: ['fake.X.pass', 'fake.X.fail', 'fake.X.skip'],
+          testsToPick: ['fake.X.pass', 'fake.X.fail', 'fake.X.skip'],
+        },
       },
       subscriptions
     );
