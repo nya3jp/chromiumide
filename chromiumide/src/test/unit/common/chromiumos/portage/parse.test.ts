@@ -104,7 +104,7 @@ describe('Ebuild parser', () => {
       content: fs.readFileSync(
         path.join(
           __dirname,
-          '../../../../../../src/test/testdata/portage/portage-9999.ebuild'
+          '../../../../../../../src/test/testdata/portage/portage-9999.ebuild'
         ),
         'utf8'
       ),

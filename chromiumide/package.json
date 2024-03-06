@@ -1424,7 +1424,7 @@
     "unit-test": {
       "command": "NODE_OPTIONS=$NODE_OPTIONS' -r source-map-support/register' jasmine --config=src/test/unit/jasmine.json --color",
       "env": {
-        "NODE_PATH": "out/test/unit/injected_modules"
+        "NODE_PATH": "out/src/test/unit/injected_modules"
       },
       "dependencies": [
         "build-tests"
@@ -1433,14 +1433,14 @@
     "e2e-test": {
       "command": "sudo true && NODE_OPTIONS=$NODE_OPTIONS' -r source-map-support/register' jasmine --config=src/test/e2e/jasmine.json --color",
       "env": {
-        "NODE_PATH": "out/test/unit/injected_modules"
+        "NODE_PATH": "out/src/test/unit/injected_modules"
       },
       "dependencies": [
         "build-tests"
       ]
     },
     "integration-test": {
-      "command": "xvfb-run -a node ./out/test/integration/runTest.js",
+      "command": "xvfb-run -a node ./out/src/test/integration/runTest.js",
       "dependencies": [
         "build-all"
       ],

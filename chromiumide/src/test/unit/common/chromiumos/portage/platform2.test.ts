@@ -77,7 +77,7 @@ describe('parsePlatform2EbuildOrThrow works for', () => {
   const {vscodeSpy} = testing.installVscodeDouble();
   const ebuildPath = path.join(
     __dirname,
-    '../../../../../../src/test/testdata/portage/portage-9999.ebuild'
+    '../../../../../../../src/test/testdata/portage/portage-9999.ebuild'
   );
   beforeEach(async () => {
     vscodeSpy.workspace.openTextDocument.and.returnValue(

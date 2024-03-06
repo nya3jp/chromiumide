@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 function packageJsonFilepath(): string {
-  return path.join(__dirname, '../../../package.json');
+  return path.join(__dirname, '../../../../package.json');
 }
 
 type MenuItem = {

@@ -1,5 +1,5 @@
 {
-  "helpers": ["out/test/unit/helpers/**/*.js"],
+  "helpers": ["out/src/test/unit/helpers/**/*.js"],
   "spec_dir": "",
-  "spec_files": ["out/test/unit/**/*.test.js", "out/_.._/shared/**/*.test.js"]
+  "spec_files": ["out/src/test/unit/**/*.test.js", "out/shared/**/*.test.js"]
 }

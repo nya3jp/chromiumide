@@ -25,7 +25,7 @@ import {FakeGerrit} from './fake_env';
 
 const GITCOOKIES_PATH = path.join(
   __dirname,
-  '../../../../../src/test/testdata/gerrit/gitcookies'
+  '../../../../../../src/test/testdata/gerrit/gitcookies'
 );
 
 describe('Gerrit', () => {

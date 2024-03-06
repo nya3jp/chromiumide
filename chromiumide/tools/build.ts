@@ -101,9 +101,6 @@ async function buildTests() {
     ...commonOptions(/* production = */ false),
     format: 'cjs',
     platform: 'node',
-    // TODO(oka): Remove outbase now that shared/ directory is introduced, which is located in a
-    // weird place (./out/_.._/shared).
-    outbase: './src',
     outdir: './out',
     tsconfig: './tsconfig.json',
     entryPoints,

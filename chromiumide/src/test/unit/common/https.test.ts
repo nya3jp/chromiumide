@@ -8,7 +8,7 @@ import * as path from 'path';
 import {Https, HttpsError} from '../../../common/https';
 import * as netUtil from '../../../common/net_util';
 
-const TEST_DATA = '../../../../src/test/testdata/https/';
+const TEST_DATA = '../../../../../src/test/testdata/https/';
 
 const serverOptions = {
   key: fs.readFileSync(path.resolve(__dirname, TEST_DATA, 'key.pem')),
