@@ -8,7 +8,6 @@
  */
 
 import * as childProcess from 'child_process';
-import * as path from 'path';
 import * as vscode from 'vscode';
 import treeKill from 'tree-kill';
 import {getDriver} from '../../shared/app/common/driver_repository';
@@ -30,7 +29,9 @@ export async function isInsideChroot(): Promise<boolean> {
 }
 
 export async function isChroot(dir: string): Promise<boolean> {
-  return await driver.fs.exists(path.join(dir, '/etc/cros_chroot_version'));
+  return await driver.fs.exists(
+    driver.path.join(dir, '/etc/cros_chroot_version')
+  );
 }
 
 /**
@@ -38,12 +39,12 @@ export async function isChroot(dir: string): Promise<boolean> {
  */
 export async function findChroot(dir: string): Promise<Chroot | undefined> {
   for (;;) {
-    const chroot = path.join(dir, 'chroot');
+    const chroot = driver.path.join(dir, 'chroot');
     if (await isChroot(chroot)) {
       return chroot as Chroot;
     }
 
-    const d = path.dirname(dir);
+    const d = driver.path.dirname(dir);
     if (d === dir) {
       break;
     }
@@ -56,14 +57,14 @@ export async function findChroot(dir: string): Promise<Chroot | undefined> {
  * Returns the ChromiumOS source directory, given the path to chroot.
  */
 export function sourceDir(chroot: Chroot): Source {
-  return path.dirname(chroot) as Source;
+  return driver.path.dirname(chroot) as Source;
 }
 
 /**
  * Returns the ChromiumOS out directory, given the path to source (chromeos root).
  */
 export function crosOutDir(source: Source): CrosOut {
-  return path.join(source, 'out') as CrosOut;
+  return driver.path.join(source, 'out') as CrosOut;
 }
 
 class Task<T> {
@@ -404,15 +405,15 @@ export async function findGitDir(
   let dir: string;
   if (!(await driver.fs.exists(filePath))) {
     // tests use files that do not exist
-    dir = path.dirname(filePath);
+    dir = driver.path.dirname(filePath);
   } else if (await driver.fs.isDirectory(filePath)) {
     dir = filePath;
   } else {
-    dir = path.dirname(filePath);
+    dir = driver.path.dirname(filePath);
   }
 
-  while (!(await driver.fs.exists(path.join(dir, '.git')))) {
-    const parent = path.dirname(dir);
+  while (!(await driver.fs.exists(driver.path.join(dir, '.git')))) {
+    const parent = driver.path.dirname(dir);
     if (parent === dir) {
       return undefined;
     }

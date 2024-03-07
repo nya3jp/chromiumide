@@ -5,6 +5,7 @@
 import * as os from 'os';
 import {Driver} from '../../shared/driver';
 import {FsImpl} from './fs';
+import {PathImpl} from './path';
 
 export class DriverImpl implements Driver {
   async whoami(): Promise<string | Error> {
@@ -12,4 +13,5 @@ export class DriverImpl implements Driver {
   }
 
   readonly fs = new FsImpl();
+  readonly path = new PathImpl();
 }

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import {Fs} from './fs';
+import {Path} from './path';
 
 export type Driver = Readonly<{
   /**
@@ -10,4 +11,5 @@ export type Driver = Readonly<{
    */
   whoami(): Promise<string | Error>;
   fs: Fs;
+  path: Path;
 }>;
