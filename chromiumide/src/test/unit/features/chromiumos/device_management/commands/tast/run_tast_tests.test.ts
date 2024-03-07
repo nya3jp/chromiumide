@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import {CancelledError} from '../../../../../../../../shared/app/common/exec/types';
 import * as commonUtil from '../../../../../../../common/common_util';
 import {
   TestResult,
@@ -263,7 +264,7 @@ fake.X.skip
     }
 
     // Make tast run command cancelled.
-    tastRun = args => new commonUtil.CancelledError('tast', args);
+    tastRun = args => new CancelledError('tast', args);
 
     {
       const result = await runTastTests(context, chrootService);

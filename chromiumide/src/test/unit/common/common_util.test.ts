@@ -6,6 +6,11 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {
+  ExecResult,
+  AbnormalExitError,
+  CancelledError,
+} from '../../../../shared/app/common/exec/types';
 import * as commonUtil from '../../../common/common_util';
 import * as testing from '../../testing';
 
@@ -115,7 +120,7 @@ describe('Logging exec', () => {
       }),
       logStdout: true,
     });
-    expect((res as commonUtil.AbnormalExitError).message).toContain(
+    expect((res as AbnormalExitError).message).toContain(
       "sh -c 'echo foo 1>&2; exit 1'"
     );
     expect(logs).toEqual("sh -c 'echo foo 1>&2; exit 1'\nfoo\n");
@@ -128,7 +133,7 @@ describe('Logging exec', () => {
         logs += log;
       }),
     });
-    expect((res as commonUtil.AbnormalExitError).message).toContain(
+    expect((res as AbnormalExitError).message).toContain(
       "sh -c 'echo foo 1>&2; exit 1'"
     );
     expect(logs).toEqual("sh -c 'echo foo 1>&2; exit 1'\nfoo\n");
@@ -146,7 +151,7 @@ describe('Logging exec', () => {
         ignoreNonZeroExit: true,
       }
     );
-    const {exitStatus, stdout, stderr} = res as commonUtil.ExecResult;
+    const {exitStatus, stdout, stderr} = res as ExecResult;
     expect(exitStatus).toEqual(1);
     expect(stdout).toEqual('bar\n');
     expect(stderr).toEqual('foo\n');
@@ -165,7 +170,7 @@ describe('Logging exec', () => {
         logStdout: true,
       }
     );
-    expect((res as commonUtil.ExecResult).stdout).toEqual('foo');
+    expect((res as ExecResult).stdout).toEqual('foo');
     expect(logs.split('\n')).toEqual([
       "sh -c 'echo -n foo; echo -n bar 1>&2;'",
       'foobar',
@@ -175,7 +180,7 @@ describe('Logging exec', () => {
 
   it('can supply stdin', async () => {
     const res = await commonUtil.exec('cat', [], {pipeStdin: 'foo'});
-    expect((res as commonUtil.ExecResult).stdout).toEqual('foo');
+    expect((res as ExecResult).stdout).toEqual('foo');
   });
 
   it('returns error when the command fails', async () => {
@@ -190,7 +195,7 @@ describe('Logging exec', () => {
     });
     canceller.cancel();
     const res = await process;
-    expect(res).toBeInstanceOf(commonUtil.CancelledError);
+    expect(res).toBeInstanceOf(CancelledError);
     expect(res).toBeInstanceOf(vscode.CancellationError);
     expect((res as Error).message).toEqual('"sleep 100" cancelled');
   });
@@ -200,8 +205,7 @@ describe('Logging exec', () => {
     async function countRunning() {
       const psAux = await commonUtil.exec('ps', ['ax', '-o', 'command']);
       return (
-        (psAux as commonUtil.ExecResult).stdout.match(new RegExp(MARKER, 'g'))
-          ?.length ?? 0
+        (psAux as ExecResult).stdout.match(new RegExp(MARKER, 'g'))?.length ?? 0
       );
     }
 
@@ -230,13 +234,13 @@ subprocess.run(['python3', '-c', 'import time; time.sleep(10) # ${MARKER}'])
     expect(await countRunning()).toBe(2);
 
     tokenSource.cancel();
-    expect(await promise).toBeInstanceOf(commonUtil.CancelledError);
+    expect(await promise).toBeInstanceOf(CancelledError);
     expect(await countRunning()).toBe(0);
   });
 
   it('changes the directory if cwd is specified', async () => {
     const res = await commonUtil.exec('pwd', [], {cwd: temp.path});
-    expect((res as commonUtil.ExecResult).stdout).toContain(temp.path);
+    expect((res as ExecResult).stdout).toContain(temp.path);
   });
 });
 

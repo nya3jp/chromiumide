@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import * as vscode from 'vscode';
+import {CancelledError} from '../../../../shared/app/common/exec/types';
 import * as commonUtil from '../../../common/common_util';
 import * as testing from '../../testing';
 
@@ -69,7 +70,7 @@ describe('fake exec', () => {
     const result = commonUtil.exec('foo', ['bar'], {
       cancellationToken: tokenSource.token,
     });
-    expect(await result).toBeInstanceOf(commonUtil.CancelledError);
+    expect(await result).toBeInstanceOf(CancelledError);
     guard.unblock();
   });
 
@@ -89,7 +90,7 @@ describe('fake exec', () => {
     });
     await testing.flushMicrotasksUntil(async () => true, 5);
     tokenSource.cancel();
-    expect(await result).toBeInstanceOf(commonUtil.CancelledError);
+    expect(await result).toBeInstanceOf(CancelledError);
     guard.unblock();
   });
 });

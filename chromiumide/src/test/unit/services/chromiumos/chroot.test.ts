@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import {ExecResult} from '../../../../../shared/app/common/exec/types';
 import * as commonUtil from '../../../../common/common_util';
 import * as services from '../../../../services';
 import * as testing from '../../../testing';
@@ -28,7 +29,7 @@ describe('chroot service exec', () => {
     );
     const res = (await cros.exec('echo', ['1'], {
       sudoReason: 'to echo',
-    })) as commonUtil.ExecResult;
+    })) as ExecResult;
     expect(res.stdout).toBe('1\n');
   });
 

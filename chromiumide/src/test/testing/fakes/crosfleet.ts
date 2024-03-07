@@ -4,8 +4,11 @@
 
 import * as path from 'path';
 import * as dateFns from 'date-fns';
+import {
+  AbnormalExitError,
+  ExecResult,
+} from '../../../../shared/app/common/exec/types';
 import * as cipd from '../../../common/cipd';
-import * as commonUtil from '../../../common/common_util';
 import * as crosfleet from '../../../features/device_management/crosfleet';
 import {arrayWithPrefix} from '../../unit/testing/jasmine/asymmetric_matcher';
 import {FakeExec} from '../fake_exec';
@@ -40,26 +43,16 @@ export class FakeCrosfleet {
       );
   }
 
-  private async handleWhoami(): Promise<
-    commonUtil.ExecResult | commonUtil.AbnormalExitError
-  > {
+  private async handleWhoami(): Promise<ExecResult | AbnormalExitError> {
     if (!this.loggedIn) {
-      return new commonUtil.AbnormalExitError(
-        'crosfleet',
-        ['whoami'],
-        1,
-        '',
-        ''
-      );
+      return new AbnormalExitError('crosfleet', ['whoami'], 1, '', '');
     }
     return {exitStatus: 0, stdout: '', stderr: ''};
   }
 
-  private async handleLeases(): Promise<
-    commonUtil.ExecResult | commonUtil.AbnormalExitError
-  > {
+  private async handleLeases(): Promise<ExecResult | AbnormalExitError> {
     if (!this.loggedIn) {
-      return new commonUtil.AbnormalExitError(
+      return new AbnormalExitError(
         'crosfleet',
         ['dut', 'leases', '-json'],
         1,
@@ -101,9 +94,9 @@ export class FakeCrosfleet {
 
   private async handleLease(
     restArgs: string[]
-  ): Promise<commonUtil.ExecResult | commonUtil.AbnormalExitError> {
+  ): Promise<ExecResult | AbnormalExitError> {
     if (!this.loggedIn) {
-      return new commonUtil.AbnormalExitError(
+      return new AbnormalExitError(
         'crosfleet',
         ['dut', 'lease'].concat(restArgs),
         1,
@@ -135,7 +128,7 @@ export class FakeCrosfleet {
       return true;
     };
     if (!ok) {
-      return new commonUtil.AbnormalExitError(
+      return new AbnormalExitError(
         'crosfleet',
         ['dut', 'lease'].concat(restArgs),
         1,

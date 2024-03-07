@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {AbnormalExitError} from '../../shared/app/common/exec/types';
 import {Metrics} from '../features/metrics/metrics';
 import * as commonUtil from './common_util';
 import * as depotTools from './depot_tools';
@@ -35,7 +36,7 @@ export class CipdRepository {
       // We send only selected data to avoid capturing too much
       // (for example, home directory name).
       const data = [`pkg: ${packageName}`, `ver: ${version}`];
-      if (error instanceof commonUtil.AbnormalExitError) {
+      if (error instanceof AbnormalExitError) {
         data.push(`status: ${error.exitStatus}`);
       }
       return data.join(', ');

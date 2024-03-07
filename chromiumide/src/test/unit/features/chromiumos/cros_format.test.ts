@@ -3,12 +3,12 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import {ExecResult} from '../../../../../shared/app/common/exec/types';
 import {TEST_ONLY} from '../../../../features/chromiumos/cros_format';
 import {Metrics} from '../../../../features/metrics/metrics';
 import {StatusManager, TaskStatus} from '../../../../ui/bg_task_status';
 import * as testing from '../../../testing';
 import {FakeTextDocument} from '../../../testing/fakes';
-import type * as commonUtil from '../../../../common/common_util';
 
 const {CrosFormat} = TEST_ONLY;
 
@@ -56,7 +56,7 @@ describe('Cros format', () => {
   });
 
   it('shows error when the command fails (exit status 127)', async () => {
-    const execResult: commonUtil.ExecResult = {
+    const execResult: ExecResult = {
       exitStatus: 127,
       stderr: 'stderr',
       stdout: 'stdout',
@@ -80,7 +80,7 @@ describe('Cros format', () => {
   });
 
   it('does not format code that is already formatted correctly', async () => {
-    const execResult: commonUtil.ExecResult = {
+    const execResult: ExecResult = {
       exitStatus: 0,
       stderr: '',
       stdout: '',
@@ -100,7 +100,7 @@ describe('Cros format', () => {
   });
 
   it('formats code', async () => {
-    const execResult: commonUtil.ExecResult = {
+    const execResult: ExecResult = {
       exitStatus: 1,
       stderr: '',
       stdout: 'formatted\nfile',

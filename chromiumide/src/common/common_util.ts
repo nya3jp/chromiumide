@@ -8,9 +8,15 @@
  */
 
 import * as childProcess from 'child_process';
-import * as vscode from 'vscode';
 import treeKill from 'tree-kill';
 import {getDriver} from '../../shared/app/common/driver_repository';
+import {
+  ExecOptions,
+  ExecResult,
+  AbnormalExitError,
+  CancelledError,
+  ProcessError,
+} from '../../shared/app/common/exec/types';
 import * as shutil from '../../shared/app/common/shutil';
 
 const driver = getDriver();
@@ -128,106 +134,6 @@ export class JobManager<T> {
     await this.handle(); // handle possible new task
   }
 }
-
-export interface ExecResult {
-  exitStatus: number | null;
-  stdout: string;
-  stderr: string;
-}
-
-export interface ExecOptions {
-  /**
-   * When set, outputs are logged with this function.
-   * Usually this is a vscode.OutputChannel object, but only append() is required.
-   */
-  logger?: Pick<vscode.OutputChannel, 'append'>;
-
-  /** If true, stdout should be logged in addition to stderr, which is always logged. */
-  logStdout?: boolean;
-
-  /**
-   * If the command exits with non-zero code, exec should return normally.
-   * This changes the default behaviour, which is to return an error.
-   */
-  ignoreNonZeroExit?: boolean;
-
-  /**
-   * When set, pipeStdin is written to the stdin of the command.
-   */
-  pipeStdin?: string;
-
-  /**
-   * Allows interrupting a command execution.
-   */
-  cancellationToken?: vscode.CancellationToken;
-
-  /**
-   * Whether to kill the entire process tree when cancelling the operation. Defaults to `false`.
-   *
-   * TODO(b/301574822): Consider removing this option and instead default to `true` for all
-   * commands.
-   */
-  treeKillWhenCancelling?: boolean;
-
-  /**
-   * Current working directory of the child process.
-   */
-  cwd?: string;
-
-  /**
-   * Environment variables passed to the subprocess.
-   */
-  env?: childProcess.SpawnOptions['env'];
-}
-
-/**
- * Command was run, returned non-zero exit status,
- * and `exec` option was to return an error.
- */
-export class AbnormalExitError extends Error {
-  constructor(
-    cmd: string,
-    args: string[],
-    readonly exitStatus: number | null,
-    readonly stdout: string,
-    readonly stderr: string
-  ) {
-    super(
-      `"${shutil.escapeArray([
-        cmd,
-        ...args,
-      ])}" failed, exit status: ${exitStatus}`
-    );
-  }
-
-  messageWithStdoutAndStderr(): string {
-    return `${this.message}\nStdout:\n${this.stdout}\nStderr:\n${this.stderr}`;
-  }
-}
-
-/**
- * Command did not run, for example, it was not found.
- */
-export class ProcessError extends Error {
-  constructor(cmd: string, args: string[], cause: Error) {
-    // Chain errors with `cause` option is not available.
-    super(`"${shutil.escapeArray([cmd, ...args])}" failed: ${cause.message}`);
-  }
-}
-
-/**
- * Command execution was interrupted with vscode.CancellationToken.
- */
-export class CancelledError extends vscode.CancellationError {
-  override readonly message = `"${shutil.escapeArray([
-    this.cmd,
-    ...this.args,
-  ])}" cancelled`;
-  constructor(private readonly cmd: string, private readonly args: string[]) {
-    super();
-  }
-}
-
 /**
  * Executes command with optionally logging its output. The promise will be
  * resolved with outputs of the command or an Error. It's guaranteed that
@@ -300,7 +206,7 @@ function realExec(
 
     const spawnOpts: childProcess.SpawnOptionsWithoutStdio = {
       cwd: options.cwd,
-      env: options.env,
+      env: options.env as NodeJS.ProcessEnv,
     };
 
     const command = childProcess.spawn(name, args, spawnOpts);

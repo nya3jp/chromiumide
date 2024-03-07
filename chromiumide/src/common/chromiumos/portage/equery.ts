@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import {AbnormalExitError} from '../../../../shared/app/common/exec/types';
 import {chromiumos} from '../../../services';
-import {AbnormalExitError} from '../../common_util';
 import {BoardOrHost} from '../board_or_host';
 import {ParsedPackageName} from './ebuild';
 

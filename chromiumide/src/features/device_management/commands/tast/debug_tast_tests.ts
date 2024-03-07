@@ -8,6 +8,7 @@ import * as path from 'path';
 import * as process from 'process';
 import * as vscode from 'vscode';
 import * as glob from 'glob';
+import {AbnormalExitError} from '../../../../../shared/app/common/exec/types';
 import {ParsedEbuildFilepath} from '../../../../common/chromiumos/portage/ebuild';
 import * as commonUtil from '../../../../common/common_util';
 import {MemoryOutputChannel} from '../../../../common/memory_output_channel';
@@ -273,7 +274,7 @@ async function ensureDutHasDelve(
   }
 
   // SSH connection to DUT failed
-  if (result instanceof commonUtil.AbnormalExitError) {
+  if (result instanceof AbnormalExitError) {
     if (result.exitStatus === 255) {
       const err = diagnoseSshError(result, memoryOutput.output);
       context.output.appendLine(err.message);

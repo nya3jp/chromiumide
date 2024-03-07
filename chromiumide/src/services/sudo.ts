@@ -7,6 +7,7 @@ import * as net from 'net';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {ExecOptions} from '../../shared/app/common/exec/types';
 import * as commonUtil from '../common/common_util';
 
 const onDidRunSudoWithPasswordEmitter = new vscode.EventEmitter<void>();
@@ -17,7 +18,7 @@ const onDidRunSudoWithPasswordEmitter = new vscode.EventEmitter<void>();
  */
 export const onDidRunSudoWithPassword = onDidRunSudoWithPasswordEmitter.event;
 
-export interface SudoExecOptions extends commonUtil.ExecOptions {
+export interface SudoExecOptions extends ExecOptions {
   /**
    * String that tells the user why sudo is required. It must start with "to ".
    * Example: 'to generate C++ cross references'

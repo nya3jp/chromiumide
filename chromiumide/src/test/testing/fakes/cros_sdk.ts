@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import * as path from 'path';
+import {ExecOptions} from '../../../../shared/app/common/exec/types';
 import * as commonUtil from '../../../common/common_util';
 import {arrayWithPrefixAnd} from '../../unit/testing/jasmine/asymmetric_matcher';
 import {FakeExec} from '../fake_exec';
@@ -19,7 +20,7 @@ export function installChrootCommandHandler(
   argsMatcher: jasmine.AsymmetricMatcher<string[]> | string[],
   callback: (
     args: string[],
-    options?: commonUtil.ExecOptions
+    options?: ExecOptions
   ) => Promise<Awaited<ReturnType<typeof commonUtil.exec>> | string> | string,
   chrootOption?: {crosSdkWorkingDir?: string}
 ): void {

@@ -4,6 +4,7 @@
 
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {CancelledError} from '../../shared/app/common/exec/types';
 import * as cipd from '../common/cipd';
 import * as commonUtil from '../common/common_util';
 import * as bgTaskStatus from '../ui/bg_task_status';
@@ -111,7 +112,7 @@ class MonorailComponentLink extends vscode.DocumentLink {
         cancellationToken: token,
       }
     );
-    if (res instanceof commonUtil.CancelledError) {
+    if (res instanceof CancelledError) {
       return;
     } else if (res instanceof Error) {
       outputChannel.append(`Failed to run 'dirmd' command: ${res}`);

@@ -4,12 +4,12 @@
 
 import * as os from 'os';
 import * as vscode from 'vscode';
+import {CancelledError} from '../../../../../shared/app/common/exec/types';
 import {BoardOrHost} from '../../../../common/chromiumos/board_or_host';
 import {
   ParsedPackageName,
   getQualifiedPackageName,
 } from '../../../../common/chromiumos/portage/ebuild';
-import {CancelledError} from '../../../../common/common_util';
 import {Context} from '../context';
 
 /**

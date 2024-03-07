@@ -5,9 +5,11 @@
 import * as vscode from 'vscode';
 import {
   ExecOptions,
+  CancelledError,
+} from '../../../shared/app/common/exec/types';
+import {
   setExecForTesting,
   exec as commonUtilExec,
-  CancelledError,
 } from '../../common/common_util';
 import {cleanState} from './clean_state';
 

@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {CancelledError} from '../../../../shared/app/common/exec/types';
 import * as commonUtil from '../../../common/common_util';
 import * as depotTools from '../../../common/depot_tools';
 import * as config from '../../../services/config';
@@ -225,7 +226,7 @@ export class Runner extends AbstractRunner {
       this.output.appendLine(
         `Error calculating test targets from test files: ${testTargetNames}`
       );
-      if (!(testTargetNames instanceof commonUtil.CancelledError)) {
+      if (!(testTargetNames instanceof CancelledError)) {
         Metrics.send({
           category: 'error',
           group: 'chromium.gtest',
@@ -250,7 +251,7 @@ export class Runner extends AbstractRunner {
       this.output.appendLine(
         `Error while building test targets (${testTargetNames}): ${result}`
       );
-      if (!(result instanceof commonUtil.CancelledError)) {
+      if (!(result instanceof CancelledError)) {
         Metrics.send({
           category: 'error',
           group: 'chromium.gtest',
@@ -269,7 +270,7 @@ export class Runner extends AbstractRunner {
         this.output.appendLine(
           `Error while extracting tests of test target ${testTargetName}: ${allTestNamesInTarget}`
         );
-        if (!(allTestNamesInTarget instanceof commonUtil.CancelledError)) {
+        if (!(allTestNamesInTarget instanceof CancelledError)) {
           Metrics.send({
             category: 'error',
             group: 'chromium.gtest',
@@ -327,7 +328,7 @@ export class Runner extends AbstractRunner {
       resultOutputPath
     );
     if (result instanceof Error) {
-      if (!(result instanceof commonUtil.CancelledError)) {
+      if (!(result instanceof CancelledError)) {
         Metrics.send({
           category: 'error',
           group: 'chromium.gtest',

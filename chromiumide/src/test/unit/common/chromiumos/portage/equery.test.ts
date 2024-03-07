@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import {AbnormalExitError} from '../../../../../../shared/app/common/exec/types';
 import {
   Board,
   BoardOrHost,
@@ -37,13 +38,7 @@ function installEmergeForUseFlagsCommandHandler(
     args,
     async () =>
       exitSatus
-        ? new commonUtil.AbnormalExitError(
-            cmd,
-            args,
-            exitSatus,
-            stdout,
-            stderr ?? ''
-          )
+        ? new AbnormalExitError(cmd, args, exitSatus, stdout, stderr ?? '')
         : stdout
   );
 }

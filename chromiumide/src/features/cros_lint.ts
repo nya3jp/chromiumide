@@ -339,7 +339,7 @@ async function updateDiagnostics(
         ignoreNonZeroExit: true,
         logStdout: true,
         cwd: cwd,
-        env: env,
+        env: env as Record<string, string>,
       });
       if (res instanceof Error) {
         log.channel.append(res.message);

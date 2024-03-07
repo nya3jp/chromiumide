@@ -7,6 +7,7 @@ import * as net from 'net';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as ws from 'ws';
+import {CancelledError} from '../../../shared/app/common/exec/types';
 import * as commonUtil from '../../common/common_util';
 import {MemoryOutputChannel} from '../../common/memory_output_channel';
 import * as netUtil from '../../common/net_util';
@@ -305,7 +306,7 @@ async function startVncServer(
     logStdout: true,
     cancellationToken: token,
   });
-  if (result instanceof commonUtil.CancelledError) {
+  if (result instanceof CancelledError) {
     return;
   }
   if (result instanceof Error) {

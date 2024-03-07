@@ -4,6 +4,7 @@
 
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {AbnormalExitError} from '../../../../../../../shared/app/common/exec/types';
 import {
   BoardOrHost,
   parseBoardOrHost,
@@ -194,13 +195,7 @@ export function installEmergeForUseFlagsCommandHandler(
     args,
     async () =>
       exitSatus
-        ? new commonUtil.AbnormalExitError(
-            cmd,
-            args,
-            exitSatus,
-            stdout,
-            stderr ?? ''
-          )
+        ? new AbnormalExitError(cmd, args, exitSatus, stdout, stderr ?? '')
         : stdout
   );
 }

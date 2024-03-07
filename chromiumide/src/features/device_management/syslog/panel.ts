@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {ExecResult} from '../../../../shared/app/common/exec/types';
 import * as shutil from '../../../../shared/app/common/shutil';
 import * as commonUtil from '../../../common/common_util';
 import {ReactPanel} from '../../../services/react_panel';
@@ -93,7 +94,7 @@ export class SyslogPanel extends ReactPanel<SyslogViewContext> {
   /**
    * Runs an external process to stream the remote system log to the local file.
    */
-  private execSyslogTail(): Promise<commonUtil.ExecResult | Error> {
+  private execSyslogTail(): Promise<ExecResult | Error> {
     // `tail -F` command keeps listening even if the file `remoteSyslogPath`
     // doesn't exist, waiting for the file to appear.
     const tailCommand = `${shutil.escapeArray(

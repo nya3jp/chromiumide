@@ -5,6 +5,10 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {
+  AbnormalExitError,
+  CancelledError,
+} from '../../../shared/app/common/exec/types';
 import * as commonUtil from '../../common/common_util';
 import {envForDepotTools} from '../../common/depot_tools';
 
@@ -68,7 +72,7 @@ export async function readGnArgs(
     }
   );
   if (result instanceof Error) {
-    if (result instanceof commonUtil.CancelledError) {
+    if (result instanceof CancelledError) {
       return {
         type: 'error',
         error: result.toString(),
@@ -77,7 +81,7 @@ export async function readGnArgs(
     return {
       type: 'error',
       error:
-        result instanceof commonUtil.AbnormalExitError
+        result instanceof AbnormalExitError
           ? result.messageWithStdoutAndStderr()
           : result.toString(),
     };

@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import {AbnormalExitError} from '../../common/common_util';
+import {AbnormalExitError} from '../../../shared/app/common/exec/types';
 import {
   compareCrosVersions,
   parseFullCrosVersion,

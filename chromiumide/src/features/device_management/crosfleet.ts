@@ -4,6 +4,7 @@
 
 import * as vscode from 'vscode';
 import * as dateFns from 'date-fns';
+import {AbnormalExitError} from '../../../shared/app/common/exec/types';
 import * as shutil from '../../../shared/app/common/shutil';
 import * as cipd from '../../common/cipd';
 import * as commonUtil from '../../common/common_util';
@@ -95,7 +96,7 @@ export class CrosfleetRunner {
    */
   async checkLogin(): Promise<boolean> {
     const result = await this.exec(['whoami']);
-    if (result instanceof commonUtil.AbnormalExitError) {
+    if (result instanceof AbnormalExitError) {
       return false;
     }
     if (result instanceof Error) {

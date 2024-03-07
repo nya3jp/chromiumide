@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import {AbnormalExitError} from '../../../../../../shared/app/common/exec/types';
 import * as commonUtil from '../../../../../common/common_util';
 import * as prebuiltUtil from '../../../../../features/device_management/prebuilt_util';
 import * as services from '../../../../../services';
@@ -90,7 +91,7 @@ gs://chromeos-image-archive/xyz-postsubmit/R102-10010.0.0-10100-1000000000000100
       'gsutil',
       ['ls', 'gs://chromeos-image-archive/xyz-postsubmit/*/image.zip'],
       async args =>
-        new commonUtil.AbnormalExitError(
+        new AbnormalExitError(
           'gsutil',
           args,
           1,

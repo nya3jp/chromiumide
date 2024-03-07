@@ -4,6 +4,7 @@
 
 import * as net from 'net';
 import * as vscode from 'vscode';
+import {CancelledError} from '../../../shared/app/common/exec/types';
 import * as commonUtil from '../../common/common_util';
 import {SshIdentity} from './ssh_identity';
 import * as sshUtil from './ssh_util';
@@ -117,7 +118,7 @@ async function createTunnelAndWait(
     logStdout: true,
     cancellationToken: token,
   });
-  if (result instanceof commonUtil.CancelledError) {
+  if (result instanceof CancelledError) {
     return;
   }
   if (result instanceof Error) {
