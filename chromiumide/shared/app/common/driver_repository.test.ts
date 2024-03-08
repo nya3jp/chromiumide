@@ -9,11 +9,15 @@ describe('registerDriver', () => {
   it('works for object', async () => {
     const driver = getDriver();
 
-    registerDriver({
+    const undo = registerDriver({
       whoami: async () => 'fake',
     } as Driver);
 
-    expect(await driver.whoami()).toEqual('fake');
+    try {
+      expect(await driver.whoami()).toEqual('fake');
+    } finally {
+      undo();
+    }
   });
 
   it('works for class instance', async () => {
@@ -24,8 +28,12 @@ describe('registerDriver', () => {
         return 'fake';
       }
     }
-    registerDriver(new DriverImpl() as Driver);
+    const undo = registerDriver(new DriverImpl() as Driver);
 
-    expect(await driver.whoami()).toEqual('fake');
+    try {
+      expect(await driver.whoami()).toEqual('fake');
+    } finally {
+      undo();
+    }
   });
 });

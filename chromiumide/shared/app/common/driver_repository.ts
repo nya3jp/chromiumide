@@ -5,9 +5,22 @@
 import type {Driver} from '../../driver';
 
 const globalDriver: Driver = {} as Driver;
+const registeredDrivers: Driver[] = [];
 
-export function registerDriver(driver: Driver): void {
+/**
+ * @returns a closure to undo the registration.
+ */
+export function registerDriver(driver: Driver): () => void {
   Object.setPrototypeOf(globalDriver, driver);
+  registeredDrivers.push(driver);
+
+  return () => {
+    registeredDrivers.pop();
+    const previousDriver = registeredDrivers.length
+      ? registeredDrivers[registeredDrivers.length - 1]
+      : ({} as Driver);
+    Object.setPrototypeOf(globalDriver, previousDriver);
+  };
 }
 
 export function getDriver(): Driver {
