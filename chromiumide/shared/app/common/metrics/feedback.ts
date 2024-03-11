@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import {vscodeRegisterCommand} from '../../../shared/app/common/vscode/commands';
+import {vscodeRegisterCommand} from '../vscode/commands';
 
 export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(

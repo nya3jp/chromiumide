@@ -25,7 +25,6 @@ import * as dirMetadata from './features/dir_metadata';
 import * as gerrit from './features/gerrit';
 import * as gn from './features/gn';
 import * as hints from './features/hints';
-import * as feedback from './features/metrics/feedback';
 import * as metrics from './features/metrics/metrics';
 import {Metrics} from './features/metrics/metrics';
 import * as metricsConfig from './features/metrics/metrics_config';
@@ -143,7 +142,6 @@ async function postMetricsActivate(
   }
   codesearch.activate(context);
   suggestExtension.activate(context);
-  feedback.activate(context);
   upstart.activate(context);
   hints.activate(context);
   showHelp.activate(context);

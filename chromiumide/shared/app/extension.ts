@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import {Driver} from '../driver';
 import {registerDriver} from './common/driver_repository';
+import * as feedback from './common/metrics/feedback';
 import {DemoWhoami} from './features/demo_whoami';
 
 /**
@@ -17,4 +18,6 @@ export function activate(
   registerDriver(driver);
 
   context.subscriptions.push(new DemoWhoami());
+
+  feedback.activate(context);
 }
