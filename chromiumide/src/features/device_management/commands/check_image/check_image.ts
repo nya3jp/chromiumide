@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import {deviceManagement} from '../../../../../shared/app/services/config';
 import {Board} from '../../../../common/chromiumos/board_or_host';
 import {
   getQualifiedPackageName,
@@ -11,7 +12,6 @@ import {
 import {getUseFlagsInstalled} from '../../../../common/chromiumos/portage/equery';
 import {getCrosPrebuiltVersionsFromBinHost} from '../../../../common/chromiumos/repo_status';
 import {chromiumos} from '../../../../services';
-import {deviceManagement} from '../../../../services/config';
 import {CommandContext, promptKnownHostnameIfNeeded} from '../common';
 import {flashImageToDevice, flashPrebuiltImage} from '../flash_prebuilt_image';
 import {CompatibilityChecker} from './compatibility';

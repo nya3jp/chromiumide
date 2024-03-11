@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import * as config from '../../../../../shared/app/services/config';
 import {LineBufferedOutputAdapter} from '../../../../common/line_buffered_output_adapter';
 import {MemoryOutputChannel} from '../../../../common/memory_output_channel';
 import {TEST_ONLY, runAutoninja} from '../../../../features/chromium/autoninja';
-import * as config from '../../../../services/config';
 import * as testing from '../../../testing';
 
 describe('autoninja output adapter', () => {

@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import * as config from '../../../shared/app/services/config';
 import * as migrate from '../../migrate';
-import * as config from '../../services/config';
 import {installFakeConfigs, installVscodeDouble} from '../testing';
 
 describe('migrate', () => {

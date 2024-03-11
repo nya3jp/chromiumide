@@ -4,7 +4,7 @@
 
 import 'jasmine';
 import * as vscode from 'vscode';
-import * as config from '../../../services/config';
+import * as config from '../../../../shared/app/services/config';
 import * as fakes from '../../testing/fakes';
 import {setConfigurationProviderForTesting} from '../injected_modules/vscode/workspace/configuration';
 

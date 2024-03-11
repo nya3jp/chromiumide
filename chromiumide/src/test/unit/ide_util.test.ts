@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 import * as path from 'path';
+import * as config from '../../../shared/app/services/config';
 import {Board} from '../../common/chromiumos/board_or_host/board';
 import {WrapFs} from '../../common/cros';
 import * as ideUtil from '../../ide_util';
-import * as config from '../../services/config';
 import * as testing from '../testing';
 import {installVscodeDouble, installFakeConfigs} from '../testing/doubles';
 

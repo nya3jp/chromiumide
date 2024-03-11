@@ -5,8 +5,8 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import {CancellationTokenSource} from 'vscode';
+import * as config from '../../../../../shared/app/services/config';
 import * as gnArgs from '../../../../features/chromium/gn_args';
-import * as config from '../../../../services/config';
 import * as testing from '../../../testing';
 
 describe('gn args', () => {

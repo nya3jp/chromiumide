@@ -4,12 +4,12 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as config from '../../../../../shared/app/services/config';
 import {
   DirNode,
   LinkNode,
   OutputDirectoriesDataProvider,
 } from '../../../../features/chromium/output_directories';
-import * as config from '../../../../services/config';
 import * as testing from '../../../testing';
 import * as fakes from '../../../testing/fakes';
 import type {ThemeIcon} from 'vscode';

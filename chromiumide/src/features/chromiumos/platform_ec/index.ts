@@ -4,8 +4,8 @@
 
 import * as vscode from 'vscode';
 import {getDriver} from '../../../../shared/app/common/driver_repository';
-import * as bgTaskStatus from '../../../../shared/app/ui/bg_task_status';
 import {vscodeRegisterCommand} from '../../../../shared/app/common/vscode/commands';
+import * as bgTaskStatus from '../../../../shared/app/ui/bg_task_status';
 import * as services from '../../../services';
 import {SHOW_LOG_COMMAND} from './constants';
 import * as statusBar from './status_bar';

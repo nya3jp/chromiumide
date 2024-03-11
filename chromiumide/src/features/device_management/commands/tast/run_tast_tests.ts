@@ -7,8 +7,8 @@
 
 import * as vscode from 'vscode';
 import {getDriver} from '../../../../../shared/app/common/driver_repository';
+import * as config from '../../../../../shared/app/services/config';
 import {ChrootService} from '../../../../services/chromiumos';
-import * as config from '../../../../services/config';
 import {CommandContext} from '../common';
 import {
   chooseTest,

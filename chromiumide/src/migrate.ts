@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import * as config from './services/config';
+import * as config from '../shared/app/services/config';
 
 /**
  * Entrypoint for starting migration if the user's environment is not compatible

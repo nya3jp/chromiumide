@@ -5,8 +5,8 @@
 import * as vscode from 'vscode';
 import {getDriver} from '../../../../shared/app/common/driver_repository';
 import {vscodeRegisterCommand} from '../../../../shared/app/common/vscode/commands';
+import {underDevelopment} from '../../../../shared/app/services/config';
 import * as services from '../../../services';
-import {underDevelopment} from '../../../services/config';
 import {Breadcrumbs} from '../../chromiumos/boards_and_packages/item';
 import * as abandonedDevices from '../abandoned_devices';
 import * as crosfleet from '../crosfleet';

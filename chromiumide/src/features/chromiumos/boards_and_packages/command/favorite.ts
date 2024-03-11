@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as config from '../../../../../shared/app/services/config';
 import {
   ParsedPackageName,
   getQualifiedPackageName,
 } from '../../../../common/chromiumos/portage/ebuild';
-import * as config from '../../../../services/config';
 
 export async function addFavoriteCategory(category: string): Promise<void> {
   const favorite = new Set(

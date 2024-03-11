@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 import 'jasmine';
+import * as config from '../../../../shared/app/services/config';
 import * as cipd from '../../../common/cipd';
-import * as config from '../../../services/config';
 import * as testing from '../../testing';
 import * as fakes from '../../testing/fakes';
 

@@ -7,7 +7,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {getDriver} from '../../../shared/app/common/driver_repository';
-import * as config from '../../services/config';
+import * as config from '../../../shared/app/services/config';
 
 const driver = getDriver();
 

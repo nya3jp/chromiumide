@@ -5,8 +5,8 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {getDriver} from '../../../../shared/app/common/driver_repository';
+import * as config from '../../../../shared/app/services/config';
 import * as services from '../../../services';
-import * as config from '../../../services/config';
 import {LazyTestController} from './lazy_test_controller';
 import {TestCase} from './test_case';
 

@@ -4,8 +4,8 @@
 
 import * as vscode from 'vscode';
 import {getDriver} from '../../shared/app/common/driver_repository';
+import {hints} from '../../shared/app/services/config';
 import {isChromiumosRoot} from '../common/chromiumos/fs';
-import {hints} from '../services/config';
 import * as sudo from '../services/sudo';
 
 const driver = getDriver();

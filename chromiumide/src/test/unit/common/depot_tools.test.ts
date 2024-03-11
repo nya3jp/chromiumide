@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 import 'jasmine';
+import * as config from '../../../../shared/app/services/config';
 import * as depotTools from '../../../common/depot_tools';
-import * as config from '../../../services/config';
 import * as testing from '../../testing';
 
 describe('depot_tools', () => {

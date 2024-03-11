@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import * as config from '../../../services/config';
+import * as config from '../../../../shared/app/services/config';
 import {GtestWorkspace} from '../../gtest/gtest_workspace';
 import {TestControllerSingleton} from '../../gtest/test_controller_singleton';
 import {Runner} from './runner';

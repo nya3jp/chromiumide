@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 import 'jasmine';
+import * as config from '../../../../../../shared/app/services/config';
 import * as abandonedDevices from '../../../../../features/device_management/abandoned_devices';
 import * as crosfleet from '../../../../../features/device_management/crosfleet';
 import * as repository from '../../../../../features/device_management/device_repository';
-import * as config from '../../../../../services/config';
 import * as testing from '../../../../testing';
 import * as fakes from '../../../../testing/fakes';
 

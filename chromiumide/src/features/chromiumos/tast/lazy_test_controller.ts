@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import {underDevelopment} from '../../../services/config';
+import {underDevelopment} from '../../../../shared/app/services/config';
 import {RunProfile} from './run_profile';
 
 /**

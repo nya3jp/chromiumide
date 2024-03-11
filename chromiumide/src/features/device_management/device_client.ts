@@ -4,7 +4,7 @@
 
 import * as vscode from 'vscode';
 import * as commonUtil from '../../../shared/app/common/common_util';
-import * as config from '../../services/config';
+import * as config from '../../../shared/app/services/config';
 import * as repository from './device_repository';
 import {SshIdentity} from './ssh_identity';
 import * as sshUtil from './ssh_util';

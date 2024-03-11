@@ -7,8 +7,8 @@ import * as vscode from 'vscode';
 import * as semver from 'semver';
 import * as metricsEvent from '../../../shared/app/common/metrics/metrics_event';
 import {vscodeRegisterCommand} from '../../../shared/app/common/vscode/commands';
+import * as config from '../../../shared/app/services/config';
 import {Https} from '../../common/https';
-import * as config from '../../services/config';
 import * as metricsConfig from './metrics_config';
 import * as metricsUtils from './metrics_util';
 

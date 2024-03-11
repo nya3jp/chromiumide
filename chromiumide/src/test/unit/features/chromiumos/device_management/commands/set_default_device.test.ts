@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import * as config from '../../../../../../../shared/app/services/config';
 import * as abandonedDevices from '../../../../../../features/device_management/abandoned_devices';
 import {setDefaultDevice} from '../../../../../../features/device_management/commands/set_default_device';
 import * as crosfleet from '../../../../../../features/device_management/crosfleet';
@@ -14,7 +15,6 @@ import {DeviceRepository} from '../../../../../../features/device_management/dev
 import * as provider from '../../../../../../features/device_management/device_tree_data_provider';
 import {SshIdentity} from '../../../../../../features/device_management/ssh_identity';
 import {ChromiumosServiceModule} from '../../../../../../services/chromiumos';
-import * as config from '../../../../../../services/config';
 import * as testing from '../../../../../testing';
 import * as fakes from '../../../../../testing/fakes';
 

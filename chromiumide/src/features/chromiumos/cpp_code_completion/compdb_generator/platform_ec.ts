@@ -6,8 +6,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as commonUtil from '../../../../../shared/app/common/common_util';
+import * as config from '../../../../../shared/app/services/config';
 import * as services from '../../../../services';
-import * as config from '../../../../services/config';
 import {CompdbGenerator, ErrorDetails, ShouldGenerateResult} from './types';
 
 function getBoard() {

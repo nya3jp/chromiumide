@@ -10,9 +10,9 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as commonUtil from '../shared/app/common/common_util';
 import {Chroot} from '../shared/app/common/common_util';
+import * as config from '../shared/app/services/config';
 import {BoardOrHost, parseBoardOrHost} from './common/chromiumos/board_or_host';
 import * as cros from './common/cros';
-import * as config from './services/config';
 
 const loggerInstance = vscode.window.createOutputChannel(
   'ChromiumIDE: UI Actions'

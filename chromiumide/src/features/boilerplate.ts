@@ -5,7 +5,7 @@
 import * as path from 'path';
 import {TextDecoder} from 'util';
 import * as vscode from 'vscode';
-import * as config from '../services/config';
+import * as config from '../../shared/app/services/config';
 
 /**
  * Inserts boilerplate (such as the copyright header) into newly created files. Whenever a new file

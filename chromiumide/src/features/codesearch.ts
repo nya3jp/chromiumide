@@ -9,9 +9,9 @@ import {
   vscodeRegisterCommand,
   vscodeRegisterTextEditorCommand,
 } from '../../shared/app/common/vscode/commands';
+import * as config from '../../shared/app/services/config';
 import {chromiumRoot} from '../common/chromium/fs';
 import * as ideUtil from '../ide_util';
-import * as config from '../services/config';
 
 const driver = getDriver();
 

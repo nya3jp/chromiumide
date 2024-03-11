@@ -6,8 +6,8 @@ import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import {vscodeRegisterCommand} from '../../../shared/app/common/vscode/commands';
+import * as config from '../../../shared/app/services/config';
 import {StatusManager, TaskStatus} from '../../../shared/app/ui/bg_task_status';
-import * as config from '../../services/config';
 
 // TODO:
 // Progress for everything.
