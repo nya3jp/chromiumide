@@ -9,9 +9,9 @@ import * as commonUtil from '../../shared/app/common/common_util';
 import {getDriver} from '../../shared/app/common/driver_repository';
 import * as logs from '../../shared/app/common/logs';
 import * as config from '../../shared/app/services/config';
+import {TextEditorsWatcher} from '../../shared/app/services/watchers/text_editors_watcher';
 import * as bgTaskStatus from '../../shared/app/ui/bg_task_status';
 import {TaskStatus} from '../../shared/app/ui/bg_task_status';
-import * as services from '../services';
 
 const driver = getDriver();
 
@@ -30,7 +30,7 @@ export function activate(
     );
   }
   // TODO(ttylenda): Add integration test to verify that we run linters on events.
-  const textEditorsWatcher = services.TextEditorsWatcher.singleton();
+  const textEditorsWatcher = TextEditorsWatcher.singleton();
   context.subscriptions.push(
     textEditorsWatcher.onDidActivate(document => {
       void updateDiagnosticsWrapper(document, collection, statusManager, log);

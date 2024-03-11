@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import {TextEditorsWatcher} from '../../../../services';
+import {TextEditorsWatcher} from '../../../../../shared/app/services/watchers/text_editors_watcher';
 import * as testing from '../../../testing';
 
 function textDocument(uri: vscode.Uri) {

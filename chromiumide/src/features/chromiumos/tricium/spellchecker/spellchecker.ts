@@ -5,6 +5,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {getDriver} from '../../../../../shared/app/common/driver_repository';
+import {TextEditorsWatcher} from '../../../../../shared/app/services/watchers/text_editors_watcher';
 import * as bgTaskStatus from '../../../../../shared/app/ui/bg_task_status';
 import {TaskStatus} from '../../../../../shared/app/ui/bg_task_status';
 import * as cipd from '../../../../common/cipd';
@@ -100,7 +101,7 @@ class Spellchecker {
 
   /** Attach spellchecker to editor events. */
   subscribeToDocumentChanges(context: vscode.ExtensionContext): void {
-    const textEditorsWatcher = services.TextEditorsWatcher.singleton();
+    const textEditorsWatcher = TextEditorsWatcher.singleton();
     if (vscode.window.activeTextEditor) {
       void this.refreshFileDiagnostics(
         vscode.window.activeTextEditor.document.uri

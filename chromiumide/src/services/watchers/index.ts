@@ -4,4 +4,3 @@
 
 export {ProductWatcher} from './product';
 export {GitDirsWatcher} from './git_dirs';
-export {TextEditorsWatcher} from './text_editors_watcher';
