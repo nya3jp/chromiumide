@@ -6,9 +6,9 @@ import * as vscode from 'vscode';
 import * as commonUtil from '../../../../shared/app/common/common_util';
 import {getDriver} from '../../../../shared/app/common/driver_repository';
 import {vscodeRegisterCommand} from '../../../../shared/app/common/vscode/commands';
+import * as bgTaskStatus from '../../../../shared/app/ui/bg_task_status';
+import {TaskStatus} from '../../../../shared/app/ui/bg_task_status';
 import * as services from '../../../services';
-import * as bgTaskStatus from '../../../ui/bg_task_status';
-import {TaskStatus} from '../../../ui/bg_task_status';
 import * as compdbGenerator from './compdb_generator';
 import {CLANGD_EXTENSION, SHOW_LOG_COMMAND} from './constants';
 

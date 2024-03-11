@@ -5,11 +5,11 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {getDriver} from '../../../../../shared/app/common/driver_repository';
+import * as bgTaskStatus from '../../../../../shared/app/ui/bg_task_status';
+import {TaskStatus} from '../../../../../shared/app/ui/bg_task_status';
 import * as cipd from '../../../../common/cipd';
 import * as services from '../../../../services';
 import * as gitDocument from '../../../../services/git_document';
-import * as bgTaskStatus from '../../../../ui/bg_task_status';
-import {TaskStatus} from '../../../../ui/bg_task_status';
 import * as tricium from '../tricium';
 import * as executor from './executor';
 

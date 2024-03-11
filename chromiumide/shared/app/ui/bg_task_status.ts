@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import {getDriver} from '../../shared/app/common/driver_repository';
-import {vscodeRegisterCommand} from '../../shared/app/common/vscode/commands';
+import {getDriver} from '../common/driver_repository';
+import {vscodeRegisterCommand} from '../common/vscode/commands';
 
 const driver = getDriver();
 

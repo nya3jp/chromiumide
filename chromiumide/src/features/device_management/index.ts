@@ -7,10 +7,10 @@
  */
 import * as fs from 'fs';
 import * as vscode from 'vscode';
+import * as bgTaskStatus from '../../../shared/app/ui/bg_task_status';
+import {TaskStatus} from '../../../shared/app/ui/bg_task_status';
 import * as cipd from '../../common/cipd';
 import * as services from '../../services';
-import * as bgTaskStatus from '../../ui/bg_task_status';
-import {TaskStatus} from '../../ui/bg_task_status';
 import * as abandonedDevices from './abandoned_devices';
 import * as commands from './commands';
 import * as crosfleet from './crosfleet';

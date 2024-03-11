@@ -5,9 +5,9 @@
 import * as vscode from 'vscode';
 import {JobManager} from '../../../shared/app/common/common_util';
 import {getDriver} from '../../../shared/app/common/driver_repository';
+import * as bgTaskStatus from '../../../shared/app/ui/bg_task_status';
 import {vscodeRegisterCommand} from '../../../shared/app/common/vscode/commands';
 import * as services from '../../services';
-import * as bgTaskStatus from '../../ui/bg_task_status';
 import * as api from './api';
 import {CommandName, GerritCommands} from './command';
 import {

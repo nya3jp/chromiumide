@@ -4,11 +4,11 @@
 
 import * as vscode from 'vscode';
 import * as commonUtil from '../../../../../../shared/app/common/common_util';
+import {TaskStatus} from '../../../../../../shared/app/ui/bg_task_status';
 import {Breadcrumbs} from '../../../../../features/chromiumos/boards_and_packages/item';
 import {Coverage} from '../../../../../features/chromiumos/coverage';
 import * as services from '../../../../../services';
 import * as config from '../../../../../services/config';
-import {TaskStatus} from '../../../../../ui/bg_task_status';
 import * as testing from '../../../../testing';
 import {FakeStatusManager, VoidOutputChannel} from '../../../../testing/fakes';
 

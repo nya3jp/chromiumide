@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import * as bgTaskStatus from '../../../../shared/app/ui/bg_task_status';
+import {TaskStatus} from '../../../../shared/app/ui/bg_task_status';
 import * as services from '../../../services';
-import * as bgTaskStatus from '../../../ui/bg_task_status';
-import {TaskStatus} from '../../../ui/bg_task_status';
 import {STATUS_TASK_NAME, SHOW_LOG_COMMAND} from './constants';
 
 export function activate(

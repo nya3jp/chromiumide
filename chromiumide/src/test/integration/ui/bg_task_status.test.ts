@@ -8,7 +8,7 @@ import {
   TaskName,
   TaskStatus,
   TEST_ONLY,
-} from '../../../ui/bg_task_status';
+} from '../../../../shared/app/ui/bg_task_status';
 import {VoidOutputChannel} from '../../testing/fakes';
 
 const {StatusManagerImpl, StatusBarHandler, StatusTreeData} = TEST_ONLY;

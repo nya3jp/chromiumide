@@ -5,8 +5,8 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {getDriver} from '../../../shared/app/common/driver_repository';
+import * as bgTaskStatus from '../../../shared/app/ui/bg_task_status';
 import * as config from '../../services/config';
-import * as bgTaskStatus from '../../ui/bg_task_status';
 import * as boilerplate from '../boilerplate';
 import * as chromiumBuild from './chromium_build';
 import * as format from './format';

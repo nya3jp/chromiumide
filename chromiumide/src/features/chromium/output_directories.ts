@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import {Mutex} from '../../../shared/app/common/common_util';
 import {getDriver} from '../../../shared/app/common/driver_repository';
 import {vscodeRegisterCommand} from '../../../shared/app/common/vscode/commands';
-import * as bgTaskStatus from '../../ui/bg_task_status';
+import * as bgTaskStatus from '../../../shared/app/ui/bg_task_status';
 import * as gnArgs from './gn_args';
 import type {Stats} from 'fs';
 

@@ -6,8 +6,8 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as commonUtil from '../../shared/app/common/common_util';
 import {CancelledError} from '../../shared/app/common/exec/types';
+import * as bgTaskStatus from '../../shared/app/ui/bg_task_status';
 import * as cipd from '../common/cipd';
-import * as bgTaskStatus from '../ui/bg_task_status';
 
 const STATUS_BAR_TASK_ID = 'DIR_METADATA';
 

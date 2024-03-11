@@ -4,9 +4,12 @@
 
 import * as vscode from 'vscode';
 import {ExecResult} from '../../../../../shared/app/common/exec/types';
+import {
+  StatusManager,
+  TaskStatus,
+} from '../../../../../shared/app/ui/bg_task_status';
 import {TEST_ONLY} from '../../../../features/chromiumos/cros_format';
 import {Metrics} from '../../../../features/metrics/metrics';
-import {StatusManager, TaskStatus} from '../../../../ui/bg_task_status';
 import * as testing from '../../../testing';
 import {FakeTextDocument} from '../../../testing/fakes';
 

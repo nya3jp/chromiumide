@@ -4,8 +4,8 @@
 
 import * as vscode from 'vscode';
 import {getDriver} from '../../../shared/app/common/driver_repository';
-import * as bgTaskStatus from '../../ui/bg_task_status';
-import {TaskStatus} from '../../ui/bg_task_status';
+import * as bgTaskStatus from '../../../shared/app/ui/bg_task_status';
+import {TaskStatus} from '../../../shared/app/ui/bg_task_status';
 
 const driver = getDriver();
 

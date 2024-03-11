@@ -15,6 +15,8 @@ import {
   registerDriver,
 } from '../shared/app/common/driver_repository';
 import * as logs from '../shared/app/common/logs';
+import * as bgTaskStatus from '../shared/app/ui/bg_task_status';
+import {TaskStatus} from '../shared/app/ui/bg_task_status';
 import {vscodeRegisterCommand} from '../shared/app/common/vscode/commands';
 import {activate as activateSharedFeatures} from '../shared/app/extension';
 import {Driver} from '../shared/driver';
@@ -42,8 +44,6 @@ import * as migrate from './migrate';
 import * as services from './services';
 import * as config from './services/config';
 import * as gitDocument from './services/git_document';
-import * as bgTaskStatus from './ui/bg_task_status';
-import {TaskStatus} from './ui/bg_task_status';
 
 // Install source map if it's available so that error stacktraces show TS
 // filepaths during our development.

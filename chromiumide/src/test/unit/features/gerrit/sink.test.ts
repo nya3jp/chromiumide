@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import * as bgTaskStatus from '../../../../../shared/app/ui/bg_task_status';
+import {TaskStatus} from '../../../../../shared/app/ui/bg_task_status';
 import {Sink} from '../../../../features/gerrit/sink';
 import {Metrics} from '../../../../features/metrics/metrics';
-import * as bgTaskStatus from '../../../../ui/bg_task_status';
-import {TaskStatus} from '../../../../ui/bg_task_status';
 import * as testing from '../../../testing';
 
 describe('Sink', () => {

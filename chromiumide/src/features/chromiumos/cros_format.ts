@@ -5,8 +5,8 @@
 import * as vscode from 'vscode';
 import * as commonUtil from '../../../shared/app/common/common_util';
 import {getDriver} from '../../../shared/app/common/driver_repository';
+import {StatusManager, TaskStatus} from '../../../shared/app/ui/bg_task_status';
 import * as ideUtil from '../../ide_util';
-import {StatusManager, TaskStatus} from '../../ui/bg_task_status';
 
 const driver = getDriver();
 

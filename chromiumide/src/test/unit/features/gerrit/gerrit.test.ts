@@ -10,7 +10,7 @@ import * as gerrit from '../../../../features/gerrit/gerrit';
 import {POLL_INTERVAL_MILLIS} from '../../../../features/gerrit/model/gerrit_comments';
 import {Metrics} from '../../../../features/metrics/metrics';
 import {GitDirsWatcher} from '../../../../services';
-import {TaskStatus} from '../../../../ui/bg_task_status';
+import {TaskStatus} from '../../../../../shared/app/ui/bg_task_status';
 import * as testing from '../../../testing';
 import {FakeStatusManager, VoidOutputChannel} from '../../../testing/fakes';
 import {FakeCommentController} from '../../../testing/fakes/comment_controller';

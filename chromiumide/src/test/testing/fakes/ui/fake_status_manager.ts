@@ -7,7 +7,7 @@ import {
   TaskData,
   TaskName,
   TaskStatus,
-} from '../../../../ui/bg_task_status';
+} from '../../../../../shared/app/ui/bg_task_status';
 
 /**
  * Fake implementation of StatusManager, extendable for testing

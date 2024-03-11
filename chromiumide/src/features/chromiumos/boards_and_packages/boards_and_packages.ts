@@ -3,9 +3,12 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import {
+  StatusManager,
+  TaskStatus,
+} from '../../../../shared/app/ui/bg_task_status';
 import {ChrootService} from '../../../services/chromiumos';
 import * as config from '../../../services/config';
-import {StatusManager, TaskStatus} from '../../../ui/bg_task_status';
 import {ActivePackageRevealer} from './active_package_revealer';
 import {BoardsAndPackagesCommands, CommandName} from './command';
 import {Breadcrumbs} from './item';
