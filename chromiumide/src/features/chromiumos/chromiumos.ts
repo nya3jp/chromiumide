@@ -12,7 +12,6 @@ import * as boilerplate from '../boilerplate';
 import {BoardsAndPackages} from './boards_and_packages';
 import {Coverage} from './coverage';
 import * as cppCodeCompletion from './cpp_code_completion';
-import * as crosFormat from './cros_format';
 import * as ebuild from './ebuild';
 import {Platform2Gtest} from './platform2_gtest';
 import * as platformEc from './platform_ec';
@@ -117,10 +116,6 @@ export class Chromiumos implements vscode.Disposable {
       ephemeralContext.subscriptions.push(
         new BoardsAndPackages(chrootService, this.statusManager)
       );
-
-      if (config.crosFormat.enabled.get()) {
-        crosFormat.activate(ephemeralContext, this.statusManager);
-      }
 
       if (config.testCoverage.enabled.get()) {
         this.featureName = 'testCoverage';

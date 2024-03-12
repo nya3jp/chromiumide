@@ -5,11 +5,11 @@
 import * as vscode from 'vscode';
 import {getDriver} from '../../../../../shared/app/common/driver_repository';
 import {ExecResult} from '../../../../../shared/app/common/exec/types';
+import {TEST_ONLY} from '../../../../../shared/app/features/cros_format';
 import {
   StatusManager,
   TaskStatus,
 } from '../../../../../shared/app/ui/bg_task_status';
-import {TEST_ONLY} from '../../../../features/chromiumos/cros_format';
 import {Metrics} from '../../../../features/metrics/metrics';
 import * as testing from '../../../testing';
 import {FakeTextDocument} from '../../../testing/fakes';

@@ -7,8 +7,10 @@ import {Driver} from '../driver';
 import {registerDriver} from './common/driver_repository';
 import {LoggingBundle, createLinterLoggingBundle} from './common/logs';
 import * as feedback from './common/metrics/feedback';
+import * as crosFormat from './features/cros_format';
 import * as crosLint from './features/cros_lint';
 import {DemoWhoami} from './features/demo_whoami';
+import * as config from './services/config';
 import * as bgTaskStatus from './ui/bg_task_status';
 
 /**
@@ -28,5 +30,10 @@ export function activate(
   // The logger that should be used by linters/code-formatters.
   const linterLogger = createLinterLoggingBundle(context);
   crosLint.activate(context, statusManager, linterLogger);
+
+  if (config.crosFormat.enabled.get()) {
+    crosFormat.activate(context, statusManager);
+  }
+
   return {statusManager, linterLogger};
 }

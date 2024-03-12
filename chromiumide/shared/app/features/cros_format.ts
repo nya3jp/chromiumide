@@ -3,11 +3,11 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import * as commonUtil from '../../../shared/app/common/common_util';
-import {crosExeFor} from '../../../shared/app/common/cros';
-import {getDriver} from '../../../shared/app/common/driver_repository';
-import {StatusManager, TaskStatus} from '../../../shared/app/ui/bg_task_status';
-import {getUiLogger} from '../../../shared/app/ui/log';
+import * as commonUtil from '../common/common_util';
+import {crosExeFor} from '../common/cros';
+import {getDriver} from '../common/driver_repository';
+import {StatusManager, TaskStatus} from '../ui/bg_task_status';
+import {getUiLogger} from '../ui/log';
 
 const driver = getDriver();
 
