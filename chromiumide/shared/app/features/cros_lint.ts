@@ -4,6 +4,7 @@
 
 import * as vscode from 'vscode';
 import * as commonUtil from '../common/common_util';
+import {crosExeFor} from '../common/cros';
 import {getDriver} from '../common/driver_repository';
 import {ProcessEnv} from '../common/exec/types';
 import * as logs from '../common/logs';
@@ -71,7 +72,6 @@ interface LintConfig {
 }
 
 const TAST_RE = /^.*\/platform\/(tast-tests-private|tast-tests|tast).*/;
-const CROS_PATH = 'chromite/bin/cros';
 const CHECK_LIBCHROME_PATH =
   'src/platform/libchrome/libchrome_tools/developer-tools/presubmit/check-libchrome.py';
 // List of directories whose files should be run against check-libchrome.py.
@@ -87,12 +87,6 @@ const CHECK_LIBCHROME_SRC_DIRS = [
   'src/third_party/atrusctl/',
   'src/third_party/virtual_usb_printer/',
 ];
-
-async function crosExeFor(path: string): Promise<string | undefined> {
-  const source = await driver.cros.findSourceDir(path);
-  if (source === undefined) return undefined;
-  return driver.path.join(source, CROS_PATH);
-}
 
 // Don't forget to update package.json when adding more languages.
 const languageToLintConfigs = new Map<string, LintConfig[]>([

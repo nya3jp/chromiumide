@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import {getDriver} from '../../../../../shared/app/common/driver_repository';
 import {ExecResult} from '../../../../../shared/app/common/exec/types';
 import {
   StatusManager,
@@ -14,24 +15,33 @@ import * as testing from '../../../testing';
 import {FakeTextDocument} from '../../../testing/fakes';
 
 const {CrosFormat} = TEST_ONLY;
+const driver = getDriver();
 
 describe('Cros format', () => {
-  const crosUri = vscode.Uri.file('/ssd/chromiumos/src/some/file.md');
-
+  const tempDir = testing.tempDir();
   const {fakeExec} = testing.installFakeExec();
 
-  const state = testing.cleanState(() => {
+  const state = testing.cleanState(async () => {
+    const crosUri = vscode.Uri.file(
+      driver.path.join(tempDir.path, 'src/some/file.md')
+    );
+    await testing.putFiles(tempDir.path, {
+      // For driver.cros.findSourceDir to find the cros repo root (based on finding chroot).
+      'chroot/etc/cros_chroot_version': 'fake chroot',
+      // For crosExeFor to find the cros executable.
+      'chromite/bin/cros': 'fakeCrosExe',
+    });
     const statusManager = jasmine.createSpyObj<StatusManager>('statusManager', [
       'setStatus',
     ]);
     const crosFormat = new CrosFormat(
-      '/ssd/chromiumos',
       statusManager,
       vscode.window.createOutputChannel('unused')
     );
     return {
       statusManager,
       crosFormat,
+      crosUri,
     };
   });
 
@@ -43,7 +53,7 @@ describe('Cros format', () => {
     fakeExec.and.resolveTo(new Error());
 
     await state.crosFormat.provideDocumentFormattingEdits(
-      new FakeTextDocument({uri: crosUri})
+      new FakeTextDocument({uri: state.crosUri})
     );
 
     expect(state.statusManager.setStatus).toHaveBeenCalledOnceWith(
@@ -67,7 +77,7 @@ describe('Cros format', () => {
     fakeExec.and.resolveTo(execResult);
 
     await state.crosFormat.provideDocumentFormattingEdits(
-      new FakeTextDocument({uri: crosUri})
+      new FakeTextDocument({uri: state.crosUri})
     );
 
     expect(state.statusManager.setStatus).toHaveBeenCalledOnceWith(
@@ -91,7 +101,7 @@ describe('Cros format', () => {
     fakeExec.and.resolveTo(execResult);
 
     const edits = await state.crosFormat.provideDocumentFormattingEdits(
-      new FakeTextDocument({uri: crosUri})
+      new FakeTextDocument({uri: state.crosUri})
     );
 
     expect(edits).toBeUndefined();
@@ -111,7 +121,7 @@ describe('Cros format', () => {
     fakeExec.and.resolveTo(execResult);
 
     const edits = await state.crosFormat.provideDocumentFormattingEdits(
-      new FakeTextDocument({uri: crosUri})
+      new FakeTextDocument({uri: state.crosUri})
     );
 
     expect(fakeExec).toHaveBeenCalled();

@@ -4,6 +4,7 @@
 
 import * as vscode from 'vscode';
 import * as commonUtil from '../../../shared/app/common/common_util';
+import {crosExeFor} from '../../../shared/app/common/cros';
 import {getDriver} from '../../../shared/app/common/driver_repository';
 import {StatusManager, TaskStatus} from '../../../shared/app/ui/bg_task_status';
 import {getUiLogger} from '../../../shared/app/ui/log';
@@ -15,7 +16,6 @@ const FORMATTER = 'Formatter';
 
 export function activate(
   context: vscode.ExtensionContext,
-  chromiumosRoot: string,
   statusManager: StatusManager
 ): void {
   const outputChannel = vscode.window.createOutputChannel(
@@ -60,14 +60,13 @@ export function activate(
   context.subscriptions.push(
     vscode.languages.registerDocumentFormattingEditProvider(
       documentSelector,
-      new CrosFormat(chromiumosRoot, statusManager, outputChannel)
+      new CrosFormat(statusManager, outputChannel)
     )
   );
 }
 
 class CrosFormat implements vscode.DocumentFormattingEditProvider {
   constructor(
-    private readonly chromiumosRoot: string,
     private readonly statusManager: StatusManager,
     private readonly outputChannel: vscode.OutputChannel
   ) {}
@@ -76,7 +75,8 @@ class CrosFormat implements vscode.DocumentFormattingEditProvider {
     document: vscode.TextDocument
   ): Promise<vscode.TextEdit[] | undefined> {
     const fsPath = document.uri.fsPath;
-    if (!fsPath.startsWith(this.chromiumosRoot)) {
+    const crosExe = await crosExeFor(fsPath);
+    if (!crosExe) {
       this.outputChannel.appendLine(`Not formatting ${fsPath}.`);
       return undefined;
     }
@@ -84,12 +84,11 @@ class CrosFormat implements vscode.DocumentFormattingEditProvider {
     this.outputChannel.appendLine(`Formatting ${fsPath}...`);
 
     const formatterOutput = await commonUtil.exec(
-      'cros',
+      crosExe,
       ['format', '--stdout', fsPath],
       {
         logger: getUiLogger(),
         ignoreNonZeroExit: true,
-        cwd: this.chromiumosRoot,
       }
     );
 
