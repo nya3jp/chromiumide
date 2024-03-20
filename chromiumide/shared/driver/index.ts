@@ -4,6 +4,7 @@
 
 import {ExecOptions, ExecResult, ProcessEnv} from '../app/common/exec/types';
 import {Event} from '../app/common/metrics/metrics_event';
+import {Cros} from './cros';
 import {Fs} from './fs';
 import {Path} from './path';
 
@@ -12,6 +13,7 @@ export type Driver = Readonly<{
    * Returns the username of the current user.
    */
   whoami(): Promise<string | Error>;
+  cros: Cros;
   fs: Fs;
   path: Path;
   exec: (

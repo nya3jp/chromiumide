@@ -6,8 +6,11 @@ import * as fs from 'fs';
 import * as https from 'https';
 import * as os from 'os';
 import * as commonUtil from '../../../shared/app/common/common_util';
+import {getDriver} from '../../../shared/app/common/driver_repository';
 import * as metricsEvent from '../../../shared/app/common/metrics/metrics_event';
 import {chromiumRoot} from '../../common/chromium/fs';
+
+const driver = getDriver();
 
 export async function isGoogler(): Promise<boolean> {
   let lsbRelease: string;
@@ -35,15 +38,6 @@ export async function isGoogler(): Promise<boolean> {
   return false;
 }
 
-// Return path to CrOS checkout.
-async function getCrOSPath(path: string): Promise<string | undefined> {
-  const chroot = await commonUtil.findChroot(path);
-  if (!chroot) {
-    return undefined;
-  }
-  return commonUtil.sourceDir(chroot);
-}
-
 /*
  * Return 'chromium' in Chromium repository, or a CrOS git repository name by looking for closest
  * git directory.
@@ -53,7 +47,7 @@ export async function getGitRepoName(
   filePath: string,
   crosPathInput?: string
 ): Promise<string | undefined> {
-  const crosPath = crosPathInput ?? (await getCrOSPath(filePath));
+  const crosPath = crosPathInput ?? (await driver.cros.findSourceDir(filePath));
   if (!crosPath) {
     if (await chromiumRoot(filePath)) {
       return 'chromium';

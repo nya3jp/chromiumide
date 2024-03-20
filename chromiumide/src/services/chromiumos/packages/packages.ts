@@ -4,7 +4,6 @@
 
 import * as path from 'path';
 import * as services from '../..';
-import {findChroot, sourceDir} from '../../../../shared/app/common/common_util';
 import {getDriver} from '../../../../shared/app/common/driver_repository';
 import {Mapping} from './mapping';
 import {SourceDir, PackageInfo} from './types';
@@ -87,11 +86,10 @@ export class Packages {
       }
     }
 
-    const chroot = await findChroot(realpath);
-    if (chroot === undefined) {
+    const sourcePath = await driver.cros.findSourceDir(realpath);
+    if (sourcePath === undefined) {
       return null;
     }
-    const sourcePath = sourceDir(chroot);
 
     let relPath = path.relative(sourcePath, realpath);
     if (relPath.startsWith('..') || path.isAbsolute(relPath)) {

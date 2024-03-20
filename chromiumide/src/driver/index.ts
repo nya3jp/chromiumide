@@ -11,6 +11,7 @@ import {
 import {Event} from '../../shared/app/common/metrics/metrics_event';
 import {Driver} from '../../shared/driver';
 import {Metrics} from '../features/metrics/metrics';
+import {CrosImpl} from './cros';
 import {realExec} from './exec';
 import {FsImpl} from './fs';
 import {PathImpl} from './path';
@@ -20,6 +21,7 @@ export class DriverImpl implements Driver {
     return os.userInfo().username;
   }
 
+  readonly cros = new CrosImpl();
   readonly fs = new FsImpl();
   readonly path = new PathImpl();
   exec = (

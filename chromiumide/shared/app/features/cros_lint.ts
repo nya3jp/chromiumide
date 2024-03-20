@@ -88,12 +88,9 @@ const CHECK_LIBCHROME_SRC_DIRS = [
   'src/third_party/virtual_usb_printer/',
 ];
 
-async function crosExeFor(realpath: string): Promise<string | undefined> {
-  const chroot = await commonUtil.findChroot(realpath);
-  if (chroot === undefined) {
-    return undefined;
-  }
-  const source = commonUtil.sourceDir(chroot);
+async function crosExeFor(path: string): Promise<string | undefined> {
+  const source = await driver.cros.findSourceDir(path);
+  if (source === undefined) return undefined;
   return driver.path.join(source, CROS_PATH);
 }
 
@@ -109,11 +106,10 @@ const languageToLintConfigs = new Map<string, LintConfig[]>([
       },
       {
         executable: async realpath => {
-          const chroot = await commonUtil.findChroot(realpath);
-          if (chroot === undefined) {
+          const source = await driver.cros.findSourceDir(realpath);
+          if (source === undefined) {
             return undefined;
           }
-          const source = commonUtil.sourceDir(chroot);
           const filepath = realpath.slice(source.length + 1); // To trim / of source dir
           for (const dir of CHECK_LIBCHROME_SRC_DIRS) {
             if (filepath.startsWith(dir)) {
@@ -200,11 +196,10 @@ async function tastLintExe(realPath: string): Promise<string | undefined> {
     return undefined;
   }
   const linterPath = `src/platform/${match[1]}/tools/run_lint.sh`;
-  const chroot = await commonUtil.findChroot(realPath);
-  if (chroot === undefined) {
+  const source = await driver.cros.findSourceDir(realPath);
+  if (source === undefined) {
     return undefined;
   }
-  const source = commonUtil.sourceDir(chroot);
   return driver.path.join(source, linterPath);
 }
 
@@ -248,7 +243,7 @@ export async function goLintEnv(exe: string): Promise<ProcessEnv | undefined> {
   }
   // Find golint executable in the chroot because cros lint
   // checks /usr/bin, where the chroot golint is located.
-  const chroot = await commonUtil.findChroot(exe);
+  const chroot = await driver.cros.findChroot(exe);
   if (chroot === undefined) {
     return undefined;
   }

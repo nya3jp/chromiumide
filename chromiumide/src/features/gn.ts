@@ -45,7 +45,7 @@ async function format(
   log: logs.LoggingBundle
 ) {
   const realpath = await driver.fs.realpath(fsPath);
-  const chroot = await commonUtil.findChroot(realpath);
+  const chroot = await driver.cros.findChroot(realpath);
   if (chroot === undefined) {
     log.channel.appendLine(
       'ERROR: chroot not found when attempting `gn format`'

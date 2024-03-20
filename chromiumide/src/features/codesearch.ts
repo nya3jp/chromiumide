@@ -48,18 +48,14 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 }
 
-async function getCodeSearchToolConfig(
+async function getCodeSearchTool(
   fullpath: string
-): Promise<{executable: string; cwd: string} | undefined> {
-  const chroot = await commonUtil.findChroot(fullpath);
-  if (!chroot) {
+): Promise<string | undefined> {
+  const source = await driver.cros.findSourceDir(fullpath);
+  if (source === undefined) {
     return undefined;
   }
-  const source = commonUtil.sourceDir(chroot);
-  return {
-    executable: path.join(source, 'chromite/contrib/generate_cs_path'),
-    cwd: chroot,
-  };
+  return path.join(source, 'chromite/contrib/generate_cs_path');
 }
 
 async function openCurrentFile(textEditor: vscode.TextEditor): Promise<void> {
@@ -140,14 +136,13 @@ async function getCodeSearchUrl(
 
   const csHash = config.codeSearch.openWithRevision.get();
 
-  const csConfig = await getCodeSearchToolConfig(fullpath);
-  if (!csConfig) {
+  const executable = await getCodeSearchTool(fullpath);
+  if (!executable) {
     void vscode.window.showErrorMessage(
       "Could not find 'generate_cs_path' script"
     );
     return;
   }
-  const {executable, cwd} = csConfig;
 
   const opts = [];
   if (csHash) {
@@ -163,7 +158,6 @@ async function getCodeSearchUrl(
     logger: getUiLogger(),
     logStdout: true,
     ignoreNonZeroExit: true,
-    cwd: cwd,
   });
 
   if (res instanceof Error) {
