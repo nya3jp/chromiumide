@@ -8,6 +8,7 @@ import {LineBufferedOutputAdapter} from '../../../../common/line_buffered_output
 import {MemoryOutputChannel} from '../../../../common/memory_output_channel';
 import {TEST_ONLY, runAutoninja} from '../../../../features/chromium/autoninja';
 import * as testing from '../../../testing';
+import * as fakes from '../../../testing/fakes';
 
 describe('autoninja output adapter', () => {
   beforeEach(() => {
@@ -117,6 +118,7 @@ describe('autoninja wrapper', () => {
   const {vscodeEmitters, vscodeSpy} = testing.installVscodeDouble();
   testing.installFakeConfigs(vscodeSpy, vscodeEmitters);
   const {fakeExec} = testing.installFakeExec();
+  fakes.installFakeDepotTools(fakeExec);
 
   beforeEach(async () => {
     await config.paths.depotTools.update('/opt/custom_depot_tools');

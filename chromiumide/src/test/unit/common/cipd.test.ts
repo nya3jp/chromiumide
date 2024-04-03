@@ -11,6 +11,7 @@ import * as fakes from '../../testing/fakes';
 describe('CIPD repository', () => {
   const {fakeExec} = testing.installFakeExec();
   const cipdRepository = fakes.installFakeCipd(fakeExec);
+  fakes.installFakeDepotTools(fakeExec);
 
   it('downloads crosfleet', async () => {
     const path = await cipdRepository.ensureCrosfleet(
@@ -29,6 +30,7 @@ describe('CIPD repository', () => {
 
 describe('CIPD repository', () => {
   const {fakeExec} = testing.installFakeExec();
+  fakes.installFakeDepotTools(fakeExec);
 
   it('returns an error on failing to run CLI', async () => {
     fakeExec.installCallback(

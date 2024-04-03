@@ -8,12 +8,14 @@ import {CancellationTokenSource} from 'vscode';
 import * as config from '../../../../../shared/app/services/config';
 import * as gnArgs from '../../../../features/chromium/gn_args';
 import * as testing from '../../../testing';
+import * as fakes from '../../../testing/fakes';
 
 describe('gn args', () => {
   const hostOS: gnArgs.TargetOs = gnArgs.TEST_ONLY.getTargetOsFromHost();
 
   const tempDir = testing.tempDir();
   const {fakeExec} = testing.installFakeExec();
+  fakes.installFakeDepotTools(fakeExec);
 
   beforeEach(async () => {
     await config.paths.depotTools.update('/opt/custom_depot_tools');

@@ -63,6 +63,7 @@ describe('device tree view shows correct default device', () => {
   const {fakeExec} = testing.installFakeExec();
   const cipdRepository = fakes.installFakeCipd(fakeExec);
   const fakeCrosfleet = fakes.installFakeCrosfleet(fakeExec, cipdRepository);
+  fakes.installFakeDepotTools(fakeExec);
 
   const subscriptions: vscode.Disposable[] = [];
 

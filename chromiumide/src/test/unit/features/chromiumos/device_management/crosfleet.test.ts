@@ -19,6 +19,7 @@ describe('CrosfleetRunner', () => {
   const {fakeExec} = testing.installFakeExec();
   const cipdRepository = fakes.installFakeCipd(fakeExec);
   const fakeCrosfleet = fakes.installFakeCrosfleet(fakeExec, cipdRepository);
+  fakes.installFakeDepotTools(fakeExec);
   const state = testing.cleanState(() => {
     const runner = new crosfleet.CrosfleetRunner(
       cipdRepository,

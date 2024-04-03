@@ -3,9 +3,19 @@
 // found in the LICENSE file.
 
 import 'jasmine';
+import * as vscode from 'vscode';
 import * as config from '../../../../shared/app/services/config';
 import * as depotTools from '../../../common/depot_tools';
 import * as testing from '../../testing';
+import * as fakes from '../../testing/fakes';
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const resetpromptedForMissingDepotTools =
+  depotTools.TEST_ONLY.resetpromptedForMissingDepotTools;
+
+beforeEach(async () => {
+  resetpromptedForMissingDepotTools();
+});
 
 describe('depot_tools', () => {
   const {vscodeEmitters, vscodeSpy} = testing.installVscodeDouble();
@@ -24,5 +34,65 @@ describe('depot_tools', () => {
     expect((await depotTools.envForDepotTools()).PATH).toEqual(
       jasmine.stringMatching('^.*:.*/depot_tools')
     );
+  });
+});
+
+describe('and depot_tools not found', () => {
+  const {vscodeEmitters, vscodeSpy} = testing.installVscodeDouble();
+  testing.installFakeConfigs(vscodeSpy, vscodeEmitters);
+  const {fakeExec} = testing.installFakeExec();
+  fakes.installFakeDepotTools(fakeExec, false);
+  const tempDir = testing.tempDir();
+
+  it('opens a file dialog once', async () => {
+    await testing.buildFakeDepotTools(tempDir.path);
+    const userDir = await vscode.Uri.file(tempDir.path);
+    vscodeSpy.window.showWarningMessage.and.resolveTo('Select directory');
+    vscodeSpy.window.showOpenDialog.and.resolveTo([userDir]);
+
+    // Ask for depot tools twice (here and in the expect).
+    // This shouldn't result in any additional window openings.
+    await depotTools.envForDepotTools();
+
+    expect((await depotTools.envForDepotTools()).PATH).toEqual(
+      jasmine.stringMatching(`^${tempDir.path}.*`)
+    );
+
+    expect(vscodeSpy.window.showWarningMessage).toHaveBeenCalledTimes(1);
+    expect(vscodeSpy.window.showOpenDialog).toHaveBeenCalledTimes(1);
+  });
+
+  it('and cancel selected', async () => {
+    await depotTools.envForDepotTools();
+    vscodeSpy.window.showWarningMessage.and.resolveTo(undefined);
+
+    await depotTools.envForDepotTools();
+
+    expect(vscodeSpy.window.showWarningMessage).toHaveBeenCalledTimes(1);
+    expect(vscodeSpy.window.showOpenDialog).toHaveBeenCalledTimes(0);
+  });
+
+  it('and user skips open dialog then selects correct path', async () => {
+    await testing.buildFakeDepotTools(tempDir.path);
+    const userDir = await vscode.Uri.file(tempDir.path);
+
+    vscodeSpy.window.showWarningMessage.and.returnValues(
+      'Select directory',
+      'Select directory'
+    );
+
+    vscodeSpy.window.showOpenDialog.and.returnValues(
+      Promise.resolve(undefined),
+      Promise.resolve([userDir])
+    );
+
+    await depotTools.envForDepotTools();
+
+    // Both windows were shown twice and the path was updated.
+    expect((await depotTools.envForDepotTools()).PATH).toEqual(
+      jasmine.stringMatching(`^${tempDir.path}.*`)
+    );
+    expect(vscodeSpy.window.showOpenDialog).toHaveBeenCalledTimes(2);
+    expect(vscodeSpy.window.showWarningMessage).toHaveBeenCalledTimes(2);
   });
 });

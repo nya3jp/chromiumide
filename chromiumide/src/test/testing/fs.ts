@@ -90,6 +90,15 @@ export async function buildFakeChromium(root: string): Promise<void> {
 }
 
 /**
+ * Make the root be recognized as the depot tools directory.
+ */
+export async function buildFakeDepotTools(root: string): Promise<void> {
+  await putFiles(root, {
+    cros: '#!/usr/bin/env python3',
+  });
+}
+
+/**
  * Returns the path to the extension root.
  * This function can be called from unit tests.
  */

@@ -6,6 +6,7 @@ export {cleanState} from './clean_state';
 export {FakeExec, installFakeExec} from './fake_exec';
 export {
   buildFakeChroot,
+  buildFakeDepotTools,
   cachedSetup,
   getExtensionUri,
   putFiles,
