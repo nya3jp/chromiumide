@@ -14,7 +14,16 @@ set -x
 
 cd "$(dirname "$0")"
 
-if [[ -z "${LUCI_CONTEXT}" ]]; then
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -d|--docker)
+      LOCAL_DOCKER=1
+      shift # past argument
+      ;;
+  esac
+done
+
+if [[ -z "${LUCI_CONTEXT}" ]] && [[ -z "${LOCAL_DOCKER}" ]]; then
   echo "Local run detected, running npm t"
   cd chromiumide
   npm t
@@ -38,12 +47,17 @@ else
             --include="**/.git*" "./infra/ide" "./infra/ide/.dockercopy"
   popd
 
-  docker build -t cq-test-image .
+  # Local docker needs sudo, see: go/installdocker#sudoless-docker
+  if [[ -n "${LOCAL_DOCKER}" ]]; then
+    sudo docker build -t cq-test-image .
+    sudo docker run cq-test-image ./ro/infra/ide/docker_tests_execute.sh
+  else
+    docker build -t cq-test-image .
+    docker run cq-test-image ./ro/infra/ide/docker_tests_execute.sh
+  fi
 
   # If you want to enter the container interactively then run:
   # $ docker run -it cq-test-image /bin/bash
-
-  docker run cq-test-image ./ro/infra/ide/docker_tests_execute.sh
 
   # Clean up.
   rm -rf ./dockercopy
