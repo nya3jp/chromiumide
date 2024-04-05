@@ -28,7 +28,7 @@
       "request": "launch",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionTestsPath=${workspaceFolder}/out/test/integration/index"
+        "--extensionTestsPath=${workspaceFolder}/out/src/test/integration/index"
       ],
       "outFiles": [
         "${workspaceFolder}/out/**/*.js",
