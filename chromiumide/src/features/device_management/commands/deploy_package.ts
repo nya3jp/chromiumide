@@ -4,6 +4,7 @@
 
 import * as vscode from 'vscode';
 import {getDriver} from '../../../../shared/app/common/driver_repository';
+import {AbnormalExitError} from '../../../../shared/app/common/exec/types';
 import {Board} from '../../../common/chromiumos/board_or_host/board';
 import {parseQualifiedPackageName} from '../../../common/chromiumos/portage/ebuild';
 import {LruCache} from '../../../common/lru_cache';
@@ -96,7 +97,7 @@ export async function deployToDevice(
     (await promptTargetPackageWithCache(
       board,
       GLOBAL_BOARD_TO_PACKAGE_CACHE,
-      () => loadPackagesOnBoardOrThrow(board, context, chrootService)
+      () => loadPackagesOnBoard(board, context, chrootService)
     ));
   if (!targetPackage) return;
 
@@ -180,7 +181,7 @@ export async function deployToDevice(
 export async function promptTargetPackageWithCache(
   board: string,
   boardToPackages: LruCache<string, Package[]>,
-  loadPackagesOrThrow: () => Promise<Package[]>,
+  loadPackagesOrThrow: () => Promise<Package[] | Error>,
   onDidChangePickerItemsForTesting?: vscode.EventEmitter<
     readonly vscode.QuickPickItem[]
   >
@@ -215,22 +216,36 @@ export async function promptTargetPackageWithCache(
     picker.show();
 
     // Update cache and the list of packages shown to user for selection.
-    void loadPackagesOrThrow()
-      .then(packages => {
+    void loadPackagesOrThrow().then(packages => {
+      if (packages instanceof Error) {
+        if (cachedPackages) {
+          // If there is a cached package list, show the cached list but warn user about it.
+          void vscode.window.showWarningMessage(
+            `Cached packages list are shown and might be outdated: ${packages.message}`
+          );
+        } else if (
+          // Handle the special case when board has not been set up yet and provide user with
+          // actionable suggestion.
+          packages instanceof AbnormalExitError &&
+          packages.stderr.includes(
+            `No such file or directory: '/build/${board}/etc'`
+          )
+        ) {
+          void vscode.window.showErrorMessage(
+            `Failed to get list of packages on ${board}: board has not been set up, run \`cros build-packages --board=${board}\`?`
+          );
+        } else {
+          // Show the original error message as is.
+          void vscode.window.showErrorMessage(
+            `Failed to get list of packages on ${board}: ${packages.message}?`
+          );
+        }
+      } else {
         boardToPackages.set(board, packages);
         picker.items = packages.map(packageAsQuickPickItem);
         onDidChangePickerItemsForTesting?.fire(picker.items);
-      })
-      .catch(e => {
-        // If there is a cached package list
-        if (cachedPackages) {
-          void vscode.window.showWarningMessage(
-            `Cached packages list are shown and might be outdated: ${e}`
-          );
-        } else {
-          void vscode.window.showErrorMessage(e);
-        }
-      });
+      }
+    });
   });
 
   return task.finally(() => {
@@ -240,11 +255,11 @@ export async function promptTargetPackageWithCache(
   });
 }
 
-async function loadPackagesOnBoardOrThrow(
+async function loadPackagesOnBoard(
   board: string,
   context: CommandContext,
   chrootService: services.chromiumos.ChrootService
-): Promise<Package[]> {
+): Promise<Package[] | Error> {
   const allPackages = await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Window,
@@ -258,9 +273,7 @@ async function loadPackagesOnBoardOrThrow(
     }
   );
   if (allPackages instanceof Error) {
-    throw new Error(
-      `Failed to get list of packages on board ${board}: ${allPackages.message}`
-    );
+    return allPackages;
   }
   return allPackages.sort(packageCmp);
 }
