@@ -726,12 +726,12 @@
         },
         {
           "command": "chromiumide.deviceManagement.deleteDevice",
-          "when": "view == devices && viewItem == device-owned",
+          "when": "view == devices && viewItem =~ /^device-owned/",
           "group": "inline@9"
         },
         {
           "command": "chromiumide.deviceManagement.deleteDevice",
-          "when": "view == devices && viewItem == device-owned",
+          "when": "view == devices && viewItem =~ /^device-owned/",
           "group": "9_delete"
         },
         {
