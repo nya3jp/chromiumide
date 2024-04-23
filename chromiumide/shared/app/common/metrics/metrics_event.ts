@@ -267,6 +267,11 @@ type DeviceManagementEvent = EventBase & {group: 'device'} & (
       }
     | {
         category: 'interactive';
+        name: 'seamless_deployment_enable_auto_check_prompt';
+        enable: string;
+      }
+    | {
+        category: 'interactive';
         name: 'device_management_copy_device_attribute';
         attribute: string;
       }

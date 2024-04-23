@@ -1029,6 +1029,11 @@
           "description": "Enable seamless deployment feature to run automatic image checks on new owned/leased device added and on the default device when extension is activated.",
           "default": false
         },
+        "chromiumide.seamlessDeployment.suggestAutoCheck": {
+          "type": "boolean",
+          "description": "Prompt user to enable seamless deployment feature to run automatic image checks.",
+          "default": true
+        },
         "chromiumide.dirMetadata.links": {
           "type": "boolean",
           "description": "Make references to components in DIR_METADATA files clickable.",

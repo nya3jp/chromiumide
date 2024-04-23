@@ -227,7 +227,7 @@ describe('deploy package command', () => {
     );
     expect(vscodeSpy.window.showErrorMessage).toHaveBeenCalledTimes(0);
     expect(vscodeSpy.window.showWarningMessage).toHaveBeenCalledTimes(0);
-    expect(vscodeSpy.window.showInformationMessage).toHaveBeenCalledOnceWith(
+    expect(vscodeSpy.window.showInformationMessage).toHaveBeenCalledWith(
       jasmine.stringMatching(/cros deploy.*succeeded/)
     );
   });

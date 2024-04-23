@@ -186,6 +186,9 @@ export const seamlessDeployment = {
   // Enable seamless deployment feature to run automatic image checks on new owned/leased device
   // added and on the default device when extension is activated.
   autoCheck: new ConfigValue<boolean>('seamlessDeployment.autoCheck'),
+  suggestAutoCheck: new ConfigValue<boolean>(
+    'seamlessDeployment.suggestAutoCheck'
+  ),
 };
 
 export const deviceManagement = {

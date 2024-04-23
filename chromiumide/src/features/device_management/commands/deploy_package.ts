@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import {getDriver} from '../../../../shared/app/common/driver_repository';
 import {AbnormalExitError} from '../../../../shared/app/common/exec/types';
+import * as config from '../../../../shared/app/services/config';
 import {Board} from '../../../common/chromiumos/board_or_host/board';
 import {parseQualifiedPackageName} from '../../../common/chromiumos/portage/ebuild';
 import {LruCache} from '../../../common/lru_cache';
@@ -161,6 +162,7 @@ export async function deployToDevice(
       );
     }
   );
+
   if (res instanceof Error) {
     void (async () => {
       const choice = await vscode.window.showErrorMessage(
@@ -171,11 +173,44 @@ export async function deployToDevice(
         context.output.show();
       }
     })();
-    return;
+  } else {
+    void vscode.window.showInformationMessage(
+      `cros deploy ${targetPackage} to ${hostname} succeeded`
+    );
   }
-  void vscode.window.showInformationMessage(
-    `cros deploy ${targetPackage} to ${hostname} succeeded`
-  );
+
+  // If the automated image compatibility check feature is not enabled and we should suggest that to
+  // user (they did not choose 'never show again' in previous prompts).
+  if (
+    !config.seamlessDeployment.autoCheck.get() &&
+    config.seamlessDeployment.suggestAutoCheck.get() &&
+    // Exclude the case if user followed the suggestion but deploy still failed.
+    !(
+      res instanceof Error &&
+      checkOutcome === CheckOutcome.FLASHED_FROM_SUGGESTION
+    )
+  ) {
+    void (async () => {
+      const choice = await vscode.window.showInformationMessage(
+        'Do you want to let our new [seamless deployment](go/chromiumide-doc-device-management#seamless-deployment) feature automatically runs image check on newly added devices, and the default device on extension activation? You can always enable/disable it in the user settings page later.',
+        'Yes',
+        "Don't show again"
+      );
+      if (choice === 'Yes') {
+        await config.seamlessDeployment.autoCheck.update(true);
+      } else if (choice === "Don't show again") {
+        await config.seamlessDeployment.suggestAutoCheck.update(false);
+      }
+      // Record user response to keep track of how popular the feature is.
+      driver.sendMetrics({
+        category: 'interactive',
+        group: 'device',
+        name: 'seamless_deployment_enable_auto_check_prompt',
+        description: 'prompt to enable seamless deployment auto check',
+        enable: choice ?? 'dismissed',
+      });
+    })();
+  }
 }
 
 export async function promptTargetPackageWithCache(
