@@ -31,6 +31,7 @@ import {CodeServer} from './features/code_server';
 import * as codesearch from './features/codesearch';
 import * as deviceManagement from './features/device_management';
 import * as dirMetadata from './features/dir_metadata';
+import {DisclaimerOnMac} from './features/disclaimer_on_mac';
 import * as gerrit from './features/gerrit';
 import * as gn from './features/gn';
 import * as hints from './features/hints';
@@ -91,6 +92,9 @@ async function postMetricsActivate(
   statusManager: bgTaskStatus.StatusManager,
   linterLogger: LoggingBundle
 ): Promise<ExtensionApi> {
+  // Put it on top to ensure the disclaimer is shown even if the following code malfunctions.
+  context.subscriptions.push(new DisclaimerOnMac());
+
   await assertOutsideChroot();
 
   const cipdRepository = new cipd.CipdRepository();

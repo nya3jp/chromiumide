@@ -1039,6 +1039,11 @@
           "description": "Make references to components in DIR_METADATA files clickable.",
           "default": true
         },
+        "chromiumide.disclaimerOnMac.enabled": {
+          "type": "boolean",
+          "description": "Enable showing disclaimer on Mac",
+          "default": true
+        },
         "chromiumide.ebuildSupport.enabled": {
           "type": "boolean",
           "description": "Enable features for ChromeOS EBuilds",

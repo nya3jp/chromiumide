@@ -150,6 +150,10 @@ export const crosFormat = {
   enabled: new ConfigValue<boolean>('crosFormat.enabled'),
 };
 
+export const disclaimerOnMac = {
+  enabled: new ConfigValue<boolean>('disclaimerOnMac.enabled'),
+};
+
 export const ebuildSupport = {
   enabled: new ConfigValue<boolean>('ebuildSupport.enabled'),
 };
