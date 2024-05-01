@@ -15,7 +15,7 @@ export async function addDevice(
   context: CommandContext,
   chrootService?: chromiumos.ChrootService
 ): Promise<void> {
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'device',
     name: 'device_management_add_device',
@@ -39,7 +39,7 @@ export async function addDevice(
       ResultDisplayMode.MESSAGE
     );
     // Report on outcome to understand usefulness of the feature.
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'interactive',
       group: 'device',
       name: 'device_management_add_device_image_check',

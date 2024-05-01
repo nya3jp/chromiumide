@@ -371,7 +371,7 @@ export async function flashPrebuiltImage(
   // Version is undefined because user hide the picker (by pressing esc).
   if (!imagePath) return false;
 
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'device',
     name: 'device_management_flash_prebuilt_image',

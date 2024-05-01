@@ -49,7 +49,7 @@ export function activate(
       // Type-check that errors are handled.
       ((_: BoardOrHost | null) => {})(board);
       if (board) {
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'interactive',
           group: 'misc',
           name: 'select_target_board',

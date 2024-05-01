@@ -38,7 +38,7 @@ export class Watcher implements vscode.Disposable {
     // If the git repository does not have any commit (the state just after
     // git init), the directory doesn't exist and we cannot watch it.
     if (!fs.existsSync(gitLogs)) {
-      driver.sendMetrics({
+      driver.metrics.send({
         group: 'git_watcher',
         category: 'error',
         name: 'git_watcher_no_commit',

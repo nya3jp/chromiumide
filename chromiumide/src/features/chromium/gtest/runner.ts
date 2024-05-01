@@ -204,7 +204,7 @@ export class Runner extends AbstractRunner {
     const testCases = this.getTestCasesToRun();
     if (testCases.length === 0) {
       this.output.appendLine('No tests found to run.');
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'error',
         group: 'chromium.gtest',
         name: 'chromium_gtest_no_test_cases_found',
@@ -229,7 +229,7 @@ export class Runner extends AbstractRunner {
         `Error calculating test targets from test files: ${testTargetNames}`
       );
       if (!(testTargetNames instanceof CancelledError)) {
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'error',
           group: 'chromium.gtest',
           name: 'chromium_gtest_calculate_test_targets_failed',
@@ -239,7 +239,7 @@ export class Runner extends AbstractRunner {
       return;
     }
 
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'interactive',
       group: 'debugging',
       name: 'debugging_run_gtest',
@@ -254,7 +254,7 @@ export class Runner extends AbstractRunner {
         `Error while building test targets (${testTargetNames}): ${result}`
       );
       if (!(result instanceof CancelledError)) {
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'error',
           group: 'chromium.gtest',
           name: 'chromium_gtest_build_test_targets_failed',
@@ -273,7 +273,7 @@ export class Runner extends AbstractRunner {
           `Error while extracting tests of test target ${testTargetName}: ${allTestNamesInTarget}`
         );
         if (!(allTestNamesInTarget instanceof CancelledError)) {
-          driver.sendMetrics({
+          driver.metrics.send({
             category: 'error',
             group: 'chromium.gtest',
             name: 'chromium_gtest_extract_tests_from_target',
@@ -290,7 +290,7 @@ export class Runner extends AbstractRunner {
         this.output.appendLine(
           `Expected to find at least one test case in target ${testTargetName}.`
         );
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'error',
           group: 'chromium.gtest',
           name: 'chromium_gtest_test_target_has_no_matching_test_cases',
@@ -331,7 +331,7 @@ export class Runner extends AbstractRunner {
     );
     if (result instanceof Error) {
       if (!(result instanceof CancelledError)) {
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'error',
           group: 'chromium.gtest',
           name: 'chromium_gtest_test_run_failed',
@@ -348,7 +348,7 @@ export class Runner extends AbstractRunner {
       await fs.promises.readFile(resultOutputPath, 'utf-8')
     );
     if (testResults instanceof Error) {
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'error',
         group: 'chromium.gtest',
         name: 'chromium_gtest_parse_test_results_failed',
@@ -447,7 +447,7 @@ export class Runner extends AbstractRunner {
       testCase => testCase.suiteAndCaseName === testName
     )?.item;
     if (!item) {
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'error',
         group: 'chromium.gtest',
         name: 'chromium_gtest_test_item_for_test_result_failed',

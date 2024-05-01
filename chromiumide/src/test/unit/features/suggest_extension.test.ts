@@ -3,10 +3,12 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import {Metrics} from '../../../features/metrics/metrics';
+import {getDriver} from '../../../../shared/app/common/driver_repository';
 import {activateSingle} from '../../../features/suggest_extension';
 import {flushMicrotasks} from '../../testing';
 import {installVscodeDouble} from '../../testing/doubles';
+
+const driver = getDriver();
 
 describe('Suggest extension module', () => {
   const {vscodeSpy, vscodeEmitters} = installVscodeDouble();
@@ -21,7 +23,7 @@ describe('Suggest extension module', () => {
 
     vscode.Disposable.from(...subscriptions).dispose();
     subscriptions.splice(0);
-    spyOn(Metrics, 'send');
+    spyOn(driver.metrics, 'send');
   });
 
   it('suggests an extension', async () => {
@@ -62,15 +64,15 @@ describe('Suggest extension module', () => {
       'workbench.extensions.installExtension',
       'foo'
     );
-    expect(Metrics.send).toHaveBeenCalledTimes(2);
-    expect(Metrics.send).toHaveBeenCalledWith({
+    expect(driver.metrics.send).toHaveBeenCalledTimes(2);
+    expect(driver.metrics.send).toHaveBeenCalledWith({
       category: 'background',
       group: 'misc',
       description: 'show suggestion',
       name: 'misc_suggested_extension',
       extension: 'foo',
     });
-    expect(Metrics.send).toHaveBeenCalledWith({
+    expect(driver.metrics.send).toHaveBeenCalledWith({
       category: 'interactive',
       group: 'misc',
       description: 'install suggested',

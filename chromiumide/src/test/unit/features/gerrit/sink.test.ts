@@ -3,11 +3,13 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import {getDriver} from '../../../../../shared/app/common/driver_repository';
 import * as bgTaskStatus from '../../../../../shared/app/ui/bg_task_status';
 import {TaskStatus} from '../../../../../shared/app/ui/bg_task_status';
 import {Sink} from '../../../../features/gerrit/sink';
-import {Metrics} from '../../../../features/metrics/metrics';
 import * as testing from '../../../testing';
+
+const driver = getDriver();
 
 describe('Sink', () => {
   const {vscodeSpy} = testing.installVscodeDouble();
@@ -31,7 +33,7 @@ describe('Sink', () => {
   });
 
   beforeEach(() => {
-    spyOn(Metrics, 'send');
+    spyOn(driver.metrics, 'send');
   });
 
   it('shows a simple message', () => {
@@ -39,7 +41,7 @@ describe('Sink', () => {
     expect(state.outputChannel.appendLine).toHaveBeenCalledOnceWith(
       'simple message'
     );
-    expect(Metrics.send).toHaveBeenCalledOnceWith({
+    expect(driver.metrics.send).toHaveBeenCalledOnceWith({
       category: 'error',
       group: 'gerrit',
       description: 'simple message',
@@ -59,7 +61,7 @@ describe('Sink', () => {
     expect(state.outputChannel.appendLine).toHaveBeenCalledOnceWith(
       'log message'
     );
-    expect(Metrics.send).toHaveBeenCalledOnceWith({
+    expect(driver.metrics.send).toHaveBeenCalledOnceWith({
       category: 'error',
       group: 'gerrit',
       description: 'metrics message',
@@ -80,7 +82,7 @@ describe('Sink', () => {
     expect(state.outputChannel.appendLine).toHaveBeenCalledOnceWith(
       'log message'
     );
-    expect(Metrics.send).toHaveBeenCalledOnceWith({
+    expect(driver.metrics.send).toHaveBeenCalledOnceWith({
       category: 'error',
       group: 'gerrit',
       description: 'metrics message',

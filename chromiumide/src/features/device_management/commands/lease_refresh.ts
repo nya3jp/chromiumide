@@ -8,7 +8,7 @@ import {CommandContext} from './common';
 const driver = getDriver();
 
 export async function refreshLeases(context: CommandContext): Promise<void> {
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'device',
     name: 'device_management_refresh_leases',

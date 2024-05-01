@@ -56,7 +56,7 @@ export async function listPrebuiltVersions(
     ) {
       return [];
     }
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'error',
       group: 'prebuilt_utils',
       name: 'prebuilt_utils_fetch_gs_images_error',

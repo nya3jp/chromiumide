@@ -55,7 +55,7 @@ export class Chromium implements vscode.Disposable {
         await this.activate(context);
       } catch (e) {
         console.error('Failed to activate chromium features', e);
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'error',
           group: 'misc',
           description: `failed to activte chromium feature ${this.featureName}`,

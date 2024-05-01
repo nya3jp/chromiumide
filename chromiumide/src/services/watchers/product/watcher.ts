@@ -125,7 +125,7 @@ export class ProductWatcher implements vscode.Disposable {
         )}]. Selecting ${this.root}. ` +
           `Open at most one ${this.product} sources per workspace to fix this problem.`
       );
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'background',
         group: 'misc',
         description: `multiple ${this.product} candidates (product watcher)`,

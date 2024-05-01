@@ -153,7 +153,7 @@ export class TastTests implements vscode.Disposable {
       ADD
     );
     if (choice === ADD) {
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'interactive',
         group: 'tast',
         name: 'tast_setup_dev_environment',

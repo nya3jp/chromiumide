@@ -13,7 +13,7 @@ export async function copyHostname(
   context: CommandContext,
   item: provider.DeviceItem
 ): Promise<void> {
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'device',
     name: 'device_management_copy_hostname',
@@ -27,7 +27,7 @@ export async function copyAttribute(
   context: CommandContext,
   item: provider.DeviceAttributeItem
 ): Promise<void> {
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'device',
     name: 'device_management_copy_device_attribute',

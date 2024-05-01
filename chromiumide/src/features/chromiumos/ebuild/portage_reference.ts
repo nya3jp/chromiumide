@@ -99,7 +99,7 @@ export class PortageReferenceHoverProvider implements vscode.HoverProvider {
     const range = document.getWordRangeAtPosition(position);
     const word = document.getText(range);
     if (PORTAGE_PREDEFINED_READ_ONLY_VARAIBLES.includes(word)) {
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'background',
         group: 'ebuild',
         name: 'show_portage_predefined_read_only_variable_hover',
@@ -113,7 +113,7 @@ export class PortageReferenceHoverProvider implements vscode.HoverProvider {
       );
     }
     if (EBUILD_DEFINED_VARIABLES.includes(word)) {
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'background',
         group: 'ebuild',
         name: 'show_ebuild_defined_variable_hover',
@@ -126,7 +126,7 @@ export class PortageReferenceHoverProvider implements vscode.HoverProvider {
       );
     }
     if (EBUILD_PHASE_FUNCTIONS.includes(word)) {
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'background',
         group: 'ebuild',
         name: 'show_ebuild_phase_function_hover',

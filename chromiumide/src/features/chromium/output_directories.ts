@@ -37,7 +37,7 @@ export async function createOrUpdateSymLinkToDirectory(
     if (stat.isSymbolicLink()) {
       await fs.unlink(linkPath);
     } else {
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'error',
         group: 'chromium.outputDirectories',
         description: 'unable to update symlink: is not a symlink',
@@ -109,7 +109,7 @@ export function activate(
             vscode.Uri.file(path.join(srcPath, node.name, 'args.gn'))
           );
 
-          driver.sendMetrics({
+          driver.metrics.send({
             category: 'interactive',
             group: 'chromium.outputDirectories',
             description: 'edit args.gn',
@@ -126,7 +126,7 @@ export function activate(
       async () => {
         await treeDataProvider.refresh();
 
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'interactive',
           group: 'chromium.outputDirectories',
           description: 'refresh',
@@ -149,7 +149,7 @@ export function activate(
         if (
           !newOutDirName.match(/^(out|out_[a-zA-Z0-9_-]+)[/\\][a-zA-Z0-9_-]+$/)
         ) {
-          driver.sendMetrics({
+          driver.metrics.send({
             category: 'error',
             group: 'chromium.outputDirectories',
             description:
@@ -186,7 +186,7 @@ export function activate(
           treeDataProvider.refresh(),
         ]);
 
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'interactive',
           group: 'chromium.outputDirectories',
           description: 'change output directory',
@@ -207,7 +207,7 @@ export function activate(
             })
           );
 
-          driver.sendMetrics({
+          driver.metrics.send({
             category: 'interactive',
             group: 'chromium.outputDirectories',
             description: 'view args.gn error',
@@ -239,7 +239,7 @@ export function activate(
             })
           );
 
-          driver.sendMetrics({
+          driver.metrics.send({
             category: 'interactive',
             group: 'chromium.outputDirectories',
             description: 'view args.gn warnings',
@@ -527,7 +527,7 @@ export class OutputDirectoriesDataProvider
       }
     }
 
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'background',
       group: 'chromium.outputDirectories',
       description: 'number of output directories',
@@ -609,7 +609,7 @@ export class OutputDirectoriesDataProvider
               }
             }
             if (targetOutDir === null) {
-              driver.sendMetrics({
+              driver.metrics.send({
                 category: 'error',
                 group: 'chromium.outputDirectories',
                 description:

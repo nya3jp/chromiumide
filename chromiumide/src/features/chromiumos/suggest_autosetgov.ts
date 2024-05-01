@@ -57,7 +57,7 @@ export class Recommender implements vscode.Disposable {
       NEVER,
       LATER
     );
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'background',
       group: 'misc',
       description: 'show autosetgov suggestion',
@@ -70,7 +70,7 @@ export class Recommender implements vscode.Disposable {
         void vscode.window.showErrorMessage((err as Error).message);
         return;
       }
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'interactive',
         group: 'misc',
         description: 'create autosetgov file',

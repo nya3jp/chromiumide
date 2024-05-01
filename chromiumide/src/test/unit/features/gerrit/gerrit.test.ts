@@ -5,11 +5,11 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {getDriver} from '../../../../../shared/app/common/driver_repository';
 import {TaskStatus} from '../../../../../shared/app/ui/bg_task_status';
 import * as api from '../../../../features/gerrit/api';
 import * as gerrit from '../../../../features/gerrit/gerrit';
 import {POLL_INTERVAL_MILLIS} from '../../../../features/gerrit/model/gerrit_comments';
-import {Metrics} from '../../../../features/metrics/metrics';
 import {GitDirsWatcher} from '../../../../services';
 import * as testing from '../../../testing';
 import {FakeStatusManager, VoidOutputChannel} from '../../../testing/fakes';
@@ -22,6 +22,8 @@ import {
   unresolvedCommentInfo,
 } from './fake_data';
 import {FakeGerrit} from './fake_env';
+
+const driver = getDriver();
 
 const GITCOOKIES_PATH = path.join(
   __dirname,
@@ -40,7 +42,7 @@ describe('Gerrit', () => {
   beforeEach(() => {
     jasmine.clock().install();
 
-    spyOn(Metrics, 'send');
+    spyOn(driver.metrics, 'send');
 
     process.env.GIT_COOKIES_PATH = GITCOOKIES_PATH;
   });
@@ -153,7 +155,7 @@ describe('Gerrit', () => {
     expect(state.statusBarItem.show).toHaveBeenCalled();
     expect(state.statusBarItem.hide).not.toHaveBeenCalled();
     expect(state.statusBarItem.text).toEqual('$(comment) 1');
-    expect(Metrics.send).toHaveBeenCalledOnceWith({
+    expect(driver.metrics.send).toHaveBeenCalledOnceWith({
       category: 'background',
       group: 'gerrit',
       description: 'update comments',
@@ -253,7 +255,7 @@ describe('Gerrit', () => {
     expect(state.statusBarItem.show).toHaveBeenCalled();
     expect(state.statusBarItem.hide).not.toHaveBeenCalled();
     expect(state.statusBarItem.text).toEqual('$(comment) 1');
-    expect(Metrics.send).toHaveBeenCalledOnceWith({
+    expect(driver.metrics.send).toHaveBeenCalledOnceWith({
       category: 'background',
       group: 'gerrit',
       description: 'update comments',
@@ -394,7 +396,7 @@ describe('Gerrit', () => {
     expect(state.statusBarItem.show).toHaveBeenCalled();
     expect(state.statusBarItem.hide).not.toHaveBeenCalled();
     expect(state.statusBarItem.text).toEqual('$(comment) 4');
-    expect(Metrics.send).toHaveBeenCalledOnceWith({
+    expect(driver.metrics.send).toHaveBeenCalledOnceWith({
       category: 'background',
       group: 'gerrit',
       description: 'update comments',
@@ -787,7 +789,7 @@ describe('Gerrit', () => {
     expect(state.statusBarItem.show).toHaveBeenCalled();
     expect(state.statusBarItem.hide).not.toHaveBeenCalled();
     expect(state.statusBarItem.text).toEqual('$(comment) 2');
-    expect(Metrics.send).toHaveBeenCalledOnceWith({
+    expect(driver.metrics.send).toHaveBeenCalledOnceWith({
       category: 'background',
       group: 'gerrit',
       description: 'update comments',
@@ -907,7 +909,7 @@ describe('Gerrit', () => {
 
     expect(state.statusBarItem.show).not.toHaveBeenCalled();
     expect(state.statusBarItem.hide).toHaveBeenCalled();
-    expect(Metrics.send).not.toHaveBeenCalled();
+    expect(driver.metrics.send).not.toHaveBeenCalled();
     expect(state.statusManager.getStatus('Gerrit')).toEqual(TaskStatus.OK);
   });
 
@@ -981,7 +983,7 @@ describe('Gerrit', () => {
     expect(state.statusBarItem.show).toHaveBeenCalled();
     expect(state.statusBarItem.hide).not.toHaveBeenCalled();
     expect(state.statusBarItem.text).toEqual('$(comment) 1');
-    expect(Metrics.send).toHaveBeenCalledOnceWith({
+    expect(driver.metrics.send).toHaveBeenCalledOnceWith({
       category: 'background',
       group: 'gerrit',
       description: 'update comments',
@@ -1095,14 +1097,14 @@ describe('Gerrit', () => {
     );
     expect(state.statusBarItem.text).toEqual('$(comment) 1');
 
-    expect(Metrics.send).toHaveBeenCalledTimes(2);
-    expect(Metrics.send).toHaveBeenCalledWith({
+    expect(driver.metrics.send).toHaveBeenCalledTimes(2);
+    expect(driver.metrics.send).toHaveBeenCalledWith({
       category: 'error',
       group: 'gerrit',
       description: '(warning) commit not available locally',
       name: 'gerrit_show_error',
     });
-    expect(Metrics.send).toHaveBeenCalledWith({
+    expect(driver.metrics.send).toHaveBeenCalledWith({
       category: 'background',
       group: 'gerrit',
       description: 'update comments',
@@ -1154,7 +1156,7 @@ describe('Gerrit', () => {
     await completeShowChangeEvents.read();
 
     expect(state.statusManager.getStatus('Gerrit')).toEqual(TaskStatus.ERROR);
-    expect(Metrics.send).toHaveBeenCalledWith({
+    expect(driver.metrics.send).toHaveBeenCalledWith({
       category: 'error',
       group: 'gerrit',
       description:
@@ -1211,7 +1213,7 @@ describe('Gerrit', () => {
 
     // Error is reported only two times, because all but the first and last
     // events are ignored.
-    expect(Metrics.send).toHaveBeenCalledTimes(2);
+    expect(driver.metrics.send).toHaveBeenCalledTimes(2);
   });
 
   it('shifts comments correctly', async () => {

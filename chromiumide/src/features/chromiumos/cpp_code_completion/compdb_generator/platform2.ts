@@ -62,7 +62,7 @@ export class Platform2 implements CompdbGenerator {
     // Send metrcis if the user interacts with platform2 files for which we support
     // xrefs.
     if (['cpp', 'c'].includes(document.languageId)) {
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'background',
         group: 'cppxrefs',
         name: 'cppxrefs_interact_with_platform2_cpp',

@@ -27,7 +27,7 @@ export function activate(context: vscode.ExtensionContext): StatusManager {
   context.subscriptions.push(
     vscodeRegisterCommand(showIdeStatusCommand, () => {
       void vscode.commands.executeCommand('chromiumide-status.focus');
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'interactive',
         group: 'idestatus',
         description: 'show ide status',
@@ -44,7 +44,7 @@ export function activate(context: vscode.ExtensionContext): StatusManager {
         if (outputChannel) {
           outputChannel.show();
         }
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'interactive',
           group: 'idestatus',
           description: 'show log for ' + taskName,

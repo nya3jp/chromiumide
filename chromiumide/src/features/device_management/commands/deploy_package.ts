@@ -115,7 +115,7 @@ export async function deployToDevice(
     parseQualifiedPackageName(targetPackage)
   );
   // Report on outcome to understand usefulness of the feature.
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'device',
     name: 'device_management_deploy_package',
@@ -202,7 +202,7 @@ export async function deployToDevice(
         await config.seamlessDeployment.suggestAutoCheck.update(false);
       }
       // Record user response to keep track of how popular the feature is.
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'interactive',
         group: 'device',
         name: 'seamless_deployment_enable_auto_check_prompt',

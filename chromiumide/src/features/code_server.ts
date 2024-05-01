@@ -53,7 +53,7 @@ export class CodeServer implements vscode.Disposable {
       'Notify later'
     );
     if (choice === OPEN_GUIDE) {
-      driver.sendMetrics({
+      driver.metrics.send({
         group: 'code_server',
         category: 'interactive',
         name: 'code_server_migration_open_guide',

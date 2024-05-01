@@ -5,7 +5,7 @@
 import 'jasmine';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as metricsConfig from '../../../../features/metrics/metrics_config';
+import * as metricsConfig from '../../../../driver/metrics/metrics_config';
 import * as testing from '../../../testing';
 
 const UID_REGEXP =

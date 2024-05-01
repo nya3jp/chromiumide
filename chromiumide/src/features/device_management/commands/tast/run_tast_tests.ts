@@ -73,7 +73,7 @@ export async function runTastTests(
   context: CommandContext,
   chrootService: ChrootService
 ): Promise<RunTastTestsResult | undefined | Error> {
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'device',
     name: 'device_management_run_tast_tests',

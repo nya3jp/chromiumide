@@ -48,7 +48,7 @@ export class CppCodeCompletion implements vscode.Disposable {
     this.output,
     vscodeRegisterCommand(SHOW_LOG_COMMAND.command, () => {
       this.output.show();
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'interactive',
         group: 'idestatus',
         name: 'cppxrefs_show_cpp_log',
@@ -184,7 +184,7 @@ export class CppCodeCompletion implements vscode.Disposable {
       const canceller = new vscode.CancellationTokenSource();
       try {
         const action = `${generator.name}: generate compdb`;
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'background',
           group: 'cppxrefs',
           name: 'cppxrefs_generate_compdb',
@@ -209,7 +209,7 @@ export class CppCodeCompletion implements vscode.Disposable {
             rawError.message,
             ...rawError.buttons
           );
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'error',
           group: 'cppxrefs',
           name: 'cppxrefs_generate_compdb_error',

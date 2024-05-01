@@ -23,7 +23,7 @@ export async function crosWorkon(
     typeof pkg === 'string' ? pkg : getQualifiedPackageName(pkg);
 
   if (action === 'start') {
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'interactive',
       group: 'boards_and_packages',
       description: 'cros_workon start',
@@ -32,7 +32,7 @@ export async function crosWorkon(
       board: board.toString(),
     });
   } else {
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'interactive',
       group: 'boards_and_packages',
       description: 'cros_workon stop',

@@ -3,9 +3,11 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import {Metrics} from '../../../features/metrics/metrics';
+import {getDriver} from '../../../../shared/app/common/driver_repository';
 import * as gitDocument from '../../../services/git_document';
 import * as testing from '../../testing';
+
+const driver = getDriver();
 
 describe('Git document provider', () => {
   const tempDir = testing.tempDir();
@@ -17,7 +19,7 @@ describe('Git document provider', () => {
   });
 
   it('retrieves git commit messages (HEAD)', async () => {
-    spyOn(Metrics, 'send');
+    spyOn(driver.metrics, 'send');
 
     const git = new testing.Git(tempDir.path);
     await git.init();
@@ -28,7 +30,7 @@ describe('Git document provider', () => {
     );
     const doc = await state.gitDocumentProvider.provideTextDocumentContent(uri);
     expect(doc).toContain('sample commit message');
-    expect(Metrics.send).toHaveBeenCalledOnceWith({
+    expect(driver.metrics.send).toHaveBeenCalledOnceWith({
       category: 'interactive',
       group: 'virtualdocument',
       description: 'open git document',
@@ -38,7 +40,7 @@ describe('Git document provider', () => {
   });
 
   it('retrieves git commit messages (SHA)', async () => {
-    spyOn(Metrics, 'send');
+    spyOn(driver.metrics, 'send');
 
     const git = new testing.Git(tempDir.path);
     await git.init();
@@ -50,7 +52,7 @@ describe('Git document provider', () => {
     );
     const doc = await state.gitDocumentProvider.provideTextDocumentContent(uri);
     expect(doc).toContain('first commit');
-    expect(Metrics.send).toHaveBeenCalledOnceWith({
+    expect(driver.metrics.send).toHaveBeenCalledOnceWith({
       category: 'interactive',
       group: 'virtualdocument',
       description: 'open git document',

@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 import {ExecOptions, ExecResult} from '../app/common/exec/types';
-import {Event} from '../app/common/metrics/metrics_event';
 import {Cros} from './cros';
 import {Fs} from './fs';
+import {Metrics} from './metrics';
 import {Path} from './path';
 
 export type Driver = Readonly<{
@@ -16,12 +16,12 @@ export type Driver = Readonly<{
   cros: Cros;
   fs: Fs;
   path: Path;
+  metrics: Metrics;
   exec: (
     name: string,
     args: string[],
     options?: ExecOptions
   ) => Promise<ExecResult | Error>;
   getUserEnvPath(): Promise<string | undefined | Error>;
-  sendMetrics(event: Event): void;
   matchGlob: (path: string, pattern: string) => boolean;
 }>;

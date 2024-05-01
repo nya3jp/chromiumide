@@ -24,6 +24,7 @@ import {SHOW_UI_LOG, getUiLogger} from '../shared/app/ui/log';
 import {Driver} from '../shared/driver';
 import * as cipd from './common/cipd';
 import {DriverImpl} from './driver';
+import * as metricsConfig from './driver/metrics/metrics_config';
 import * as features from './features';
 import * as boilerplate from './features/boilerplate';
 import {CodeServer} from './features/code_server';
@@ -33,8 +34,6 @@ import * as dirMetadata from './features/dir_metadata';
 import * as gerrit from './features/gerrit';
 import * as gn from './features/gn';
 import * as hints from './features/hints';
-import * as metrics from './features/metrics/metrics';
-import * as metricsConfig from './features/metrics/metrics_config';
 import * as ownersLinks from './features/owners_links';
 import * as shortLinkProvider from './features/short_link_provider';
 import * as showHelp from './features/show_help';
@@ -61,14 +60,12 @@ export async function activate(
   await migrate.migrate();
 
   registerDriver(new DriverImpl());
-  const {statusManager, linterLogger} = activateSharedFeatures(
+  // Activate metrics (a shared feature) so that other components can emit metrics on activation.
+  const {statusManager, linterLogger} = await activateSharedFeatures(
     context,
     new DriverImpl()
   );
   const driver = getDriver();
-
-  // Activate metrics so that other components can emit metrics on activation.
-  await metrics.activate(context);
 
   try {
     return await postMetricsActivate(
@@ -78,7 +75,7 @@ export async function activate(
       linterLogger
     );
   } catch (err) {
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'error',
       group: 'misc',
       description: `activate failed: ${err}`,
@@ -125,7 +122,7 @@ async function postMetricsActivate(
   context.subscriptions.push(
     vscodeRegisterCommand(SHOW_UI_LOG.command, () => {
       getUiLogger().show();
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'interactive',
         group: 'idestatus',
         description: 'show ui actions log',
@@ -169,7 +166,7 @@ async function postMetricsActivate(
   // We want to know if some users flip enablement bit.
   // If the feature is disabled it could mean that it's annoying.
   if (!config.gerrit.enabled.hasDefaultValue()) {
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'background',
       group: 'gerrit',
       description: 'gerrit enablement',
@@ -178,7 +175,7 @@ async function postMetricsActivate(
     });
   }
 
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'background',
     group: 'misc',
     description: 'activate',
@@ -186,7 +183,7 @@ async function postMetricsActivate(
   });
 
   const age = await metricsConfig.getUserIdAgeInDays();
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'background',
     group: 'misc',
     description: 'user ID age',

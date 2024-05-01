@@ -13,7 +13,7 @@ export async function connectToDeviceForScreen(
   rotate: boolean,
   selectedHostname?: string
 ): Promise<void> {
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'device',
     name: 'device_management_connect_to_device_vnc',

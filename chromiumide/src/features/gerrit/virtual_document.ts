@@ -36,7 +36,7 @@ export class GerritDocumentProvider
   }
 
   async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'interactive',
       group: 'virtualdocument',
       description: 'open gerrit document',

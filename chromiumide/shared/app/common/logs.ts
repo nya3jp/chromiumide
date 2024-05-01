@@ -42,7 +42,7 @@ function createLoggingBundle(
   context.subscriptions.push(
     vscodeRegisterCommand(showLogCommand.command, () => {
       channel.show();
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'interactive',
         group: 'idestatus',
         description: 'show linter log',

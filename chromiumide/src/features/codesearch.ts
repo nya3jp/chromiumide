@@ -65,7 +65,7 @@ async function openCurrentFile(textEditor: vscode.TextEditor): Promise<void> {
   const result = await getCurrentFile(textEditor);
   if (result) {
     void vscode.env.openExternal(vscode.Uri.parse(result));
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'interactive',
       group: 'codesearch',
       name: 'codesearch_open_current_file',
@@ -88,7 +88,7 @@ async function openFiles(allSelectedFiles: vscode.Uri[]): Promise<void> {
     }
   }
   if (opened) {
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'interactive',
       group: 'codesearch',
       name: 'codesearch_open_files',
@@ -101,7 +101,7 @@ async function copyCurrentFile(textEditor: vscode.TextEditor): Promise<void> {
   const result = await getCurrentFile(textEditor);
   if (result) {
     void vscode.env.clipboard.writeText(result);
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'interactive',
       group: 'codesearch',
       name: 'codesearch_copy_current_file',
@@ -177,7 +177,7 @@ async function getCodeSearchUrl(
     void vscode.window.showErrorMessage(
       `generate_cs_path returned an error: ${stderr}`
     );
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'error',
       group: 'codesearch',
       name: 'codesearch_generate_cs_path_failed',
@@ -208,7 +208,7 @@ function searchSelection(textEditor: vscode.TextEditor): void {
     query: `q=${selectedText}`,
   });
   void vscode.env.openExternal(uri);
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'codesearch',
     description: 'search selection',

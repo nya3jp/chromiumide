@@ -16,14 +16,18 @@ import * as bgTaskStatus from './ui/bg_task_status';
 /**
  * Activates features shared between internal IDE and VSCode.
  */
-export function activate(
+export async function activate(
   context: vscode.ExtensionContext,
   driver: Driver
-): {statusManager: bgTaskStatus.StatusManager; linterLogger: LoggingBundle} {
+): Promise<{
+  statusManager: bgTaskStatus.StatusManager;
+  linterLogger: LoggingBundle;
+}> {
   registerDriver(driver);
 
   context.subscriptions.push(new DemoWhoami());
 
+  await driver.metrics.activate(context);
   feedback.activate(context);
 
   const statusManager = bgTaskStatus.activate(context);

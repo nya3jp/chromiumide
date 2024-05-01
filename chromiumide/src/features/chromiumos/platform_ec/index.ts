@@ -26,7 +26,7 @@ export function activate(
   context.subscriptions.push(
     vscodeRegisterCommand(SHOW_LOG_COMMAND.command, () => {
       outputChannel.show();
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'interactive',
         group: 'idestatus',
         name: 'platform_ec_show_log',

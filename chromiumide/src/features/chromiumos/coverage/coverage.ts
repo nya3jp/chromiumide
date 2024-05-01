@@ -56,7 +56,7 @@ export class Coverage {
 
           const qpn = getQualifiedPackageName({category, name});
 
-          driver.sendMetrics({
+          driver.metrics.send({
             category: 'interactive',
             group: 'coverage',
             name: 'coverage_generate',
@@ -118,19 +118,19 @@ export class Coverage {
     const {covered: coveredRanges, uncovered: uncoveredRanges} =
       await this.readDocumentCoverage(activeEditor.document.fileName);
 
-    let sendMetrics = false;
+    let send = false;
 
     if (coveredRanges) {
       activeEditor.setDecorations(coveredDecoration, coveredRanges);
-      sendMetrics = true;
+      send = true;
     }
     if (uncoveredRanges) {
       activeEditor.setDecorations(uncoveredDecoration, uncoveredRanges);
-      sendMetrics = true;
+      send = true;
     }
 
-    if (sendMetrics) {
-      driver.sendMetrics({
+    if (send) {
+      driver.metrics.send({
         category: 'background',
         group: 'coverage',
         name: 'coverage_show_background',

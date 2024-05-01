@@ -3,15 +3,17 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import {Metrics} from '../../../../../features/metrics/metrics';
+import {getDriver} from '../../../../../../shared/app/common/driver_repository';
 import {Watcher} from '../../../../../services/watchers/git_dirs/head';
 import * as testing from '../../../../testing';
+
+const driver = getDriver();
 
 describe('git.Watcher', () => {
   const tempDir = testing.tempDir();
 
   const state = testing.cleanState(async () => {
-    const metricsSpy = spyOn(Metrics, 'send');
+    const metricsSpy = spyOn(driver.metrics, 'send');
     metricsSpy.and.callFake(event => {
       fail(`Unexpected metrics was sent: ${JSON.stringify(event)}`);
     });

@@ -40,7 +40,7 @@ export async function openEbuild(
   const document = await vscode.workspace.openTextDocument(fileName);
   await vscode.window.showTextDocument(document);
 
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'boards_and_packages',
     name: 'boards_and_packages_open_ebuild',

@@ -273,7 +273,7 @@ async function updateDiagnosticsWrapper(
       status: TaskStatus.ERROR,
       command: log.showLogCommand,
     });
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'error',
       group: 'lint',
       description: 'error was thrown',
@@ -293,7 +293,7 @@ async function updateDiagnostics(
     const lintConfigs = languageToLintConfigs.get(document.languageId);
     if (!lintConfigs) {
       // Sent metrics just to track languages.
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'background',
         group: 'lint',
         description: 'skip',
@@ -353,7 +353,7 @@ async function updateDiagnostics(
             status: TaskStatus.ERROR,
             command: log.showLogCommand,
           });
-          driver.sendMetrics({
+          driver.metrics.send({
             category: 'error',
             group: 'lint',
             description: `non-zero linter exit, but no diagnostics (${document.languageId})`,
@@ -370,7 +370,7 @@ async function updateDiagnostics(
       status: TaskStatus.OK,
       command: log.showLogCommand,
     });
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'background',
       group: 'lint',
       description: 'update',

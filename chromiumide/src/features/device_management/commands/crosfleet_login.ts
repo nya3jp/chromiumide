@@ -8,7 +8,7 @@ import {CommandContext} from './common';
 const driver = getDriver();
 
 export async function crosfleetLogin(context: CommandContext): Promise<void> {
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'device',
     name: 'device_management_log_in_to_crosfleet',

@@ -124,7 +124,7 @@ export class SyslogPanel extends ReactPanel<SyslogViewContext> {
           );
         }
       } else if (msg.command === 'copy') {
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'interactive',
           group: 'device',
           name: 'device_management_syslog_viewer_copy',

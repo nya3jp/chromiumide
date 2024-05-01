@@ -64,7 +64,7 @@ export class Runner extends AbstractRunner {
         ? ('debugging_run_gtest' as const)
         : ('debugging_debug_gtest' as const);
 
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'interactive',
       group: 'debugging',
       name: name,

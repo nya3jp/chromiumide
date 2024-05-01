@@ -65,7 +65,7 @@ export class Sink implements vscode.Disposable {
       this.statusManager.setStatus(GERRIT, TaskStatus.ERROR);
     }
     if (m.metrics) {
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'error',
         group: 'gerrit',
         description: m.metrics,

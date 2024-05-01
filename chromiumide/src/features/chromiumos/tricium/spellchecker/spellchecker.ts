@@ -187,7 +187,7 @@ class Spellchecker {
   ): Promise<void> {
     if (results instanceof Error) {
       this.setStatus(TaskStatus.ERROR);
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'error',
         group: 'spellchecker',
         name: 'spellchecker_error',
@@ -220,7 +220,7 @@ class Spellchecker {
     }
 
     if (diagnostics.length) {
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'background',
         group: 'spellchecker',
         name: 'spellchecker_diagnostics',

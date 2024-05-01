@@ -5,13 +5,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {getDriver} from '../../../../../shared/app/common/driver_repository';
 import {
   Recommender,
   TEST_ONLY,
 } from '../../../../features/chromiumos/suggest_autosetgov';
-import {Metrics} from '../../../../features/metrics/metrics';
 import * as testing from '../../../testing';
 import * as doubles from '../../../testing/doubles';
+
+const driver = getDriver();
 
 describe('Suggest autosetgov', () => {
   const tempDir = testing.tempDir();
@@ -21,7 +23,7 @@ describe('Suggest autosetgov', () => {
 
   beforeEach(() => {
     vscode.Disposable.from(...subscriptions.splice(0)).dispose();
-    spyOn(Metrics, 'send');
+    spyOn(driver.metrics, 'send');
   });
 
   it('suggests setting autosetgov', async () => {
@@ -53,14 +55,14 @@ describe('Suggest autosetgov', () => {
     const fileinfo = fs.statSync(name);
     expect(fileinfo.isFile());
 
-    expect(Metrics.send).toHaveBeenCalledTimes(2);
-    expect(Metrics.send).toHaveBeenCalledWith({
+    expect(driver.metrics.send).toHaveBeenCalledTimes(2);
+    expect(driver.metrics.send).toHaveBeenCalledWith({
       category: 'background',
       group: 'misc',
       description: 'show autosetgov suggestion',
       name: 'misc_autosetgov_suggested',
     });
-    expect(Metrics.send).toHaveBeenCalledWith({
+    expect(driver.metrics.send).toHaveBeenCalledWith({
       category: 'interactive',
       group: 'misc',
       description: 'create autosetgov file',
@@ -92,8 +94,8 @@ describe('Suggest autosetgov', () => {
       expect((err as {code?: unknown}).code === 'ENOENT');
     }
 
-    expect(Metrics.send).toHaveBeenCalledTimes(1);
-    expect(Metrics.send).toHaveBeenCalledWith({
+    expect(driver.metrics.send).toHaveBeenCalledTimes(1);
+    expect(driver.metrics.send).toHaveBeenCalledWith({
       category: 'background',
       group: 'misc',
       description: 'show autosetgov suggestion',

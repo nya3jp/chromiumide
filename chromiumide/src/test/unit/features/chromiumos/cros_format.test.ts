@@ -10,7 +10,6 @@ import {
   StatusManager,
   TaskStatus,
 } from '../../../../../shared/app/ui/bg_task_status';
-import {Metrics} from '../../../../features/metrics/metrics';
 import * as testing from '../../../testing';
 import {FakeTextDocument} from '../../../testing/fakes';
 
@@ -46,7 +45,7 @@ describe('Cros format', () => {
   });
 
   beforeEach(() => {
-    spyOn(Metrics, 'send');
+    spyOn(driver.metrics, 'send');
   });
 
   it('shows error when the command fails (execution error)', async () => {
@@ -60,7 +59,7 @@ describe('Cros format', () => {
       'Formatter',
       TaskStatus.ERROR
     );
-    expect(Metrics.send).toHaveBeenCalledOnceWith({
+    expect(driver.metrics.send).toHaveBeenCalledOnceWith({
       category: 'error',
       group: 'format',
       name: 'cros_format_call_error',
@@ -84,7 +83,7 @@ describe('Cros format', () => {
       'Formatter',
       TaskStatus.ERROR
     );
-    expect(Metrics.send).toHaveBeenCalledOnceWith({
+    expect(driver.metrics.send).toHaveBeenCalledOnceWith({
       category: 'error',
       group: 'format',
       name: 'cros_format_return_error',
@@ -109,7 +108,7 @@ describe('Cros format', () => {
       'Formatter',
       TaskStatus.OK
     );
-    expect(Metrics.send).not.toHaveBeenCalled();
+    expect(driver.metrics.send).not.toHaveBeenCalled();
   });
 
   it('formats code', async () => {
@@ -130,7 +129,7 @@ describe('Cros format', () => {
       'Formatter',
       TaskStatus.OK
     );
-    expect(Metrics.send).toHaveBeenCalledOnceWith({
+    expect(driver.metrics.send).toHaveBeenCalledOnceWith({
       category: 'background',
       group: 'format',
       name: 'cros_format',
@@ -145,7 +144,7 @@ describe('Cros format', () => {
 
     expect(fakeExec).not.toHaveBeenCalled();
     expect(edits).toBeUndefined();
-    expect(Metrics.send).not.toHaveBeenCalled();
+    expect(driver.metrics.send).not.toHaveBeenCalled();
   });
 
   it('does not format files that are ignored', async () => {
@@ -159,7 +158,7 @@ describe('Cros format', () => {
 
     expect(fakeExec).not.toHaveBeenCalled();
     expect(edits).toBeUndefined();
-    expect(Metrics.send).not.toHaveBeenCalled();
+    expect(driver.metrics.send).not.toHaveBeenCalled();
   });
 });
 

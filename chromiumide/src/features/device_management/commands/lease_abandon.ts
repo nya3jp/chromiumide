@@ -12,7 +12,7 @@ export async function abandonLease(
   context: CommandContext,
   selectedHostname?: string
 ): Promise<void> {
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'device',
     name: 'device_management_abandon_lease',

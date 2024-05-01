@@ -5,6 +5,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as commonUtil from '../../../../../../../shared/app/common/common_util';
+import {getDriver} from '../../../../../../../shared/app/common/driver_repository';
 import {AbnormalExitError} from '../../../../../../../shared/app/common/exec/types';
 import {
   BoardOrHost,
@@ -21,13 +22,14 @@ import {
 } from '../../../../../../features/device_management/device_client';
 import {DeviceCategory} from '../../../../../../features/device_management/device_repository';
 import {SshIdentity} from '../../../../../../features/device_management/ssh_identity';
-import {Metrics} from '../../../../../../features/metrics/metrics';
 import {ChromiumosServiceModule} from '../../../../../../services/chromiumos';
 import * as testing from '../../../../../testing';
 import {VscodeGetters, VscodeSpy} from '../../../../../testing/doubles';
 import {arrayWithPrefix} from '../../../../testing/jasmine/asymmetric_matcher';
 import {FakeDeviceRepository} from '../fake_device_repository';
 import {FakeSshServer} from '../fake_ssh_server';
+
+const driver = getDriver();
 
 export type Config = {
   /** A temporary directory representing fake chromiumos root. */
@@ -113,7 +115,7 @@ export async function prepareCommonFakes(
     } as vscode.TextEditor);
 
     // Prepare user responses.
-    spyOn(Metrics, 'send');
+    spyOn(driver.metrics, 'send');
     vscodeSpy.window.showQuickPick
       .withArgs(
         jasmine.arrayContaining(testsToPick),

@@ -79,7 +79,7 @@ export async function openSystemLogViewer(
   context: CommandContext,
   selectedHostname?: string
 ): Promise<void> {
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'device',
     name: 'device_management_syslog_viewer_open',

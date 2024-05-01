@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import * as metricsUtil from '../../../../features/metrics/metrics_util';
+import * as metricsUtil from '../../../../driver/metrics/metrics_util';
 import * as testing from '../../../testing';
 
 describe('Metrics util: get git repo name', () => {

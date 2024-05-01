@@ -60,7 +60,7 @@ export class CipdRepository {
         );
         if (result instanceof Error) {
           const details = errorDetails(result);
-          driver.sendMetrics({
+          driver.metrics.send({
             category: 'error',
             group: 'cipd',
             description: `call to 'cipd init' failed, details: ${details}`,
@@ -81,7 +81,7 @@ export class CipdRepository {
       );
       if (result instanceof Error) {
         const details = errorDetails(result);
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'error',
           group: 'cipd',
           description: `call to 'cipd install' failed, details: ${details}`,

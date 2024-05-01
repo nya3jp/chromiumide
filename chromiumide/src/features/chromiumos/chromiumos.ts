@@ -63,7 +63,7 @@ export class Chromiumos implements vscode.Disposable {
         await this.activate(context);
       } catch (e) {
         console.error('Failed to activate chromiumos features', e);
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'error',
           group: 'misc',
           name: 'activate_chromiumos_error',

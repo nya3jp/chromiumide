@@ -36,7 +36,7 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
       vscodeRegisterCommand(command, () => {
         void vscode.env.openExternal(link);
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'interactive',
           group: 'misc',
           description: command,

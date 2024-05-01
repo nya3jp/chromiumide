@@ -28,7 +28,7 @@ export class OwnersLink extends vscode.DocumentLink {
   }
 
   async resolve(): Promise<void> {
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'interactive',
       group: 'owners',
       description: 'clicked file: or include link',

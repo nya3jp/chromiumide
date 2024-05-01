@@ -8,6 +8,7 @@ import * as semver from 'semver';
 import * as metricsEvent from '../../../shared/app/common/metrics/metrics_event';
 import {vscodeRegisterCommand} from '../../../shared/app/common/vscode/commands';
 import * as config from '../../../shared/app/services/config';
+import {Metrics} from '../../../shared/driver/metrics';
 import {Https} from '../../common/https';
 import * as metricsConfig from './metrics_config';
 import * as metricsUtils from './metrics_util';
@@ -180,16 +181,20 @@ export class Analytics {
 }
 
 /** The class to send metrics. */
-export class Metrics {
-  static analytics: Promise<Analytics> | null;
+export class MetricsImpl implements Metrics {
+  analytics: Promise<Analytics> | null = null;
 
   /** Sends event for collecting metrics. */
-  static send(event: metricsEvent.Event): void {
+  send(event: metricsEvent.Event): void {
     if (!this.analytics) {
       this.analytics = Analytics.create();
     }
     void (async () => {
       await (await this.analytics!).send(event);
     })();
+  }
+
+  async activate(context: vscode.ExtensionContext): Promise<void> {
+    await activate(context);
   }
 }

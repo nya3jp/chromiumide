@@ -13,7 +13,7 @@ export async function deleteDevice(
   context: CommandContext,
   selectedHostname?: string
 ): Promise<void> {
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'device',
     name: 'device_management_delete_device',

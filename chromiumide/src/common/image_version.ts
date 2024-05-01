@@ -73,7 +73,7 @@ export async function getChromeMilestones(
     // empty list, so that user can continue with the image path selection process by manually
     // inputing the milestone they want.
     // Report error to metrics for investigation.
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'error',
       group: 'device',
       name: 'device_management_fetch_manifest_refs_error',

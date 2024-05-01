@@ -159,7 +159,7 @@ class CrosFormat implements vscode.DocumentFormattingEditProvider {
     if (formatterOutput instanceof Error) {
       this.outputChannel.appendLine(formatterOutput.message);
       this.statusManager.setStatus(FORMATTER, TaskStatus.ERROR);
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'error',
         group: 'format',
         name: 'cros_format_call_error',
@@ -181,7 +181,7 @@ class CrosFormat implements vscode.DocumentFormattingEditProvider {
         this.statusManager.setStatus(FORMATTER, TaskStatus.OK);
         // Depending on how formatting is called it can be interactive
         // (selected from the command palette) or background (format on save).
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'background',
           group: 'format',
           name: 'cros_format',
@@ -201,7 +201,7 @@ class CrosFormat implements vscode.DocumentFormattingEditProvider {
           `not formatting file with syntax error: ${formatterOutput.stderr}`
         );
         this.statusManager.setStatus(FORMATTER, TaskStatus.ERROR);
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'error',
           group: 'format',
           name: 'cros_format_return_error',
@@ -215,7 +215,7 @@ class CrosFormat implements vscode.DocumentFormattingEditProvider {
       default: {
         this.outputChannel.appendLine(formatterOutput.stderr);
         this.statusManager.setStatus(FORMATTER, TaskStatus.ERROR);
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'error',
           group: 'format',
           name: 'cros_format_return_error',

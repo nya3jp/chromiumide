@@ -44,7 +44,7 @@ export async function addLease(
   context: CommandContext,
   chrootService?: chromiumos.ChrootService
 ): Promise<void> {
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'device',
     name: 'device_management_add_lease',
@@ -130,7 +130,7 @@ export async function addLease(
       ResultDisplayMode.MESSAGE
     );
     // Report on outcome to understand usefulness of the feature.
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'interactive',
       group: 'device',
       name: 'device_management_lease_device_image_check',

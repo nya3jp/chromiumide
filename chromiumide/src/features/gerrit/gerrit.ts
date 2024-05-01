@@ -51,7 +51,7 @@ export function activate(
       void vscode.commands.executeCommand(
         'workbench.action.focusCommentsPanel'
       );
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'interactive',
         group: 'gerrit',
         description: 'focus comments panel',
@@ -88,7 +88,7 @@ export function activate(
           'workbench.action.collapseAllComments'
         );
         gerrit.collapseAllCommentThreadsInVscode();
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'interactive',
           group: 'gerrit',
           description: 'collapse all comment threads',
@@ -404,7 +404,7 @@ class Gerrit implements vscode.Disposable {
 
       this.updateStatusBar();
       if (changes && threadsToDisplay.length > 0) {
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'background',
           group: 'gerrit',
           description: 'update comments',

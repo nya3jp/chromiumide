@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import {getDriver} from '../../../../shared/app/common/driver_repository';
 import {
   CROS_IMAGE_VERSION_RE_SRC,
   getChromeMilestones,
   parseFullCrosVersion,
 } from '../../../common/image_version';
-import {Metrics} from '../../../features/metrics/metrics';
 import * as testing from '../../testing';
 import * as fakes from '../../testing/fakes';
+
+const driver = getDriver();
 
 describe('Match CrOS version with', () => {
   const versionRe = new RegExp(`^(${CROS_IMAGE_VERSION_RE_SRC})$`);
@@ -76,14 +78,14 @@ bcbb260575b8ad07f82e3f748e671a9adfcbfd71 refs/heads/stabilize-10032.111.B
   });
 
   it('report error when failed to get ChromiumOS manifest', async () => {
-    spyOn(Metrics, 'send');
+    spyOn(driver.metrics, 'send' as never);
     const milestones = await getChromeMilestones(async () => {
       throw new Error(
         'GET https://chromium.googlesource.com/chromiumos/manifest/+refs?format=TEXT: status code: 404: body'
       );
     });
     expect(milestones).toEqual([]);
-    expect(Metrics.send).toHaveBeenCalledOnceWith({
+    expect(driver.metrics.send).toHaveBeenCalledOnceWith({
       category: 'error',
       group: 'device',
       name: 'device_management_fetch_manifest_refs_error',

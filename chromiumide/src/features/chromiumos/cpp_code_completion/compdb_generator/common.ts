@@ -12,7 +12,7 @@ const driver = getDriver();
 export async function throwForNoChroot(fileName: string): Promise<never> {
   // Send metrics before showing the message, because they don't seem
   // to be sent if the user does not act on the message.
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'background',
     group: 'cppxrefs',
     name: 'cppxrefs_no_chroot',

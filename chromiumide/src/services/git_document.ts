@@ -64,7 +64,7 @@ export class GitDocumentProvider implements vscode.TextDocumentContentProvider {
   async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
     const file = driver.path.basename(uri.path);
 
-    driver.sendMetrics({
+    driver.metrics.send({
       category: 'interactive',
       group: 'virtualdocument',
       description: 'open git document',

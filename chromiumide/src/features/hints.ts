@@ -77,7 +77,7 @@ async function onDidChangeWorkspaceFolders({
       hints.tooLargeWorkspace.get() &&
       (await isChromiumosRoot(dir.uri.fsPath))
     ) {
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'background',
         group: 'hints',
         description: 'show chromiumos workspace warning',
@@ -108,7 +108,7 @@ async function onDidChangeWorkspaceFolders({
       } else if (choice === dontAskAgain) {
         await hints.tooLargeWorkspace.update(false);
 
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'interactive',
           group: 'hints',
           description: 'show chromiumos workspace warning',

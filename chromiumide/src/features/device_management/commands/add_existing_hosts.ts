@@ -22,7 +22,7 @@ async function addExistingHosts(
   deviceRepository: OwnedDeviceRepository,
   sshConfigPath: string = sshConfig.defaultConfigPath
 ): Promise<void> {
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'device',
     name: 'device_management_add_existing_hosts',

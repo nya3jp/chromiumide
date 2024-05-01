@@ -138,7 +138,7 @@ class Recommender implements vscode.Disposable {
         YES,
         LATER
       );
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'background',
         group: 'misc',
         description: 'show suggestion',
@@ -154,7 +154,7 @@ class Recommender implements vscode.Disposable {
           'workbench.extensions.installExtension',
           this.recommendation.extensionId
         );
-        driver.sendMetrics({
+        driver.metrics.send({
           category: 'interactive',
           group: 'misc',
           description: 'install suggested',

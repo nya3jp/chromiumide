@@ -197,7 +197,7 @@ function registerChromiumosCommands(
             item?.hostname
           );
           if (outcome instanceof Error) {
-            driver.sendMetrics({
+            driver.metrics.send({
               category: 'error',
               group: 'device',
               name: 'device_management_check_or_suggest_image_error',
@@ -205,7 +205,7 @@ function registerChromiumosCommands(
               outcome: 'error flashing image',
             });
           } else {
-            driver.sendMetrics({
+            driver.metrics.send({
               category: 'interactive',
               group: 'device',
               name: 'device_management_check_or_suggest_image',
@@ -263,7 +263,7 @@ async function checkImageOfDefaultDevice(
     ResultDisplayMode.MESSAGE
   );
   // Report on outcome to understand usefulness of the feature.
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'background',
     group: 'device',
     name: 'device_management_default_device_image_check',

@@ -46,7 +46,7 @@ export async function debugTastTests(
   chrootService: services.chromiumos.ChrootService,
   homedir = os.homedir()
 ): Promise<DebugTastTestsResult | undefined | Error> {
-  driver.sendMetrics({
+  driver.metrics.send({
     category: 'interactive',
     group: 'device',
     name: 'device_management_debug_tast_tests',
@@ -220,7 +220,7 @@ function getDlvEbuildVersion(
       const res = ParsedEbuildFilepath.parseOrThrow(ebuildFileName);
       return res.pkg.version;
     } catch {
-      driver.sendMetrics({
+      driver.metrics.send({
         category: 'error',
         group: 'tast',
         name: 'tast_debug_fail_to_get_delve_version_from_ebuild',
