@@ -9,33 +9,44 @@ import * as commonUtil from '../../../shared/app/common/common_util';
 import {getDriver} from '../../../shared/app/common/driver_repository';
 import * as metricsEvent from '../../../shared/app/common/metrics/metrics_event';
 import {chromiumRoot} from '../../common/chromium/fs';
+import {getPlatform} from '../../common/platform';
 
 const driver = getDriver();
 
 export async function isGoogler(): Promise<boolean> {
-  let lsbRelease: string;
+  return (await isGoobuntu()) || isGMac() || (await isOnCorpNetwork());
+}
+
+async function isGoobuntu(): Promise<boolean> {
+  if (getPlatform() !== 'linux') return false;
+
   try {
-    lsbRelease = await fs.promises.readFile('/etc/lsb-release', {
+    const lsbRelease = await fs.promises.readFile('/etc/lsb-release', {
       encoding: 'utf8',
       flag: 'r',
     });
+    return lsbRelease.includes('GOOGLE_ID=Goobuntu');
   } catch {
-    // If lsb-release cannot be read, fallback to checking whether user is on corp network.
-    return new Promise((resolve, _reject) => {
-      https
-        .get('https://cit-cli-metrics.appspot.com/should-upload', res => {
-          resolve(res.statusCode === 200);
-        })
-        .on('error', _error => {
-          resolve(false);
-        });
-    });
+    return false;
   }
+}
 
-  if (lsbRelease.includes('GOOGLE_ID=Goobuntu')) {
-    return true;
-  }
-  return false;
+function isGMac(): boolean {
+  if (getPlatform() !== 'darwin') return false;
+
+  return fs.existsSync('/Applications/gMenu.app');
+}
+
+async function isOnCorpNetwork(): Promise<boolean> {
+  return new Promise((resolve, _reject) => {
+    https
+      .get('https://cit-cli-metrics.appspot.com/should-upload', res => {
+        resolve(res.statusCode === 200);
+      })
+      .on('error', _error => {
+        resolve(false);
+      });
+  });
 }
 
 /*
