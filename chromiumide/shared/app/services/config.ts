@@ -263,6 +263,16 @@ export const autosetgov = {
   check: new ConfigValue<boolean>('autosetgov.check'),
 };
 
+// Configs used during the development of chromiumide extension itself. These configs are
+// intentionally unlisted in package.json. Please directly edit settings.json to change their
+// values. For example, to fake the value of `osPlatform`, you can add the line like the following.
+// "chromiumide.chromiumideDevelopment.osPlatform": "darwin",
+export const chromiumideDevelopment = {
+  // If set fake the platform on which the extension is running to ease manual testing (used in
+  // getPlatform())
+  osPlatform: new ConfigValue<string>('chromiumideDevelopment.osPlatform'),
+};
+
 export const TEST_ONLY = {
   CHROMIUMIDE_PREFIX,
 };
