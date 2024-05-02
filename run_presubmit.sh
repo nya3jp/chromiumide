@@ -34,6 +34,12 @@ if [[ -z "${LUCI_CONTEXT}" ]] && [[ -z "${LOCAL_DOCKER}" ]]; then
     exit 0
   fi
   echo "Local run detected, running npm t"
+
+  if [[ -n "${PRESUBMIT_COMMIT}" ]] && ! git diff --quiet HEAD; then
+    echo "Dirty git status; run the command in clean environment (git stash?)"
+    exit 1
+  fi
+
   cd chromiumide
   npm t
   cd -
