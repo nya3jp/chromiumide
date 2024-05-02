@@ -275,7 +275,9 @@ export async function promptTargetPackageWithCache(
           void vscode.window.showWarningMessage(
             `Cached packages list are shown and might be outdated: ${packages.message}`
           );
-        } else if (
+          return;
+        }
+        if (
           // Handle the special case when board has not been set up yet and provide user with
           // actionable suggestion.
           packages instanceof AbnormalExitError &&
@@ -292,6 +294,8 @@ export async function promptTargetPackageWithCache(
             `Failed to get list of packages on ${board}: ${packages.message}?`
           );
         }
+        // Hide the picker as no meaningful suggestions can be made.
+        picker.hide();
       } else {
         boardToPackages.set(board, packages);
         picker.items = packages.map(packageAsQuickPickItem);
