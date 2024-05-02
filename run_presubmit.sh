@@ -20,10 +20,19 @@ while [[ $# -gt 0 ]]; do
       LOCAL_DOCKER=1
       shift # past argument
       ;;
+    --commit)
+      PRESUBMIT_COMMIT="$2"
+      shift 2
+      ;;
   esac
 done
 
 if [[ -z "${LUCI_CONTEXT}" ]] && [[ -z "${LOCAL_DOCKER}" ]]; then
+  head="$(git rev-parse HEAD | tr -d '\n')"
+  if [[ -n "${PRESUBMIT_COMMIT}" ]] && [[ -n "${head}" ]] && [[ "${PRESUBMIT_COMMIT}" != "${head}" ]]; then
+    echo "Skip: npm t only runs on HEAD (${head}) but the given commit was ${PRESUBMIT_COMMIT}"
+    exit 0
+  fi
   echo "Local run detected, running npm t"
   cd chromiumide
   npm t
