@@ -7,10 +7,10 @@
  */
 
 import * as vscode from 'vscode';
+import {BoardOrHost} from '../../../shared/app/common/board_or_host';
 import {getDriver} from '../../../shared/app/common/driver_repository';
 import {vscodeRegisterCommand} from '../../../shared/app/common/vscode/commands';
 import * as config from '../../../shared/app/services/config';
-import {BoardOrHost} from '../../common/chromiumos/board_or_host';
 import * as ideUtil from '../../ide_util';
 import * as services from '../../services';
 

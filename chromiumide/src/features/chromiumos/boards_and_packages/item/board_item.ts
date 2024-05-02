@@ -3,8 +3,11 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import {
+  BoardOrHost,
+  Host,
+} from '../../../../../shared/app/common/board_or_host';
 import * as config from '../../../../../shared/app/services/config';
-import {BoardOrHost, Host} from '../../../../common/chromiumos/board_or_host';
 import {getQualifiedPackageName} from '../../../../common/chromiumos/portage/ebuild';
 import {ViewItemContext} from '../constant';
 import {Context} from '../context';

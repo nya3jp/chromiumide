@@ -6,8 +6,8 @@ import * as fs from 'fs';
 import * as net from 'net';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {BoardOrHost} from '../../../../shared/app/common/board_or_host';
 import {getDriver} from '../../../../shared/app/common/driver_repository';
-import {BoardOrHost} from '../../../common/chromiumos/board_or_host';
 import {getQualifiedPackageName} from '../../../common/chromiumos/portage/ebuild';
 import {
   parsePlatform2EbuildOrThrow,

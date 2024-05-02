@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import {Board} from '../../../../shared/app/common/board_or_host/board';
 import {getDriver} from '../../../../shared/app/common/driver_repository';
 import {AbnormalExitError} from '../../../../shared/app/common/exec/types';
 import * as config from '../../../../shared/app/services/config';
-import {Board} from '../../../common/chromiumos/board_or_host/board';
 import {parseQualifiedPackageName} from '../../../common/chromiumos/portage/ebuild';
 import {LruCache} from '../../../common/lru_cache';
 import * as services from '../../../services';

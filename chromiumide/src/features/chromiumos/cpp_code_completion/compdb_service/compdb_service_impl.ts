@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as uuid from 'uuid';
-import {BoardOrHost} from '../../../../common/chromiumos/board_or_host';
+import {BoardOrHost} from '../../../../../shared/app/common/board_or_host';
 import {getQualifiedPackageName} from '../../../../common/chromiumos/portage/ebuild';
 import * as services from '../../../../services';
 import {PackageInfo} from '../../../../services/chromiumos';

@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import {parseBoardOrHost} from '../../../../../shared/app/common/board_or_host';
 import {vscodeRegisterCommand} from '../../../../../shared/app/common/vscode/commands';
-import {parseBoardOrHost} from '../../../../common/chromiumos/board_or_host';
 import {Context} from '../context';
 import {Breadcrumbs} from '../item';
 import {build} from './build';

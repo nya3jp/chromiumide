@@ -4,13 +4,13 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import {Board} from '../../../shared/app/common/board_or_host';
 import {chromiumos} from '../../services';
 import {
   CROS_IMAGE_VERSION_RE_SRC,
   ImageVersion,
   parseFullCrosVersion,
 } from '../image_version';
-import {Board} from './board_or_host';
 
 const PRIVATE_BINHOST_DIR =
   'src/private-overlays/chromeos-partner-overlay/chromeos/binhost/target/';

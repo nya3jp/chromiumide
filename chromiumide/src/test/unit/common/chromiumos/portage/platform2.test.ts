@@ -4,7 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import {parseBoardOrHost} from '../../../../../common/chromiumos/board_or_host';
+import {parseBoardOrHost} from '../../../../../../shared/app/common/board_or_host';
 import {
   Platform2Package,
   platform2TestWorkingDirectory,

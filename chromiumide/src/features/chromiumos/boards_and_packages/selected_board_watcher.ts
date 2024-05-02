@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import {
   BoardOrHost,
   parseBoardOrHost,
-} from '../../../common/chromiumos/board_or_host';
+} from '../../../../shared/app/common/board_or_host';
 import {Breadcrumbs} from './item';
 
 /**

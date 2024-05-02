@@ -5,7 +5,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import {Board} from '../../../common/chromiumos/board_or_host/board';
+import {Board} from '../../../../shared/app/common/board_or_host/board';
 import {getQualifiedPackageName} from '../../../common/chromiumos/portage/ebuild';
 import {CompdbServiceImpl} from '../../../features/chromiumos/cpp_code_completion/compdb_service';
 import {

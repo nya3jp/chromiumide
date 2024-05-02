@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import path from 'path';
+import {getDriver} from '../driver_repository';
 import {CommonInterface, HOST_AS_STRING} from './common_interface';
+
+const driver = getDriver();
 
 export class Board implements CommonInterface {
   private static readonly knownBoards = new Map<string, Board>();
@@ -40,7 +42,7 @@ export class Board implements CommonInterface {
   }
 
   sysroot(): string {
-    return path.join('/build', this.board);
+    return driver.path.join('/build', this.board);
   }
 
   suffixedExecutable(

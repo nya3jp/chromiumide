@@ -275,7 +275,7 @@ async function buildAndUpload(preRelease: boolean, remoteBranch?: string) {
     }
 
     if (publishFailures) {
-      throw new Error(`Some publish failed. Please check log.`);
+      throw new Error('Some publish failed. Please check log.');
     }
   });
 }

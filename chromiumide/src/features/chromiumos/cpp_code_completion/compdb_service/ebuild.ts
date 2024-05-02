@@ -4,7 +4,7 @@
 
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {BoardOrHost} from '../../../../common/chromiumos/board_or_host';
+import {BoardOrHost} from '../../../../../shared/app/common/board_or_host';
 import {buildGet9999EbuildCommand} from '../../../../common/chromiumos/portage/equery';
 import {Mutex} from '../../../../common/mutex';
 import * as services from '../../../../services';

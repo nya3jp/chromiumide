@@ -8,7 +8,7 @@ import {
   Board,
   HOST_AS_STRING,
   Host,
-} from '../../../../common/chromiumos/board_or_host';
+} from '../../../../../shared/app/common/board_or_host';
 
 describe('BoardOrHost', () => {
   const host = parseBoardOrHost('host');

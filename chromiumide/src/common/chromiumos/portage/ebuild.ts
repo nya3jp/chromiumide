@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as path from 'path';
-import {BoardOrHost} from '../board_or_host';
+import {BoardOrHost} from '../../../../shared/app/common/board_or_host';
 
 export type ParsedPackageName = {
   // Package's category, e.g. chromeos-base

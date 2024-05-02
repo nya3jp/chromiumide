@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import {BoardOrHost} from '../../../common/chromiumos/board_or_host';
+import {BoardOrHost} from '../../../../shared/app/common/board_or_host';
 import {ParsedPackageName} from '../../../common/chromiumos/portage/ebuild';
 import {ChrootService} from '../../../services/chromiumos';
 import {ActivePackageWatcher} from './active_package_watcher';

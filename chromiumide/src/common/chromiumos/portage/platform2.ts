@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import {BoardOrHost} from '../board_or_host';
+import {BoardOrHost} from '../../../../shared/app/common/board_or_host';
 import {
   EbuildPackage,
   ParsedEbuildFilepath,

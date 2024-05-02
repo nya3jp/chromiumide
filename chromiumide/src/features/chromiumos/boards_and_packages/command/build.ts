@@ -4,8 +4,8 @@
 
 import * as os from 'os';
 import * as vscode from 'vscode';
+import {BoardOrHost} from '../../../../../shared/app/common/board_or_host';
 import {CancelledError} from '../../../../../shared/app/common/exec/types';
-import {BoardOrHost} from '../../../../common/chromiumos/board_or_host';
 import {
   ParsedPackageName,
   getQualifiedPackageName,

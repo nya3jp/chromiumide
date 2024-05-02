@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import {BoardOrHost} from '../../../../common/chromiumos/board_or_host';
+import {BoardOrHost} from '../../../../../shared/app/common/board_or_host';
 import {PackageInfo} from '../../../../services/chromiumos';
 
 /**

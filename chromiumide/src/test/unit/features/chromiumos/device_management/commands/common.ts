@@ -4,13 +4,13 @@
 
 import * as path from 'path';
 import * as vscode from 'vscode';
-import * as commonUtil from '../../../../../../../shared/app/common/common_util';
-import {getDriver} from '../../../../../../../shared/app/common/driver_repository';
-import {AbnormalExitError} from '../../../../../../../shared/app/common/exec/types';
 import {
   BoardOrHost,
   parseBoardOrHost,
-} from '../../../../../../common/chromiumos/board_or_host';
+} from '../../../../../../../shared/app/common/board_or_host';
+import * as commonUtil from '../../../../../../../shared/app/common/common_util';
+import {getDriver} from '../../../../../../../shared/app/common/driver_repository';
+import {AbnormalExitError} from '../../../../../../../shared/app/common/exec/types';
 import {
   CommandContext,
   SimplePickItem,

@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import {BoardOrHost} from '../../../../../shared/app/common/board_or_host';
 import {getDriver} from '../../../../../shared/app/common/driver_repository';
-import {BoardOrHost} from '../../../../common/chromiumos/board_or_host';
 import {
   ParsedPackageName,
   getQualifiedPackageName,

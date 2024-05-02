@@ -1,7 +1,7 @@
 // Copyright 2024 The ChromiumOS Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-import {Board} from '../../../../common/chromiumos/board_or_host';
+import {Board} from '../../../../../shared/app/common/board_or_host';
 import {getCrosPrebuiltVersionsFromBinHost} from '../../../../common/chromiumos/repo_status';
 import * as services from '../../../../services';
 import * as testing from '../../../testing';
