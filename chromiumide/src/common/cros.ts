@@ -17,12 +17,12 @@ export class WrapFs<T extends string> {
     return path.join(this.root, p);
   }
 
-  async copyFile(p: string, dest: string): Promise<void> {
-    return fs.promises.copyFile(this.realpath(p), dest);
+  async aTime(p: string): Promise<number> {
+    return (await fs.promises.stat(this.realpath(p))).atimeMs;
   }
 
-  async stat(p: string): Promise<fs.Stats> {
-    return fs.promises.stat(this.realpath(p));
+  async mTime(p: string): Promise<number> {
+    return (await fs.promises.stat(this.realpath(p))).mtimeMs;
   }
 
   existsSync(p: string): boolean {
@@ -35,13 +35,6 @@ export class WrapFs<T extends string> {
 
   async rm(p: string, opts?: {force?: boolean}): Promise<void> {
     return fs.promises.rm(this.realpath(p), opts);
-  }
-
-  watchSync(
-    p: string,
-    listener: (eventType: string, fileName: string | null) => void
-  ): void {
-    fs.watch(this.realpath(p), listener);
   }
 }
 
@@ -56,8 +49,8 @@ export async function getSetupBoardsRecentFirst(
   return getSetupBoardsOrdered(
     chroot,
     out,
-    async (fs, dir) => fs.stat(dir),
-    (a, b) => b.atimeMs - a.atimeMs
+    async (fs, dir) => fs.aTime(dir),
+    (a, b) => b - a
   );
 }
 

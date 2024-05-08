@@ -191,7 +191,7 @@ export class Ebuild {
   }
 
   private async artifactPath(): Promise<Artifact | undefined> {
-    const candidates: Array<[Date, Artifact]> = [];
+    const candidates: Array<[number, Artifact]> = [];
     for (const dir of this.buildDirs()) {
       const file = path.join(
         dir,
@@ -199,9 +199,9 @@ export class Ebuild {
       );
       for (const fs of [this.crosFs.chroot, this.crosFs.out]) {
         try {
-          const stat = await fs.stat(file);
+          const mTime = await fs.mTime(file);
           candidates.push([
-            stat.mtime,
+            mTime,
             {
               path: file,
               baseDir: fs.root,
