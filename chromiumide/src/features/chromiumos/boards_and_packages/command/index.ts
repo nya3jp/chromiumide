@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import {parseBoardOrHost} from '../../../../../shared/app/common/chromiumos/board_or_host';
 import {vscodeRegisterCommand} from '../../../../../shared/app/common/vscode/commands';
+import * as config from '../../../../../shared/app/services/config';
 import {Context} from '../context';
 import {Breadcrumbs} from '../item';
 import {build} from './build';
@@ -16,7 +17,6 @@ import {
   deleteFavoritePackage,
 } from './favorite';
 import {openEbuild} from './open_ebuild';
-import {setDefaultBoard} from './set_default_board';
 
 export enum CommandName {
   SET_DEFAULT_BOARD = 'chromiumide.boardsAndPackages.setDefaultBoard',
@@ -49,7 +49,9 @@ export class BoardsAndPackagesCommands implements vscode.Disposable {
       // Commands for board items
       this.register(
         CommandName.SET_DEFAULT_BOARD,
-        ({breadcrumbs: [board]}: Breadcrumbs) => setDefaultBoard(board)
+        async ({breadcrumbs: [board]}: Breadcrumbs) => {
+          await config.board.update(board);
+        }
       ),
       // Commands for category name and package name items
       this.register(
