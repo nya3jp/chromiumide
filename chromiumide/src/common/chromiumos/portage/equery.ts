@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as vscode from 'vscode';
 import {BoardOrHost} from '../../../../shared/app/common/board_or_host';
 import {AbnormalExitError} from '../../../../shared/app/common/exec/types';
 import {chromiumos} from '../../../services';
@@ -37,7 +38,8 @@ export async function getUseFlagsInstalled(
   board: BoardOrHost,
   targetPackage: string,
   chrootService: chromiumos.ChrootService,
-  reason?: `to ${string}`
+  reason?: `to ${string}`,
+  output?: vscode.OutputChannel
 ): Promise<Map<string, boolean> | Error> {
   // `equery uses` is normally the command to get use flags. It provides two states, 'U - final flag
   // setting for installation' and (the second one) 'I - package is installed with flag'.
@@ -55,6 +57,7 @@ export async function getUseFlagsInstalled(
   const result = await chrootService.exec(args[0], args.slice(1), {
     sudoReason:
       reason ?? `to get ${targetPackage} use flags on ${board.toBoardName()}`,
+    logger: output,
   });
   if (result instanceof Error) {
     if (result instanceof AbnormalExitError && result.exitStatus === 127) {

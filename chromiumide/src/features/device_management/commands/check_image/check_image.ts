@@ -206,8 +206,12 @@ async function checkDeviceImageCompatibility(
       board,
       packageName,
       chrootService,
-      `to get cros-debug flag of ${board.toBoardName()} and check device ${hostname} image compatibility`
+      `to get cros-debug flag of ${board.toBoardName()} and check device ${hostname} image compatibility`,
+      context.output
     );
+    if (useFlags instanceof Error) {
+      context.output.show(); // reveal the logged command
+    }
     // If user dismisses the sudo password prompt knowing it is for image compatibility check, they
     // do not want to continue with it.
     if (useFlags instanceof SudoError) {
