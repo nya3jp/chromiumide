@@ -10,10 +10,11 @@ export async function execute(
   args: string[],
   opts?: {
     logStdout?: boolean;
+    logStderr?: boolean;
     cwd?: string;
   }
 ): Promise<string> {
-  const {logStdout, cwd} = opts || {};
+  const {logStdout, logStderr, cwd} = opts || {};
   const logger = new (class {
     append(s: string) {
       process.stdout.write(s);
@@ -34,10 +35,15 @@ export async function execute(
     let lastChar = '';
     command.stdout.on('data', (data: string) => {
       if (logStdout) {
-        logger.append(data);
+        logger.append('STDOUT: ' + data);
         lastChar = data[data.length - 1];
       }
       stdout += data;
+    });
+    command.stderr.on('data', (data: string) => {
+      if (logStderr) {
+        logger.append('STDERR: ' + data);
+      }
     });
 
     command.on('close', exitStatus => {

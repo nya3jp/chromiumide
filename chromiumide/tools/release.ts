@@ -250,6 +250,7 @@ async function buildAndUpload(preRelease: boolean, remoteBranch?: string) {
 
     const ovsxArgs = ['ovsx', 'publish', vsixFile];
     const vsceArgs = ['vsce', 'publish', '-i', vsixFile];
+    const logOpts = {logStdout: true, logStderr: true};
     if (preRelease) {
       vsceArgs.push('--pre-release');
     }
@@ -259,7 +260,7 @@ async function buildAndUpload(preRelease: boolean, remoteBranch?: string) {
     console.log(`Publishing ${fileName} to OpenVSX`);
 
     try {
-      await execute('npx', ovsxArgs);
+      await execute('npx', ovsxArgs, logOpts);
     } catch (e) {
       console.error(e);
       publishFailures = true;
@@ -268,7 +269,7 @@ async function buildAndUpload(preRelease: boolean, remoteBranch?: string) {
     console.log(`Publishing ${fileName} to MS Marketplace`);
 
     try {
-      await execute('npx', vsceArgs);
+      await execute('npx', vsceArgs, logOpts);
     } catch (e) {
       console.error(e);
       publishFailures = true;
