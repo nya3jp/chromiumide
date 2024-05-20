@@ -48,7 +48,7 @@ export class CodeServer implements vscode.Disposable {
     const OPEN_GUIDE = 'Open guide';
 
     const choice = await vscode.window.showErrorMessage(
-      `ChromiumIDE: code-server support will be deprecated ([PSA](${PSA})), and new releases of the extension will not be available on OpenVSX Marketplace for code-server starting from the next release. Please switch to VSCode following our [guide](${GUIDE}).`,
+      `ChromiumIDE: code-server support has been deprecated ([PSA](${PSA})), and new releases are only available in VSCode. Please switch to VSCode following our [guide](${GUIDE}).`,
       OPEN_GUIDE,
       'Notify later'
     );
