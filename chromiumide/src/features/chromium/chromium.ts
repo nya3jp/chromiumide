@@ -7,8 +7,10 @@ import * as vscode from 'vscode';
 import {getDriver} from '../../../shared/app/common/driver_repository';
 import * as config from '../../../shared/app/services/config';
 import * as bgTaskStatus from '../../../shared/app/ui/bg_task_status';
+import {CppXrefs} from '../../common/cpp_xrefs/cpp_xrefs';
 import * as boilerplate from '../boilerplate';
 import * as chromiumBuild from './chromium_build';
+import {ChromiumCppXrefs} from './cpp_xrefs';
 import * as format from './format';
 import * as gtest from './gtest';
 import * as outputDirectories from './output_directories';
@@ -47,7 +49,8 @@ export class Chromium implements vscode.Disposable {
     context: Context,
     private readonly root: string,
     private readonly statusManager: bgTaskStatus.StatusManager,
-    private readonly boilerplateInserter: boilerplate.BoilerplateInserter
+    private readonly boilerplateInserter: boilerplate.BoilerplateInserter,
+    private readonly cppXrefs: CppXrefs
   ) {
     void (async () => {
       try {
@@ -113,6 +116,9 @@ export class Chromium implements vscode.Disposable {
         new gtest.ChromiumGtest(path.join(this.root, 'src'))
       );
     }
+
+    this.featureName = 'chromiumCppXrefs';
+    new ChromiumCppXrefs(this.root, this.cppXrefs);
   }
 }
 

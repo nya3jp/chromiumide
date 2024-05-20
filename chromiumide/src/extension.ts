@@ -116,7 +116,12 @@ async function postMetricsActivate(
 
   context.subscriptions.push(
     cppXrefs,
-    new ChromiumActivation(context, statusManager, boilerplateInserter),
+    new ChromiumActivation(
+      context,
+      statusManager,
+      boilerplateInserter,
+      cppXrefs
+    ),
     new ChromiumosActivation(
       context,
       statusManager,
@@ -268,7 +273,8 @@ class ChromiumActivation implements vscode.Disposable {
   constructor(
     context: vscode.ExtensionContext,
     statusManager: bgTaskStatus.StatusManager,
-    boilerplateInserter: boilerplate.BoilerplateInserter
+    boilerplateInserter: boilerplate.BoilerplateInserter,
+    cppXrefs: CppXrefs
   ) {
     this.subscriptions.push(
       this.watcher.onDidChangeRoot(root => {
@@ -278,7 +284,8 @@ class ChromiumActivation implements vscode.Disposable {
               context,
               root,
               statusManager,
-              boilerplateInserter
+              boilerplateInserter,
+              cppXrefs
             )
           : undefined;
       })

@@ -146,6 +146,12 @@ export const codeSearch = {
   openWithRevision: new ConfigValue<boolean>('codeSearchHash'),
 };
 
+export const cppXrefs = {
+  suggestWorkspaceFolder: new ConfigValue<boolean>(
+    'cppXrefs.suggestWorkspaceFolder'
+  ),
+};
+
 export const crosFormat = {
   enabled: new ConfigValue<boolean>('crosFormat.enabled'),
 };

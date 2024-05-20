@@ -981,6 +981,11 @@
           "default": true,
           "description": "Control whether tests should be run in parallel and be retried once on failure. This uses the `--test-launcher-bot-mode` flag."
         },
+        "chromiumide.cppXrefs.suggestWorkspaceFolder": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show warnings when C++ compilation database was generated but no workspace folders having the file is opened"
+        },
         "chromiumide.codeSearch": {
           "type": "string",
           "enum": [
