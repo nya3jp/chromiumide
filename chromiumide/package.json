@@ -30,7 +30,7 @@
       {
         "command": "chromiumide.boardsAndPackages.build",
         "category": "CrOS",
-        "title": "Build the package"
+        "title": "Build"
       },
       {
         "command": "chromiumide.boardsAndPackages.crosWorkonStart",
@@ -149,7 +149,7 @@
       {
         "command": "chromiumide.deviceManagement.deployPackage",
         "category": "CrOS",
-        "title": "Deploy Package to Device",
+        "title": "Deploy to Device",
         "icon": "$(package)"
       },
       {
