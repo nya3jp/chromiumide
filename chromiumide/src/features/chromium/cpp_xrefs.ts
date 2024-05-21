@@ -12,7 +12,7 @@ import {
   CompdbGenerator,
   ErrorDetails,
   ShouldGenerateResult,
-} from '../chromiumos/cpp_xrefs/compdb_generator';
+} from '../../common/cpp_xrefs/types';
 
 /**
  * Activates chromium C++ xrefs support.

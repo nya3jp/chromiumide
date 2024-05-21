@@ -7,7 +7,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as commonUtil from '../../../../../../../shared/app/common/common_util';
 import * as config from '../../../../../../../shared/app/services/config';
-import {ShouldGenerateResult} from '../../../../../../features/chromiumos/cpp_xrefs/compdb_generator';
+import {ShouldGenerateResult} from '../../../../../../common/cpp_xrefs/types';
 import {Platform2} from '../../../../../../features/chromiumos/cpp_xrefs/compdb_generator/platform2';
 import * as compdbService from '../../../../../../features/chromiumos/cpp_xrefs/compdb_service';
 import * as services from '../../../../../../services';
