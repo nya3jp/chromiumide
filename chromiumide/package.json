@@ -585,7 +585,7 @@
       "view/item/context": [
         {
           "command": "chromiumide.boardsAndPackages.build",
-          "when": "config.chromiumide.underDevelopment.buildAndDeploy && view == boards-and-packages && viewItem =~ /<package>/",
+          "when": "view == boards-and-packages && viewItem =~ /<package>/",
           "group": "3_build"
         },
         {
@@ -1114,11 +1114,6 @@
           "type": "boolean",
           "description": "Show custom progressbar when running autoninja, which helps improve compile times when using remote VSCode.",
           "default": true
-        },
-        "chromiumide.underDevelopment.buildAndDeploy": {
-          "type": "boolean",
-          "description": "Enable build + deploy features under development",
-          "default": false
         },
         "chromiumide.underDevelopment.chromiumBuild": {
           "type": "boolean",

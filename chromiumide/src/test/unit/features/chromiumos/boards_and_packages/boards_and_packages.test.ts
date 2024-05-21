@@ -531,7 +531,6 @@ describe('Boards and packages', () => {
           )!.when,
           {
             'config.chromiumide.testCoverage.enabled': true,
-            'config.chromiumide.underDevelopment.buildAndDeploy': true,
             view: 'boards-and-packages',
             viewItem: contextValue,
           }
