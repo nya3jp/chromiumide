@@ -161,6 +161,8 @@ export async function updateDraft(
         path: filePath,
         in_reply_to: inReplyTo,
         unresolved,
+        line: comment.gerritComment.commentInfo.line,
+        range: comment.gerritComment.commentInfo.range,
       },
       ctx.sink
     );
