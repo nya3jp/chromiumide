@@ -13,20 +13,18 @@ import {
   getOrSelectDefaultBoard,
 } from '../../../../../shared/app/features/default_board';
 import {
-  CompdbGenerator,
-  ErrorDetails,
-  ShouldGenerateResult,
-} from '../../../../common/cpp_xrefs/types';
+  CompdbGeneratorCore,
+  GenerationScope,
+} from '../../../../common/cpp_xrefs/generic_compdb_generator';
+import {ErrorDetails} from '../../../../common/cpp_xrefs/types';
 import {ChrootService} from '../../../../services/chromiumos';
 
 const driver = getDriver();
 
-type GenerationState = 'generating' | 'generated' | 'failed';
-
 /**
  * Provides compilation database for C++ files under src/third_party/kernel.
  */
-export class Kernel implements CompdbGenerator {
+export class Kernel implements CompdbGeneratorCore {
   constructor(
     private readonly chrootService: ChrootService,
     private readonly output: vscode.OutputChannel
@@ -34,48 +32,38 @@ export class Kernel implements CompdbGenerator {
 
   readonly name = 'kernel';
 
-  // Packages for which compdb has been or being generated in this session.
-  // Keyed by git directory.
-  private readonly generationStates = new Map<string, GenerationState>();
-
-  async shouldGenerate(document: TextDocument): Promise<ShouldGenerateResult> {
+  async generationScope(document: TextDocument): Promise<GenerationScope> {
     if (!['cpp', 'c'].includes(document.languageId)) {
-      return ShouldGenerateResult.NoUnsupported;
+      return GenerationScope.Unsupported;
     }
 
     const gitDir = await findGitDir(document.fileName);
-    if (!gitDir) return ShouldGenerateResult.NoUnsupported;
+    if (!gitDir) {
+      return GenerationScope.Unsupported;
+    }
 
     const kernelDir = path.dirname(gitDir);
     if (!kernelDir.endsWith('src/third_party/kernel')) {
-      return ShouldGenerateResult.NoUnsupported;
+      return GenerationScope.Unsupported;
     }
 
-    switch (this.generationStates.get(gitDir)) {
-      case undefined:
-        return ShouldGenerateResult.Yes;
-      case 'generated': {
-        if (!fs.existsSync(compdbPath(gitDir))) {
-          // Corner case: compdb was generated but then manually removed. In
-          // this case we can safely rerun the same command and regenerate it.
-          return ShouldGenerateResult.Yes;
-        }
-        return ShouldGenerateResult.NoNeedNoChange;
-      }
-      case 'generating':
-        return ShouldGenerateResult.NoGenerating;
-      case 'failed':
-        // We don't retry the generation if it fails. Instead we instruct the
-        // user to manually fix the problem and then reload the IDE through the
-        // error message.
-        return ShouldGenerateResult.NoHasFailed;
+    return GenerationScope.InitOnly;
+  }
+
+  async compdbPath(document: TextDocument): Promise<string> {
+    const gitDir = await findGitDir(document.fileName);
+    if (!gitDir) {
+      throw new Error(
+        `Internal error: git directory not found for ${document.fileName}`
+      );
     }
+    return compdbPath(gitDir);
   }
 
   async generate(
     document: TextDocument,
     token: CancellationToken
-  ): Promise<void> {
+  ): Promise<undefined | ErrorDetails | vscode.CancellationError> {
     driver.metrics.send({
       category: 'background',
       group: 'cppxrefs',
@@ -86,30 +74,6 @@ export class Kernel implements CompdbGenerator {
     const gitDir = await findGitDir(document.fileName);
     if (!gitDir) return;
 
-    const previousState = this.generationStates.get(gitDir);
-    this.generationStates.set(gitDir, 'generating');
-
-    const result = await this.generateInner(gitDir, token);
-    if (result instanceof Error) {
-      if (token.isCancellationRequested) {
-        if (!previousState) {
-          this.generationStates.delete(gitDir);
-        } else {
-          this.generationStates.set(gitDir, previousState);
-        }
-        return;
-      }
-      this.generationStates.set(gitDir, 'failed');
-      throw result;
-    }
-
-    this.generationStates.set(gitDir, 'generated');
-  }
-
-  private async generateInner(
-    gitDir: string,
-    token: vscode.CancellationToken
-  ): Promise<undefined | ErrorDetails> {
     const chroot = this.chrootService.chroot;
     const board = await getOrSelectDefaultBoard(chroot);
 

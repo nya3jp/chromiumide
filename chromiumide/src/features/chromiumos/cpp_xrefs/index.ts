@@ -4,8 +4,9 @@
 
 import * as vscode from 'vscode';
 import {CppXrefs, GeneratorFactory} from '../../../common/cpp_xrefs/cpp_xrefs';
+import {GenericCompdbGenerator} from '../../../common/cpp_xrefs/generic_compdb_generator';
 import {ChrootService} from '../../../services/chromiumos';
-import * as compdbGenerator from './compdb_generator';
+import {Kernel, Platform2, PlatformEc} from './compdb_generator';
 
 export class ChromiumosCppXrefs {
   constructor(
@@ -13,9 +14,9 @@ export class ChromiumosCppXrefs {
     private readonly cppXrefs: CppXrefs
   ) {
     cppXrefs.register(
-      output => new compdbGenerator.Kernel(chrootService, output),
-      output => new compdbGenerator.Platform2(chrootService, output),
-      output => new compdbGenerator.PlatformEc(chrootService, output)
+      output => new GenericCompdbGenerator(new Kernel(chrootService, output)),
+      output => new Platform2(chrootService, output),
+      output => new PlatformEc(chrootService, output)
     );
   }
 
