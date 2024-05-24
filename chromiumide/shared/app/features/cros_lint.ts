@@ -62,11 +62,16 @@ interface LintConfig {
     stderr: string,
     document: vscode.TextDocument
   ): vscode.Diagnostic[];
+
   /**
    * Returns the cwd to run the executable.
    */
   cwd?(exePath: string): string | undefined;
-  env?(exePath: string, path: string): Promise<ProcessEnv | undefined>;
+
+  /**
+   * Returns the extraEnv option to use on running the executable with `exec`.
+   */
+  extraEnv?(exePath: string, path: string): Promise<ProcessEnv | undefined>;
 
   // If true, allow empty diagnostics even when linter returned non-zero exit code.
   // Otherwise, such case is raised to an IDE error status.
@@ -177,7 +182,7 @@ const languageToLintConfigs = new Map<string, LintConfig[]>([
           TAST_RE.test(exePath)
             ? driver.path.dirname(driver.path.dirname(exePath))
             : undefined,
-        env: (execPath: string) => goLintEnv(execPath),
+        extraEnv: (execPath: string) => goLintExtraEnv(execPath),
         // run_lint.sh exits with non-zero status when the file cannot be parsed,
         // which happens often when the code is edited.
         ignoreEmptyDiagnostics: true,
@@ -236,7 +241,9 @@ async function checkForGo(): Promise<boolean> {
  * Returns undefined if the environment is unable to be configured or if the environment does
  * not need to be modified.
  */
-export async function goLintEnv(exe: string): Promise<ProcessEnv | undefined> {
+export async function goLintExtraEnv(
+  exe: string
+): Promise<ProcessEnv | undefined> {
   const goCrosLint = exe.endsWith('cros');
   if (!goCrosLint) {
     return undefined;
@@ -333,13 +340,13 @@ async function updateDiagnostics(
       }
       const args = lintConfig.arguments(realpath);
       const cwd = lintConfig.cwd?.(name);
-      const env = await lintConfig.env?.(name, realpath);
+      const extraEnv = await lintConfig.extraEnv?.(name, realpath);
       const res = await commonUtil.exec(name, args, {
         logger: log.channel,
         ignoreNonZeroExit: true,
         logStdout: true,
         cwd: cwd,
-        env: env as Record<string, string>,
+        extraEnv,
       });
       if (res instanceof Error) {
         log.channel.append(res.message);
