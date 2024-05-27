@@ -1,5 +1,22 @@
 # Change Log
 
+## 0.32.0 (May 2024)
+
+- C++ xrefs
+  - Chromium
+  - Kernel
+- Code server support deprecation
+- Boards and packages
+  - Enable build command by default
+  - Rename command titles
+  - Add help icon
+- Gerrit
+  - Bug fix on comment edit
+  - chromium: set environment variable properly on calling git cl so that the issue b/341097070
+    doesn't happen
+- Gcert
+  - Add command to run gcert, and add a button to run the command on several error messages.
+
 ## 0.30.0 (May 2024)
 
 - DUT management
@@ -8,6 +25,9 @@
 - Logging
   - Log the current directory and the modified or allowlisted environment variables on running
     commands
+- Format
+  - Formatting now works on all file types supported by cros format command (but will skip
+    files matching .presubmitignore)
 
 ## 0.28.0 (April 2024) - skipped
 
