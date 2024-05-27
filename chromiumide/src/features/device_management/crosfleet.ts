@@ -126,8 +126,7 @@ export class CrosfleetRunner {
     return await commonUtil.exec(executablePath, args, {
       logger: background ? this.outputBackground : this.output,
       cancellationToken: token,
-      env: {
-        ...process.env, // for crosfleet to locate credentials via HOME
+      extraEnv: {
         PATH: envPath,
       },
     });

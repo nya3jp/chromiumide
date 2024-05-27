@@ -5,7 +5,6 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import * as process from 'process';
 import * as vscode from 'vscode';
 import * as glob from 'glob';
 import * as commonUtil from '../../../../../shared/app/common/common_util';
@@ -388,7 +387,7 @@ async function ensureHostHasDelve(
         {
           logger: context.output,
           cancellationToken: token,
-          env: {...process.env, GOBIN: gobin},
+          extraEnv: {GOBIN: gobin},
         }
       );
       if (token.isCancellationRequested) {
