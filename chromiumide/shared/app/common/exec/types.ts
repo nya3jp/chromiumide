@@ -59,8 +59,17 @@ export interface ExecOptions {
   cwd?: string;
 
   /**
+   * Environment variables passed to the subprocess.
+   *
+   * @deprecated Use `extraEnv` instead.
+   */
+  env?: ProcessEnv;
+
+  /**
    * Additional environment variables. The default environment variables and extraEnv are merged and
    * passed to the subprocess, where extraEnv's entries take precednece in case of conflicts.
+   *
+   * This should not be set when `env` is set, and otherwise an error will be thrown.
    */
   extraEnv?: ProcessEnv;
 }

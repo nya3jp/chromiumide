@@ -20,6 +20,12 @@ export function realExec(
   args: string[],
   options: ExecOptions = {}
 ): Promise<ExecResult | Error> {
+  if (options.env && options.extraEnv) {
+    throw new Error(
+      'Internal error: exec() with both env and extraEnv options is not allowed'
+    );
+  }
+
   return new Promise((resolve, _reject) => {
     if (options.logger) {
       options.logger.append(stringifyExecRequest(name, args, options));
@@ -112,6 +118,9 @@ export function realExec(
 }
 
 function constructEnv(options: ExecOptions): ProcessEnv | undefined {
+  if (options.env) {
+    return options.env;
+  }
   if (options.extraEnv) {
     return {
       ...process.env,
