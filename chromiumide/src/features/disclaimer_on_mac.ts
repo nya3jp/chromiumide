@@ -25,7 +25,7 @@ export class DisclaimerOnMac implements vscode.Disposable {
     if (isMac && config.disclaimerOnMac.enabled.get()) {
       const dontShowAgain = "Don't show again";
       const choice = await vscode.window.showWarningMessage(
-        'ChromiumIDE is installed on Mac. This is probably not what you want. See [our guide](http://go/chromiumide-on-mac) to install it to a remote workstation',
+        'ChromiumIDE is installed on Mac (not officially supported platform). Maybe you meant to install it on a remote workstation (see [our guide](http://go/chromiumide-on-mac)); ignore it if your are a Mac developer',
         'Ok',
         dontShowAgain
       );
