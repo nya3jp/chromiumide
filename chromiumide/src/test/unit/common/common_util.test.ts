@@ -271,7 +271,7 @@ subprocess.run(['python3', '-c', 'import time; time.sleep(10) # ${MARKER}'])
       logger: new SimpleLogger(log => {
         logs += log;
       }),
-      env: {
+      extraEnv: {
         a: 'b',
         c: 'd',
         HOME: home,
@@ -283,8 +283,8 @@ subprocess.run(['python3', '-c', 'import time; time.sleep(10) # ${MARKER}'])
       new RegExp(`env.* HOME=${home} .*USER=${fakeUser} .*a=b c=d true\n`)
     );
     expect(logs).not.toContain(` ${unprintedEnvKey}=`);
-    // PATH is not in `env` and not used.
-    expect(logs).not.toContain(' PATH=');
+    // PATH is not in `extraEnv` but inherited from process.env.
+    expect(logs).toContain(' PATH=');
   });
 });
 
