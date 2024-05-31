@@ -95,18 +95,4 @@ describe('Ebuild LSP', () => {
       );
     }
   });
-
-  it('should support document links', async () => {
-    const textDocument = await vscode.workspace.openTextDocument(
-      testing.testdataUri('ebuild_lsp/fake_simple.ebuild')
-    );
-    asyncDisposes.push(() => closeDocument(textDocument));
-
-    const links: vscode.DocumentLink[] = await vscode.commands.executeCommand(
-      'vscode.executeLinkProvider',
-      textDocument.uri
-    );
-
-    expect(links[0].target?.toString()).toEqual('http://www.example.com/');
-  });
 });

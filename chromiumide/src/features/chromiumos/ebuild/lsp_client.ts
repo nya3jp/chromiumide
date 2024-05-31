@@ -24,7 +24,8 @@ export class EbuildLspClient implements Disposable {
   constructor(
     extensionUri: vscode.Uri,
     chromiumosRoot: string,
-    outputChannel?: vscode.OutputChannel
+    outputChannel?: vscode.OutputChannel,
+    remoteName = vscode.env.remoteName
   ) {
     const serverModule = path.join(extensionUri.fsPath, 'dist/server.js');
 
@@ -41,6 +42,7 @@ export class EbuildLspClient implements Disposable {
 
     const initializationOptions: InitializationOptions = {
       chromiumosRoot,
+      remoteName,
     };
 
     const clientOptions: LanguageClientOptions = {

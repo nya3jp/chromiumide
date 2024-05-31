@@ -6,8 +6,9 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {EbuildLinkProvider} from '../../../../features/chromiumos/ebuild/link_provider';
+import {EbuildLspClient} from '../../../../features/chromiumos/ebuild/lsp_client';
 import * as testing from '../../../testing';
+import {VoidOutputChannel} from '../../../testing/fakes';
 import {closeDocument} from '../../extension_testing';
 
 const csBase =
@@ -113,14 +114,19 @@ async function buildFs(
   await testing.putFiles(chromiumosRoot, opts.files ?? {});
 }
 
-function activate(
+async function activate(
   chromiumosRoot: string,
-  remoteName?: () => string | undefined
-): vscode.Disposable {
-  return vscode.languages.registerDocumentLinkProvider(
-    {language: 'shellscript', pattern: '**/*.{ebuild,eclass}'},
-    new EbuildLinkProvider(chromiumosRoot, remoteName)
+  asyncDisposes: (() => Promise<void>)[],
+  remoteName = vscode.env.remoteName
+): Promise<void> {
+  const client = new EbuildLspClient(
+    testing.getExtensionUri(),
+    chromiumosRoot,
+    new VoidOutputChannel(),
+    remoteName
   );
+  await client.start();
+  asyncDisposes.push(() => client.disposeAsync());
 }
 
 // It seems `vscode.executeLinkProvider` is buggy and doesn't fill
@@ -140,25 +146,16 @@ describe('Ebuild Link Provider', () => {
 
   const state = testing.cleanState(() => {
     const chromiumosRoot = tempDir.path;
-    let remoteName = vscode.env.remoteName;
-    const subscriptions: vscode.Disposable[] = [
-      activate(chromiumosRoot, () => remoteName),
-    ];
 
     return {
       chromiumosRoot,
       dirLinks: dirLinks.bind(null, chromiumosRoot),
       fileLinks: fileLinks.bind(null, chromiumosRoot),
-      setRemoteName: (s: string | undefined) => {
-        remoteName = s;
-      },
-      subscriptions,
     };
   });
 
   const asyncDisposes: (() => Promise<void>)[] = [];
   afterEach(async () => {
-    vscode.Disposable.from(...state.subscriptions.reverse()).dispose();
     for (const x of asyncDisposes) {
       await x();
     }
@@ -173,6 +170,8 @@ describe('Ebuild Link Provider', () => {
   };
 
   it('on CROS_WORKON extracts links from string-type value', async () => {
+    await activate(state.chromiumosRoot, asyncDisposes);
+
     const CONTENT = `# copyright
 EAPI=7
 CROS_WORKON_USE_VCSID="1"
@@ -213,6 +212,8 @@ PLATFORM_SUBDIR="biod"
   });
 
   it('on CROS_WORKON extracts links from one-line array-type value', async () => {
+    await activate(state.chromiumosRoot, asyncDisposes);
+
     const CONTENT = `# copyright
 EAPI=7
 CROS_WORKON_PROJECT=("chromiumos/platform2" "chromiumos/platform/vpd")
@@ -253,6 +254,8 @@ PLATFORM_SUBDIR="vpd"
   });
 
   it('on CROS_WORKON extracts links from multiple-line array-type value', async () => {
+    await activate(state.chromiumosRoot, asyncDisposes);
+
     const CONTENT = `# copyright
 EAPI=7
 
@@ -324,6 +327,8 @@ PLATFORM_SUBDIR="arc/keymint"
   });
 
   it('on CROS_WORKON handles local name with leading two dots', async () => {
+    await activate(state.chromiumosRoot, asyncDisposes);
+
     const CONTENT = `# copyright
 EAPI="7"
 CROS_WORKON_PROJECT="chromiumos/platform/tpm"
@@ -346,6 +351,8 @@ CROS_WORKON_LOCALNAME="../third_party/tpm"
   });
 
   it('on CROS_WORKON does not generate subtree links when length does not match localname', async () => {
+    await activate(state.chromiumosRoot, asyncDisposes);
+
     const CONTENT = `# copyright
 EAPI=7
 
@@ -383,6 +390,9 @@ PLATFORM_SUBDIR="arc/keymint"
   });
 
   it('on CROS_WORKON generates remote links', async () => {
+    // 'ssh-remote' will change the links to open folders
+    await activate(state.chromiumosRoot, asyncDisposes, 'ssh-remote');
+
     const CONTENT = `# copyright
 EAPI=7
 CROS_WORKON_PROJECT=("chromiumos/platform2")
@@ -403,9 +413,6 @@ PLATFORM_SUBDIR="vpd"
         'foo.ebuild': CONTENT,
       },
     });
-
-    // 'ssh-remote' will change the links to open folders
-    state.setRemoteName('ssh-remote');
 
     const ebuild = await openDocument('foo.ebuild');
 
@@ -427,6 +434,9 @@ PLATFORM_SUBDIR="vpd"
   });
 
   it('on CROS_WORKON does not generate remote vscode links for non-ssh-remote', async () => {
+    // Remote links that are not 'ssh-remote' should not generate folder links due to b/311555429.
+    await activate(state.chromiumosRoot, asyncDisposes, 'localhost:8080');
+
     const CONTENT = `# copyright
 EAPI=7
 CROS_WORKON_PROJECT=("chromiumos/platform2")
@@ -447,9 +457,6 @@ PLATFORM_SUBDIR="vpd"
         'foo.ebuild': CONTENT,
       },
     });
-
-    // Remote links that are not 'ssh-remote' should not generate folder links due to b/311555429.
-    state.setRemoteName('localhost:8080');
 
     const ebuild = await openDocument('foo.ebuild');
 
@@ -472,6 +479,8 @@ PLATFORM_SUBDIR="vpd"
   });
 
   it('on CROS_WORKON ignores missing files', async () => {
+    await activate(state.chromiumosRoot, asyncDisposes);
+
     const CONTENT = `# copyright
 EAPI=7
 CROS_WORKON_USE_VCSID="1"
@@ -505,6 +514,8 @@ PLATFORM_SUBDIR="biod"
   });
 
   it('on inherits handles single inherit', async () => {
+    await activate(state.chromiumosRoot, asyncDisposes);
+
     const CONTENT = `# copyright
 EAPI=7
 inherit cros-constants
@@ -533,6 +544,8 @@ inherit cros-constants
   });
 
   it('on inherits handles multiple inherit', async () => {
+    await activate(state.chromiumosRoot, asyncDisposes);
+
     const CONTENT = `# copyright
 EAPI=7
 inherit cros-sanitizers cros-workon toolchain-funcs
@@ -577,6 +590,8 @@ inherit cros-sanitizers cros-workon toolchain-funcs
   });
 
   it('on inherits does not generate link when eclass not found', async () => {
+    await activate(state.chromiumosRoot, asyncDisposes);
+
     const CONTENT = `# copyright
 EAPI=7
 inherit non-exist-eclass

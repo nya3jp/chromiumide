@@ -4,6 +4,7 @@
 
 export type InitializationOptions = {
   chromiumosRoot: string;
+  remoteName: string | undefined;
 };
 
 export const PORTAGE_PREDEFINED_READ_ONLY_VARIABLES_HOVER_STRING = (

@@ -4,8 +4,8 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as vscode from 'vscode';
+import * as eclass from '../../../../server/ebuild_lsp/shared/eclass';
 import * as parse from '../../../../server/ebuild_lsp/shared/parse';
-import * as eclass from '../../../common/chromiumos/portage/eclass';
 
 /**
  * NOTE: Migration to LSP is happening. Keep the algorithm in sync with

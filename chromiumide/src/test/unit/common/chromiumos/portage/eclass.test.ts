@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as path from 'path';
-import * as eclass from '../../../../../common/chromiumos/portage/eclass';
+import * as eclass from '../../../../../../server/ebuild_lsp/shared/eclass';
 import * as testing from '../../../../testing';
 
 describe('Eclass path finder', () => {
