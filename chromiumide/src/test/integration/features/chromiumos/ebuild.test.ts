@@ -2,6 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import {promisify} from 'util';
 import * as vscode from 'vscode';
 import {
   EBUILD_DEFINED_VARIABLES_HOVER_STRING,
@@ -14,22 +18,34 @@ import {ConsoleOutputChannel} from '../../../testing/fakes';
 import {closeDocument} from '../../extension_testing';
 
 describe('Ebuild LSP', () => {
+  let chromiumosRoot = '';
   let ebuildLspClient: EbuildLspClient = {} as EbuildLspClient;
 
   beforeAll(async () => {
+    chromiumosRoot = await promisify(fs.mkdtemp)(os.tmpdir() + '/');
+
     ebuildLspClient = new EbuildLspClient(
       testing.getExtensionUri(),
+      chromiumosRoot,
       new ConsoleOutputChannel()
     );
+
     await ebuildLspClient.start();
   });
 
   afterAll(async () => {
     await ebuildLspClient.disposeAsync();
+
+    await fs.promises.rm(chromiumosRoot, {recursive: true});
   });
 
   const asyncDisposes: (() => Promise<void>)[] = [];
+
   afterEach(async () => {
+    for (const x of await fs.promises.readdir(chromiumosRoot)) {
+      await fs.promises.rm(path.join(chromiumosRoot, x), {recursive: true});
+    }
+
     for (const x of asyncDisposes.splice(0).reverse()) {
       await x();
     }
@@ -78,5 +94,19 @@ describe('Ebuild LSP', () => {
         })
       );
     }
+  });
+
+  it('should support document links', async () => {
+    const textDocument = await vscode.workspace.openTextDocument(
+      testing.testdataUri('ebuild_lsp/fake_simple.ebuild')
+    );
+    asyncDisposes.push(() => closeDocument(textDocument));
+
+    const links: vscode.DocumentLink[] = await vscode.commands.executeCommand(
+      'vscode.executeLinkProvider',
+      textDocument.uri
+    );
+
+    expect(links[0].target?.toString()).toEqual('http://www.example.com/');
   });
 });

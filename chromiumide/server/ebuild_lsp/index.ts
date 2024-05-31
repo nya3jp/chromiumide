@@ -14,7 +14,9 @@ import {
 } from 'vscode-languageserver/node';
 import {URI} from 'vscode-uri';
 import {Context} from './context';
+import {onDocumentLinks} from './document_links';
 import {onHover} from './hover';
+import {InitializationOptions} from './shared/constants';
 import {VirtualFileSystem} from './virtual_file_system';
 
 export function runEbuildLsp(): void {
@@ -25,16 +27,20 @@ export function runEbuildLsp(): void {
   const fs = new VirtualFileSystem('shellscript');
 
   const ctx: Context = {
+    initializationOptions: {} as InitializationOptions,
     fs,
     connection,
   };
 
   const subscriptions: Disposable[] = [
     connection,
-    connection.onInitialize((_params: InitializeParams) => {
+    connection.onInitialize((params: InitializeParams) => {
+      ctx.initializationOptions = params.initializationOptions;
+
       const result: InitializeResult = {
         capabilities: {
           textDocumentSync: TextDocumentSyncKind.Full,
+          documentLinkProvider: {},
           hoverProvider: true,
         },
       };
@@ -49,6 +55,7 @@ export function runEbuildLsp(): void {
     }),
 
     connection.onHover(item => onHover(ctx, item)),
+    connection.onDocumentLinks(item => onDocumentLinks(ctx, item)),
 
     documents.listen(connection),
 

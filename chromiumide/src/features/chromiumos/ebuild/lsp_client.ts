@@ -12,12 +12,17 @@ import {
   ServerOptions,
   TransportKind,
 } from 'vscode-languageclient/node';
+import {InitializationOptions} from '../../../../server/ebuild_lsp/shared/constants';
 
 export class EbuildLspClient implements Disposable {
   private readonly client: LanguageClient;
 
   /** Instantiates the client, `start` should be called for the feature to start working. */
-  constructor(extensionUri: vscode.Uri, outputChannel?: vscode.OutputChannel) {
+  constructor(
+    extensionUri: vscode.Uri,
+    chromiumosRoot: string,
+    outputChannel?: vscode.OutputChannel
+  ) {
     const serverModule = path.join(extensionUri.fsPath, 'dist/server.js');
 
     const nodeModule: NodeModule = {
@@ -31,6 +36,10 @@ export class EbuildLspClient implements Disposable {
       debug: nodeModule,
     };
 
+    const initializationOptions: InitializationOptions = {
+      chromiumosRoot,
+    };
+
     const clientOptions: LanguageClientOptions = {
       documentSelector: [
         {
@@ -39,6 +48,7 @@ export class EbuildLspClient implements Disposable {
         },
       ],
       outputChannel,
+      initializationOptions,
     };
 
     this.client = new LanguageClient(

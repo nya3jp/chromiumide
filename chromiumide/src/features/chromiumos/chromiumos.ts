@@ -100,7 +100,10 @@ export class Chromiumos implements vscode.Disposable {
     }
 
     if (config.underDevelopment.ebuildLsp.get()) {
-      const ebuildLspClient = new EbuildLspClient(context.extensionUri);
+      const ebuildLspClient = new EbuildLspClient(
+        context.extensionUri,
+        this.root
+      );
       this.subscriptions.push(ebuildLspClient);
       void ebuildLspClient.start();
     } else {

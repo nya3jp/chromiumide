@@ -3,9 +3,11 @@
 // found in the LICENSE file.
 
 import {Connection} from 'vscode-languageserver';
+import {InitializationOptions} from './shared/constants';
 import {VirtualFileSystem} from './virtual_file_system';
 
 export type Context = {
+  initializationOptions: InitializationOptions;
   fs: VirtualFileSystem;
   connection: Connection;
 };

@@ -7,6 +7,11 @@ import * as vscode from 'vscode';
 import * as eclass from '../../../common/chromiumos/portage/eclass';
 import * as parse from '../../../common/chromiumos/portage/parse';
 
+/**
+ * NOTE: Migration to LSP is happening. Keep the algorithm in sync with
+ * server/ebuild_lsp/document_links.ts.
+ */
+
 export function activate(
   context: vscode.ExtensionContext,
   chromiumosRoot: string
