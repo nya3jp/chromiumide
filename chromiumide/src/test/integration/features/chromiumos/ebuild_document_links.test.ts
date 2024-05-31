@@ -6,12 +6,9 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {EbuildLinkProvider} from '../../../../../features/chromiumos/ebuild/link_provider';
-import * as testing from '../../../../testing';
-import {
-  FakeCancellationToken,
-  FakeTextDocument,
-} from '../../../../testing/fakes';
+import {EbuildLinkProvider} from '../../../../features/chromiumos/ebuild/link_provider';
+import * as testing from '../../../testing';
+import {closeDocument} from '../../extension_testing';
 
 const csBase =
   'http://source.corp.google.com/h/chromium/chromiumos/codesearch/+/main:';
@@ -19,11 +16,17 @@ const csBase =
 function documentLink(
   range: vscode.Range,
   target: vscode.Uri,
-  tooltip: string
-): vscode.DocumentLink {
+  _tooltip: string
+) {
   const link = new vscode.DocumentLink(range, target);
-  link.tooltip = tooltip;
-  return link;
+
+  // TODO(b/343857580): Ensure `vscode.executeLinkProvider` command fills `tooltip` and use tooltip
+  // in the return value to restore test coverage for tooltip.
+
+  return jasmine.objectContaining({
+    range: link.range,
+    target: link.target,
+  });
 }
 
 function openFolderCmdUri(
@@ -54,7 +57,7 @@ function dirLinks(
   range: vscode.Range,
   subpath: string,
   remoteHost: string | undefined = undefined
-): vscode.DocumentLink[] {
+) {
   return [
     documentLink(
       range,
@@ -77,7 +80,7 @@ function fileLinks(
   chromiumosRoot: string,
   range: vscode.Range,
   subpath: string
-): vscode.DocumentLink[] {
+) {
   return [
     documentLink(
       range,
@@ -94,14 +97,41 @@ function fileLinks(
 
 async function buildFs(
   chromiumosRoot: string,
-  opts: {dirs?: string[]; files?: string[]}
+  opts: {
+    dirs?: string[];
+    emptyFiles?: string[];
+    files?: {[key: string]: string};
+  }
 ) {
   for (const dir of opts?.dirs ?? []) {
     await fs.promises.mkdir(path.join(chromiumosRoot, dir), {recursive: true});
   }
   await testing.putFiles(
     chromiumosRoot,
-    opts.files?.reduce((obj, key) => ({...obj, [key]: ''}), {}) ?? {}
+    opts.emptyFiles?.reduce((obj, key) => ({...obj, [key]: ''}), {}) ?? {}
+  );
+  await testing.putFiles(chromiumosRoot, opts.files ?? {});
+}
+
+function activate(
+  chromiumosRoot: string,
+  remoteName?: () => string | undefined
+): vscode.Disposable {
+  return vscode.languages.registerDocumentLinkProvider(
+    {language: 'shellscript', pattern: '**/*.{ebuild,eclass}'},
+    new EbuildLinkProvider(chromiumosRoot, remoteName)
+  );
+}
+
+// It seems `vscode.executeLinkProvider` is buggy and doesn't fill
+// the `tooltip` field. https://github.com/microsoft/vscode/issues/213970
+// Internal bug for follow up: b/343857580
+async function provideDocumentLinks(
+  uri: vscode.Uri
+): Promise<vscode.DocumentLink[]> {
+  return await vscode.commands.executeCommand(
+    'vscode.executeLinkProvider',
+    uri
   );
 }
 
@@ -110,13 +140,37 @@ describe('Ebuild Link Provider', () => {
 
   const state = testing.cleanState(() => {
     const chromiumosRoot = tempDir.path;
+    let remoteName = vscode.env.remoteName;
+    const subscriptions: vscode.Disposable[] = [
+      activate(chromiumosRoot, () => remoteName),
+    ];
 
     return {
       chromiumosRoot,
       dirLinks: dirLinks.bind(null, chromiumosRoot),
       fileLinks: fileLinks.bind(null, chromiumosRoot),
+      setRemoteName: (s: string | undefined) => {
+        remoteName = s;
+      },
+      subscriptions,
     };
   });
+
+  const asyncDisposes: (() => Promise<void>)[] = [];
+  afterEach(async () => {
+    vscode.Disposable.from(...state.subscriptions.reverse()).dispose();
+    for (const x of asyncDisposes) {
+      await x();
+    }
+  });
+
+  const openDocument = async (subpath: string) => {
+    const doc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(path.join(state.chromiumosRoot, subpath))
+    );
+    asyncDisposes.push(() => closeDocument(doc));
+    return doc;
+  };
 
   it('on CROS_WORKON extracts links from string-type value', async () => {
     const CONTENT = `# copyright
@@ -135,16 +189,13 @@ PLATFORM_SUBDIR="biod"
     const GN = PLATFORM2 + '/.gn';
     await buildFs(state.chromiumosRoot, {
       dirs: [PLATFORM2, COMMONMK, BIOD],
-      files: [GN],
+      emptyFiles: [GN],
+      files: {'foo.ebuild': CONTENT},
     });
 
-    const ebuildLinkProvider = new EbuildLinkProvider(state.chromiumosRoot);
-    const textDocument = new FakeTextDocument({text: CONTENT});
+    const ebuild = await openDocument('foo.ebuild');
 
-    const documentLinks = await ebuildLinkProvider.provideDocumentLinks(
-      textDocument,
-      new FakeCancellationToken()
-    );
+    const documentLinks = await provideDocumentLinks(ebuild.uri);
 
     const RANGE_PLATFORM2 = new vscode.Range(3, 23, 3, 32);
     const RANGE_COMMONMK = new vscode.Range(6, 21, 6, 30);
@@ -178,16 +229,13 @@ PLATFORM_SUBDIR="vpd"
     const GN = PLATFORM2 + '/.gn';
     await buildFs(state.chromiumosRoot, {
       dirs: [PLATFORM2, VPD, COMMONMK],
-      files: [GN],
+      emptyFiles: [GN],
+      files: {'foo.ebuild': CONTENT},
     });
 
-    const ebuildLinkProvider = new EbuildLinkProvider(state.chromiumosRoot);
-    const textDocument = new FakeTextDocument({text: CONTENT});
+    const ebuild = await openDocument('foo.ebuild');
 
-    const documentLinks = await ebuildLinkProvider.provideDocumentLinks(
-      textDocument,
-      new FakeCancellationToken()
-    );
+    const documentLinks = await provideDocumentLinks(ebuild.uri);
 
     const RANGE_PLATFORM2 = new vscode.Range(3, 24, 3, 33);
     const RANGE_VPD = new vscode.Range(3, 36, 3, 48);
@@ -209,23 +257,23 @@ PLATFORM_SUBDIR="vpd"
 EAPI=7
 
 CROS_WORKON_LOCALNAME=(
-\t"platform2"
-\t"aosp/system/keymint"
-\t"aosp/system/core/libcutils"
+  "platform2"
+  "aosp/system/keymint"
+  "aosp/system/core/libcutils"
 )
 
 CROS_WORKON_INCREMENTAL_BUILD="1"
 
 CROS_WORKON_DESTDIR=(
-\t"\${S}/platform2"
-\t"\${S}/aosp/system/keymint"
-\t"\${S}/aosp/system/core/libcutils"
+  "\${S}/platform2"
+  "\${S}/aosp/system/keymint"
+  "\${S}/aosp/system/core/libcutils"
 )
 
 CROS_WORKON_SUBTREE=(
-\t"common-mk featured arc/keymint .gn"
-\t""
-\t""
+  "common-mk featured arc/keymint .gn"
+  ""
+  ""
 )
 PLATFORM_SUBDIR="arc/keymint"
 `;
@@ -246,16 +294,13 @@ PLATFORM_SUBDIR="arc/keymint"
         FEATURED,
         ARC_KEYMINT,
       ],
-      files: [GN],
+      emptyFiles: [GN],
+      files: {'foo.ebuild': CONTENT},
     });
 
-    const ebuildLinkProvider = new EbuildLinkProvider(state.chromiumosRoot);
-    const textDocument = new FakeTextDocument({text: CONTENT});
+    const ebuild = await openDocument('foo.ebuild');
 
-    const documentLinks = await ebuildLinkProvider.provideDocumentLinks(
-      textDocument,
-      new FakeCancellationToken()
-    );
+    const documentLinks = await provideDocumentLinks(ebuild.uri);
 
     const RANGE_PLATFORM2 = new vscode.Range(4, 3, 4, 12);
     const RANGE_SYSTEM_KEYMINT = new vscode.Range(5, 3, 5, 22);
@@ -286,15 +331,14 @@ CROS_WORKON_LOCALNAME="../third_party/tpm"
 `;
 
     const TPM = 'src/third_party/tpm';
-    await buildFs(state.chromiumosRoot, {dirs: [TPM]});
+    await buildFs(state.chromiumosRoot, {
+      dirs: [TPM],
+      files: {'foo.ebuild': CONTENT},
+    });
 
-    const ebuildLinkProvider = new EbuildLinkProvider(state.chromiumosRoot);
-    const textDocument = new FakeTextDocument({text: CONTENT});
+    const ebuild = await openDocument('foo.ebuild');
 
-    const documentLinks = await ebuildLinkProvider.provideDocumentLinks(
-      textDocument,
-      new FakeCancellationToken()
-    );
+    const documentLinks = await provideDocumentLinks(ebuild.uri);
 
     const RANGE_TPM = new vscode.Range(3, 23, 3, 41);
 
@@ -306,12 +350,12 @@ CROS_WORKON_LOCALNAME="../third_party/tpm"
 EAPI=7
 
 CROS_WORKON_LOCALNAME=(
-\t"platform2"
-\t"aosp/system/keymint"
+  "platform2"
+  "aosp/system/keymint"
 )
 
 CROS_WORKON_SUBTREE=(
-\t"common-mk featured arc/keymint .gn"
+  "common-mk featured arc/keymint .gn"
 )
 PLATFORM_SUBDIR="arc/keymint"
 `;
@@ -320,15 +364,12 @@ PLATFORM_SUBDIR="arc/keymint"
     const SYSTEM_KEYMINT = 'src/aosp/system/keymint';
     await buildFs(state.chromiumosRoot, {
       dirs: [PLATFORM2, SYSTEM_KEYMINT],
+      files: {'foo.ebuild': CONTENT},
     });
 
-    const ebuildLinkProvider = new EbuildLinkProvider(state.chromiumosRoot);
-    const textDocument = new FakeTextDocument({text: CONTENT});
+    const ebuild = await openDocument('foo.ebuild');
 
-    const documentLinks = await ebuildLinkProvider.provideDocumentLinks(
-      textDocument,
-      new FakeCancellationToken()
-    );
+    const documentLinks = await provideDocumentLinks(ebuild.uri);
 
     const RANGE_PLATFORM2 = new vscode.Range(4, 3, 4, 12);
     const RANGE_SYSTEM_KEYMINT = new vscode.Range(5, 3, 5, 22);
@@ -355,23 +396,20 @@ PLATFORM_SUBDIR="vpd"
     const PLATFORM2 = 'src/platform2';
     const COMMONMK = PLATFORM2 + '/common-mk';
     const GN = PLATFORM2 + '/.gn';
-    const CHROOT = state.chromiumosRoot;
     await buildFs(state.chromiumosRoot, {
       dirs: [PLATFORM2, COMMONMK],
-      files: [GN],
+      emptyFiles: [GN],
+      files: {
+        'foo.ebuild': CONTENT,
+      },
     });
 
-    const ebuildLinkProvider = new EbuildLinkProvider(
-      CHROOT,
-      // 'ssh-remote' will change the links to open folders
-      () => 'ssh-remote'
-    );
-    const textDocument = new FakeTextDocument({text: CONTENT});
+    // 'ssh-remote' will change the links to open folders
+    state.setRemoteName('ssh-remote');
 
-    const documentLinks = await ebuildLinkProvider.provideDocumentLinks(
-      textDocument,
-      new FakeCancellationToken()
-    );
+    const ebuild = await openDocument('foo.ebuild');
+
+    const documentLinks = await provideDocumentLinks(ebuild.uri);
 
     const RANGE_PLATFORM2 = new vscode.Range(3, 24, 3, 33);
     const RANGE_COMMONMK = new vscode.Range(5, 22, 5, 31);
@@ -402,23 +440,20 @@ PLATFORM_SUBDIR="vpd"
     const PLATFORM2 = 'src/platform2';
     const COMMONMK = PLATFORM2 + '/common-mk';
     const GN = PLATFORM2 + '/.gn';
-    const CHROOT = state.chromiumosRoot;
     await buildFs(state.chromiumosRoot, {
       dirs: [PLATFORM2, COMMONMK],
-      files: [GN],
+      emptyFiles: [GN],
+      files: {
+        'foo.ebuild': CONTENT,
+      },
     });
 
-    const ebuildLinkProvider = new EbuildLinkProvider(
-      CHROOT,
-      // Remote links that are not 'ssh-remote' should not generate folder links due to b/311555429.
-      () => 'localhost:8080'
-    );
-    const textDocument = new FakeTextDocument({text: CONTENT});
+    // Remote links that are not 'ssh-remote' should not generate folder links due to b/311555429.
+    state.setRemoteName('localhost:8080');
 
-    const documentLinks = await ebuildLinkProvider.provideDocumentLinks(
-      textDocument,
-      new FakeCancellationToken()
-    );
+    const ebuild = await openDocument('foo.ebuild');
+
+    const documentLinks = await provideDocumentLinks(ebuild.uri);
 
     const RANGE_PLATFORM2 = new vscode.Range(3, 24, 3, 33);
     const RANGE_COMMONMK = new vscode.Range(5, 22, 5, 31);
@@ -451,15 +486,12 @@ PLATFORM_SUBDIR="biod"
     const BIOD = PLATFORM2 + '/biod';
     await buildFs(state.chromiumosRoot, {
       dirs: [PLATFORM2, BIOD],
+      files: {'foo.ebuild': CONTENT},
     });
 
-    const ebuildLinkProvider = new EbuildLinkProvider(state.chromiumosRoot);
-    const textDocument = new FakeTextDocument({text: CONTENT});
+    const ebuild = await openDocument('foo.ebuild');
 
-    const documentLinks = await ebuildLinkProvider.provideDocumentLinks(
-      textDocument,
-      new FakeCancellationToken()
-    );
+    const documentLinks = await provideDocumentLinks(ebuild.uri);
 
     const RANGE_PLATFORM2 = new vscode.Range(3, 23, 3, 32);
     const RANGE_BIOD = new vscode.Range(6, 21, 6, 25);
@@ -473,22 +505,20 @@ PLATFORM_SUBDIR="biod"
   });
 
   it('on inherits handles single inherit', async () => {
-    await testing.putFiles(tempDir.path, {
-      'src/third_party/eclass-overlay/eclass/cros-constants.eclass':
-        'cros-constants',
-    });
-
     const CONTENT = `# copyright
 EAPI=7
 inherit cros-constants
 `;
-    const ebuildLinkProvider = new EbuildLinkProvider(tempDir.path);
-    const textDocument = new FakeTextDocument({text: CONTENT});
 
-    const documentLinks = await ebuildLinkProvider.provideDocumentLinks(
-      textDocument,
-      new FakeCancellationToken()
-    );
+    await testing.putFiles(tempDir.path, {
+      'src/third_party/eclass-overlay/eclass/cros-constants.eclass':
+        'cros-constants',
+      'foo.ebuild': CONTENT,
+    });
+
+    const ebuild = await openDocument('foo.ebuild');
+
+    const documentLinks = await provideDocumentLinks(ebuild.uri);
 
     expect(documentLinks).toEqual(
       [
@@ -503,6 +533,11 @@ inherit cros-constants
   });
 
   it('on inherits handles multiple inherit', async () => {
+    const CONTENT = `# copyright
+EAPI=7
+inherit cros-sanitizers cros-workon toolchain-funcs
+`;
+
     await testing.putFiles(tempDir.path, {
       'src/third_party/chromiumos-overlay/eclass/cros-sanitizers.eclass':
         'cros-sanitizers',
@@ -510,18 +545,12 @@ inherit cros-constants
         'cros-workon',
       'src/third_party/chromiumos-overlay/eclass/toolchain-funcs.eclass':
         'toolchain-funcs',
+      'foo.ebuild': CONTENT,
     });
-    const CONTENT = `# copyright
-EAPI=7
-inherit cros-sanitizers cros-workon toolchain-funcs
-`;
-    const ebuildLinkProvider = new EbuildLinkProvider(tempDir.path);
-    const textDocument = new FakeTextDocument({text: CONTENT});
 
-    const documentLinks = await ebuildLinkProvider.provideDocumentLinks(
-      textDocument,
-      new FakeCancellationToken()
-    );
+    const ebuild = await openDocument('foo.ebuild');
+
+    const documentLinks = await provideDocumentLinks(ebuild.uri);
 
     expect(documentLinks).toEqual(
       [
@@ -552,13 +581,13 @@ inherit cros-sanitizers cros-workon toolchain-funcs
 EAPI=7
 inherit non-exist-eclass
 `;
-    const ebuildLinkProvider = new EbuildLinkProvider(tempDir.path);
-    const textDocument = new FakeTextDocument({text: CONTENT});
+    await testing.putFiles(state.chromiumosRoot, {
+      'foo.ebuild': CONTENT,
+    });
 
-    const documentLinks = await ebuildLinkProvider.provideDocumentLinks(
-      textDocument,
-      new FakeCancellationToken()
-    );
+    const ebuild = await openDocument('foo.ebuild');
+
+    const documentLinks = await provideDocumentLinks(ebuild.uri);
 
     expect(documentLinks).toEqual([]);
   });
