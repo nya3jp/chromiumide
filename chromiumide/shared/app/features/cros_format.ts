@@ -53,6 +53,22 @@ export function activate(
   );
 }
 
+async function hasCrOSFolder(
+  folders: Readonly<vscode.WorkspaceFolder[]>,
+  outputChannel?: vscode.OutputChannel
+): Promise<boolean> {
+  for (const folder of folders) {
+    if ((await driver.cros.findSourceDir(folder.uri.fsPath)) !== undefined) {
+      outputChannel?.appendLine(
+        `New folder ${folder.uri.path} is in a CrOS repository.`
+      );
+      return true;
+    }
+  }
+  outputChannel?.appendLine('No new folder is in a CrOS repository.');
+  return false;
+}
+
 async function maybeSuggestSettingDefaultFormatter(
   folders: Readonly<vscode.WorkspaceFolder[]>,
   extensionId: string,
@@ -78,12 +94,7 @@ async function maybeSuggestSettingDefaultFormatter(
 
   // If the workspace folder is in a CrOS repo, suggest setting cros format as the workspace
   // default formatter.
-  if (
-    folders.some(
-      async folder =>
-        (await driver.cros.findSourceDir(folder.uri.fsPath)) !== undefined
-    )
-  ) {
+  if (await hasCrOSFolder(folders, outputChannel)) {
     const choice = await vscode.window.showInformationMessage(
       'Do you want to set `cros format` as your default formatter in this workspace?',
       'Yes',

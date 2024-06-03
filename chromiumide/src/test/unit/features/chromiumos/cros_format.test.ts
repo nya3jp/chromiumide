@@ -233,6 +233,7 @@ describe('maybeSuggestSettingDefaultFormatter', () => {
   const {vscodeEmitters, vscodeSpy} = testing.installVscodeDouble();
   testing.installFakeConfigs(vscodeSpy, vscodeEmitters);
   const tempDir = testing.tempDir();
+  const tempDirNotCros = testing.tempDir();
 
   const subscriptions: vscode.Disposable[] = [];
   testing.cleanState(async () => {
@@ -247,7 +248,7 @@ describe('maybeSuggestSettingDefaultFormatter', () => {
       .withArgs('editor')
       .and.returnValue(defaultFormatterConfig);
 
-    void maybeSuggestSettingDefaultFormatter(
+    await maybeSuggestSettingDefaultFormatter(
       [
         {
           uri: vscode.Uri.file(tempDir.path),
@@ -263,7 +264,7 @@ describe('maybeSuggestSettingDefaultFormatter', () => {
     );
   });
 
-  it('shows suggestion when config is another formatter', () => {
+  it('shows suggestion when config is another formatter', async () => {
     const defaultFormatterConfig = FakeWorkspaceConfiguration.fromDefaults<
       string | null
     >('editor', new Map([['defaultFormatter', 'prettier']]), subscriptions);
@@ -271,7 +272,7 @@ describe('maybeSuggestSettingDefaultFormatter', () => {
       .withArgs('editor')
       .and.returnValue(defaultFormatterConfig);
 
-    void maybeSuggestSettingDefaultFormatter(
+    await maybeSuggestSettingDefaultFormatter(
       [
         {
           uri: vscode.Uri.file(tempDir.path),
@@ -287,7 +288,26 @@ describe('maybeSuggestSettingDefaultFormatter', () => {
     );
   });
 
-  it('does not show suggestion when config is already set to the one by extension', () => {
+  it('does not show suggestion when new folder added is not in a CrOS repo', async () => {
+    const defaultFormatterConfig = FakeWorkspaceConfiguration.fromDefaults<
+      string | null
+    >('editor', new Map([['defaultFormatter', null]]), subscriptions);
+    vscodeSpy.workspace.getConfiguration
+      .withArgs('editor')
+      .and.returnValue(defaultFormatterConfig);
+
+    await maybeSuggestSettingDefaultFormatter(
+      [
+        {
+          uri: vscode.Uri.file(tempDirNotCros.path),
+        } as vscode.WorkspaceFolder,
+      ],
+      formatterName
+    );
+    expect(vscodeSpy.window.showInformationMessage).not.toHaveBeenCalled();
+  });
+
+  it('does not show suggestion when config is already set to the one by extension', async () => {
     const defaultFormatterConfig = FakeWorkspaceConfiguration.fromDefaults<
       string | null
     >(
@@ -299,7 +319,7 @@ describe('maybeSuggestSettingDefaultFormatter', () => {
       .withArgs('editor')
       .and.returnValue(defaultFormatterConfig);
 
-    void maybeSuggestSettingDefaultFormatter(
+    await maybeSuggestSettingDefaultFormatter(
       [
         {
           uri: vscode.Uri.file(tempDir.path),
