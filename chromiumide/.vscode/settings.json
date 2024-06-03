@@ -29,8 +29,7 @@
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
 
-  // Use Prettier as the default code formatter.
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.defaultFormatter": "Google.cros-ide",
 
   // Languages to be validated by eslint on vscode
   "eslint.validate": ["javascript", "typescript"],
@@ -43,5 +42,9 @@
   "editor.codeActionsOnSave": ["source.fixAll.eslint"],
 
   "editor.formatOnPaste": true,
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+
+  "[html][javascript][json][jsonc][jsonl][typescript][typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }
