@@ -10,10 +10,8 @@ import {
 } from '../../../../../../../shared/app/common/chromiumos/board_or_host';
 import {getDriver} from '../../../../../../../shared/app/common/driver_repository';
 import {AbnormalExitError} from '../../../../../../../shared/app/common/exec/types';
-import {
-  CommandContext,
-  SimplePickItem,
-} from '../../../../../../features/device_management/commands/common';
+import {SimplePickItem} from '../../../../../../../shared/app/ui/input_box';
+import {CommandContext} from '../../../../../../features/device_management/commands/common';
 import {TEST_ONLY} from '../../../../../../features/device_management/commands/tast/tast_common';
 import {
   DeviceAttributes,

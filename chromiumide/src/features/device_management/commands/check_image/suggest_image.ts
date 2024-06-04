@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import {SimplePickItem} from '../../../../../shared/app/ui/input_box';
 import {ChrootService} from '../../../../services/chromiumos';
 import {PrebuiltImageType, listPrebuiltVersions} from '../../prebuilt_util';
-import {SimplePickItem} from '../common';
 import {
   ChromeOsVersionItem,
   showAllLocalImagesInputBox,

@@ -7,13 +7,13 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import {exec} from '../../../../shared/app/common/common_util';
 import {getDriver} from '../../../../shared/app/common/driver_repository';
+import {SimplePickItem} from '../../../../shared/app/ui/input_box';
 import {getCrosPath} from '../../../common/chromiumos/cros_client';
 import {ImageVersion, getChromeMilestones} from '../../../common/image_version';
 import * as services from '../../../services';
 import {DeviceClient} from '../device_client';
 import * as prebuiltUtil from '../prebuilt_util';
 import {
-  SimplePickItem,
   CommandContext,
   promptKnownHostnameIfNeeded,
   showMissingInternalRepoErrorMessage,

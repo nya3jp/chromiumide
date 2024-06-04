@@ -3,6 +3,10 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
+import {
+  SimplePickItem,
+  showInputBoxWithSuggestions,
+} from '../../../../shared/app/ui/input_box';
 import * as netUtil from '../../../common/net_util';
 import * as abandonedDevices from '../abandoned_devices';
 import * as crosfleet from '../crosfleet';
@@ -36,10 +40,13 @@ export async function promptNewHostname(
   const suggestedHosts = await sshConfig.readUnaddedSshHosts(
     ownedDeviceRepository
   );
-  return await showInputBoxWithSuggestions(suggestedHosts, {
-    title,
-    placeholder: 'host[:port]',
-  });
+  return await showInputBoxWithSuggestions(
+    suggestedHosts.map(x => new SimplePickItem(x)),
+    {
+      title,
+      placeholder: 'host[:port]',
+    }
+  );
 }
 
 /**
@@ -91,62 +98,6 @@ export async function promptKnownHostnameIfNeeded(
     }
   })();
   return undefined;
-}
-
-export class SimplePickItem implements vscode.QuickPickItem {
-  constructor(
-    readonly label: string,
-    readonly kind?: vscode.QuickPickItemKind,
-    readonly description?: string
-  ) {}
-}
-
-interface InputBoxWithSuggestionsOptions {
-  title?: string;
-  placeholder?: string;
-}
-
-/**
- * Shows an input box with suggestions.
- *
- * It is actually a quick pick that shows the user input as the first item.
- * Idea is from:
- * https://github.com/microsoft/vscode/issues/89601#issuecomment-580133277
- */
-export function showInputBoxWithSuggestions(
-  labels: string[],
-  options?: InputBoxWithSuggestionsOptions
-): Promise<string | undefined> {
-  const labelSet = new Set(labels);
-
-  return new Promise(resolve => {
-    const subscriptions: vscode.Disposable[] = [];
-
-    const picker = vscode.window.createQuickPick();
-    if (options !== undefined) {
-      Object.assign(picker, options);
-    }
-    picker.items = labels.map(label => new SimplePickItem(label));
-
-    subscriptions.push(
-      picker.onDidChangeValue(() => {
-        if (!labelSet.has(picker.value)) {
-          picker.items = [picker.value, ...labels].map(
-            label => new SimplePickItem(label)
-          );
-        }
-      }),
-      picker.onDidAccept(() => {
-        const choice = picker.activeItems[0];
-        picker.hide();
-        picker.dispose();
-        vscode.Disposable.from(...subscriptions).dispose();
-        resolve(choice.label);
-      })
-    );
-
-    picker.show();
-  });
 }
 
 /**
