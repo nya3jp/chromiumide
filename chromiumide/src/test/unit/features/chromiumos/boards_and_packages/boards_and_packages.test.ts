@@ -569,4 +569,42 @@ describe('Boards and packages', () => {
       'chromeos-base/codelab has been built for betty'
     );
   });
+
+  it('offers command to build the package with flags', async () => {
+    let built = false;
+    testing.fakes.installChrootCommandHandler(
+      fakeExec,
+      state.chromiumosRoot,
+      'env',
+      [
+        'FEATURES=nostrip',
+        'emerge-betty',
+        'chromeos-base/codelab',
+        '--jobs',
+        `${os.cpus().length}`,
+      ],
+      () => {
+        built = true;
+        return '';
+      }
+    );
+
+    const picker = new testing.fakes.FakeQuickPick();
+    vscodeSpy.window.createQuickPick.and.returnValue(picker);
+
+    const command = vscode.commands.executeCommand(
+      'chromiumide.boardsAndPackages.buildWithFlags',
+      Breadcrumbs.from('betty', 'chromeos-base', 'codelab')
+    );
+
+    picker.activeItems = [{label: 'FEATURES=nostrip'}];
+    picker.accept();
+
+    await command;
+
+    expect(built).toBeTrue();
+    expect(vscodeSpy.window.showInformationMessage).toHaveBeenCalledOnceWith(
+      'chromeos-base/codelab has been built for betty'
+    );
+  });
 });

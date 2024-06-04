@@ -85,7 +85,10 @@ export class ParsedEbuild {
   }
 }
 
-export function parseEbuildOrThrow(document: TextDocument): ParsedEbuild {
+export function parseEbuildOrThrow(
+  document: TextDocument,
+  customErrorPrefix?: string
+): ParsedEbuild {
   const content = document.getText();
   const positions = [...content].map((_c, i) => document.positionAt(i));
 
@@ -97,7 +100,12 @@ export function parseEbuildOrThrow(document: TextDocument): ParsedEbuild {
 
   let m;
   while ((m = focusLineStartRE.exec(content))) {
-    const scanner = new Scanner(content, positions, focusLineStartRE.lastIndex);
+    const scanner = new Scanner(
+      content,
+      positions,
+      focusLineStartRE.lastIndex,
+      customErrorPrefix
+    );
 
     if (m[0] === 'inherit ') {
       let eclass = scanner.nextEclass();
@@ -135,7 +143,8 @@ class Scanner {
   constructor(
     private readonly content: string,
     private readonly positions: Position[],
-    private p: number
+    private p: number,
+    private errorPrefix = 'Ebuild parse failed: '
   ) {}
 
   get lastIndex() {
@@ -144,7 +153,7 @@ class Scanner {
 
   private peek(): string {
     if (this.p >= this.content.length) {
-      throw new Error('Ebuild parse failed: unclosed paren or string?');
+      throw new Error(this.errorPrefix + 'unclosed paren or string?');
     }
     return this.content.charAt(this.p);
   }
@@ -175,7 +184,7 @@ class Scanner {
         value.push(this.nextString());
       }
 
-      throw new Error('Ebuild parse failed: unclosed paren');
+      throw new Error(this.errorPrefix + 'unclosed paren');
     }
 
     return this.nextString();

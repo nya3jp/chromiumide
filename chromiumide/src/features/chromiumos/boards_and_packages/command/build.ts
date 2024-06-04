@@ -4,8 +4,10 @@
 
 import * as os from 'os';
 import * as vscode from 'vscode';
+import {parseEbuildOrThrow} from '../../../../../server/ebuild_lsp/shared/parse';
 import {BoardOrHost} from '../../../../../shared/app/common/chromiumos/board_or_host';
 import {CancelledError} from '../../../../../shared/app/common/exec/types';
+import {showInputBoxWithSuggestions} from '../../../../../shared/app/ui/input_box';
 import {
   ParsedPackageName,
   getQualifiedPackageName,
@@ -18,12 +20,21 @@ import {Context} from '../context';
 export async function build(
   ctx: Context,
   board: BoardOrHost,
-  pkg: ParsedPackageName
+  pkg: ParsedPackageName,
+  flags?: Record<string, string>
 ): Promise<void> {
-  const qpn = getQualifiedPackageName(pkg);
+  const args: string[] = [];
 
+  if (flags) {
+    args.push('env');
+    for (const [key, value] of Object.entries(flags)) {
+      args.push(`${key}=${value}`);
+    }
+  }
+
+  const qpn = getQualifiedPackageName(pkg);
   const nproc = os.cpus().length.toString();
-  const args = [board.suffixedExecutable('emerge'), qpn, '--jobs', nproc];
+  args.push(board.suffixedExecutable('emerge'), qpn, '--jobs', nproc);
 
   await vscode.window.withProgress(
     {
@@ -61,4 +72,64 @@ export async function build(
       );
     }
   );
+}
+
+export async function buildWithFlags(
+  ctx: Context,
+  board: BoardOrHost,
+  pkg: ParsedPackageName
+): Promise<void> {
+  let initialValue: string | undefined = undefined;
+  for (;;) {
+    const presets: vscode.QuickPickItem[] = [
+      {
+        label: 'FEATURES="nostrip"',
+        description: 'Keep debug symbols',
+      },
+    ];
+    const flagString = await showInputBoxWithSuggestions(presets, {
+      title: 'Build with flags',
+      placeholder: 'Enter flags to pass to emerge',
+      value: initialValue,
+    });
+    if (flagString === undefined) return;
+
+    const flags = parseFlags(flagString.trim() + '\n');
+    if (flags instanceof Error) {
+      void vscode.window.showErrorMessage(flags.message);
+      initialValue = flagString;
+      // Allow the user to fix the string and try again.
+      continue;
+    }
+
+    await build(ctx, board, pkg, flags);
+    break;
+  }
+}
+
+/**
+ * Parse flags. For example, `A="a a" B=b C=` -> {A: "a a", B: "b", C: ""}
+ */
+function parseFlags(flags: string): Record<string, string> | Error {
+  // Utilize the existing parser for ebuild. It works because ebuild is bash based.
+  const document = {
+    getText: () => flags,
+    // We don't use the ranges, so no need to care about newlines.
+    positionAt: (offset: number) => new vscode.Position(0, offset),
+  };
+  let asEbuild;
+  try {
+    asEbuild = parseEbuildOrThrow(document, 'Parsing flags failed: ');
+  } catch (e) {
+    return e as Error;
+  }
+  const res: Record<string, string> = {};
+  for (const {name, value} of asEbuild.assignments) {
+    const flagName = name.name;
+    if (value.kind !== 'string') {
+      return new Error(`Flag ${flagName} must be a string`);
+    }
+    res[flagName] = value.value;
+  }
+  return res;
 }

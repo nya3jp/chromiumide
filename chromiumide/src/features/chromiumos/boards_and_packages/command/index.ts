@@ -8,7 +8,7 @@ import {vscodeRegisterCommand} from '../../../../../shared/app/common/vscode/com
 import * as config from '../../../../../shared/app/services/config';
 import {Context} from '../context';
 import {Breadcrumbs} from '../item';
-import {build} from './build';
+import {build, buildWithFlags} from './build';
 import {crosWorkon} from './cros_workon';
 import {
   addFavoriteCategory,
@@ -28,6 +28,7 @@ export enum CommandName {
   CROS_WORKON_STOP = 'chromiumide.boardsAndPackages.crosWorkonStop',
   OPEN_EBUILD = 'chromiumide.boardsAndPackages.openEbuild',
   BUILD = 'chromiumide.boardsAndPackages.build',
+  BUILD_WITH_FLAGS = 'chromiumide.boardsAndPackages.buildWithFlags',
 }
 
 /**
@@ -79,6 +80,11 @@ export class BoardsAndPackagesCommands implements vscode.Disposable {
         CommandName.BUILD,
         ({breadcrumbs: [board, category, name]}: Breadcrumbs) =>
           build(ctx, parseBoardOrHost(board), {category, name})
+      ),
+      this.register(
+        CommandName.BUILD_WITH_FLAGS,
+        ({breadcrumbs: [board, category, name]}: Breadcrumbs) =>
+          buildWithFlags(ctx, parseBoardOrHost(board), {category, name})
       ),
       this.register(
         CommandName.CROS_WORKON_START,

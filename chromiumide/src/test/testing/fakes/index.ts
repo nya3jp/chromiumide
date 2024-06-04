@@ -15,3 +15,4 @@ export {installFakeSudo} from './sudo';
 export {FakeTextDocument} from './text_document';
 export {FakeStatusManager} from './ui';
 export {installFakeDepotTools} from './depot_tools';
+export {FakeQuickPick} from './quick_pick';
