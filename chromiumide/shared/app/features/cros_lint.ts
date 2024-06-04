@@ -53,6 +53,10 @@ export function activate(
 /** Describes how to run a linter and parse its output. */
 interface LintConfig {
   /**
+   * Name of this lint config.
+   */
+  name: string | ((p: string) => string);
+  /**
    * Returns the executable name to lint the realpath. It returns undefined in case linter should not be applied.
    */
   executable(realpath: string): Promise<string | undefined>;
@@ -101,11 +105,13 @@ const languageToLintConfigs = new Map<string, LintConfig[]>([
     'cpp',
     [
       {
+        name: 'cros lint',
         executable: realpath => crosExeFor(realpath),
         arguments: (path: string) => ['lint', path],
         parse: parseCrosLintCpp,
       },
       {
+        name: 'libchrome check',
         executable: async realpath => {
           // For cider ChromeOS extension, libchrome check is not in scope.
           if (driver.platform() === Platform.CIDER) {
@@ -133,6 +139,7 @@ const languageToLintConfigs = new Map<string, LintConfig[]>([
     'gn',
     [
       {
+        name: 'cros lint',
         executable: realpath => crosExeFor(realpath),
         arguments: (path: string) => ['lint', path],
         parse: parseCrosLintGn,
@@ -149,6 +156,7 @@ const languageToLintConfigs = new Map<string, LintConfig[]>([
     'python',
     [
       {
+        name: 'cros lint',
         executable: realpath => crosExeFor(realpath),
         arguments: (path: string) => ['lint', path],
         parse: parseCrosLintPython,
@@ -161,6 +169,7 @@ const languageToLintConfigs = new Map<string, LintConfig[]>([
     'shellscript',
     [
       {
+        name: 'cros lint',
         executable: realpath => crosExeFor(realpath),
         arguments: (path: string) => ['lint', '--output=parseable', path],
         parse: parseCrosLintShell,
@@ -171,6 +180,7 @@ const languageToLintConfigs = new Map<string, LintConfig[]>([
     'go',
     [
       {
+        name: realpath => (!TAST_RE.test(realpath) ? 'cros lint' : 'tast lint'),
         executable: realpath =>
           !TAST_RE.test(realpath)
             ? crosExeFor(realpath)
@@ -331,17 +341,24 @@ async function updateDiagnostics(
 
     const diagnosticsCollection: vscode.Diagnostic[] = [];
     for (const lintConfig of lintConfigs) {
-      const name = await lintConfig.executable(realpath);
-      if (!name) {
-        log.channel.append(
-          `Do not apply lint executable for ${document.uri.fsPath}\n`
-        );
+      const executable = await lintConfig.executable(realpath);
+      log.channel.appendLine(
+        `${executable ? 'Applying' : 'Do not apply'} ${
+          typeof lintConfig.name === 'string'
+            ? lintConfig.name
+            : lintConfig.name(realpath)
+        } lint executable to ${document.languageId} file: ${
+          document.uri.fsPath
+        }`
+      );
+      if (!executable) {
         continue;
       }
+
       const args = lintConfig.arguments(realpath);
-      const cwd = lintConfig.cwd?.(name);
-      const extraEnv = await lintConfig.extraEnv?.(name, realpath);
-      const res = await commonUtil.exec(name, args, {
+      const cwd = lintConfig.cwd?.(executable);
+      const extraEnv = await lintConfig.extraEnv?.(executable, realpath);
+      const res = await commonUtil.exec(executable, args, {
         logger: log.channel,
         ignoreNonZeroExit: true,
         logStdout: true,
