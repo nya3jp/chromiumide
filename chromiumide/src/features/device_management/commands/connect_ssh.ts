@@ -20,7 +20,8 @@ const driver = getDriver();
 
 export async function connectToDeviceForShell(
   context: CommandContext,
-  selectedHostname?: string
+  selectedHostname?: string,
+  onDidFinishForTesting?: vscode.EventEmitter<void>
 ): Promise<void> {
   driver.metrics.send({
     category: 'interactive',
@@ -53,9 +54,11 @@ export async function connectToDeviceForShell(
       errorMessageProvider.dispose();
 
       // ssh exits with the exit status of the remote command or with 255 if an error occurred.
-      if (terminal.exitStatus?.code !== 255) return;
+      if (terminal.exitStatus?.code === 255) {
+        await checkSshConnection(context, hostname);
+      }
 
-      await checkSshConnection(context, hostname);
+      onDidFinishForTesting?.fire();
     }
   );
 }
