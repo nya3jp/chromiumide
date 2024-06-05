@@ -3,9 +3,10 @@
 // found in the LICENSE file.
 
 import {
-  SyslogEntry,
-  SyslogSeverity,
-} from '../../../../../src/features/device_management/syslog/model';
+  DeviceSyslogEntry,
+  DeviceSyslogSeverity,
+} from '../../../../../src/common/syslog';
+
 /**
  * Filter on a syslog entry,
  * meaning the conjunction of component conditions.
@@ -19,7 +20,7 @@ export type SyslogFilter = {
 export type MatchedSyslogEntry = {
   lineNum: number;
   timestamp?: string;
-  severity?: SyslogSeverity;
+  severity?: DeviceSyslogSeverity;
   process?: MatchedText;
   message: MatchedText;
 };
@@ -27,7 +28,7 @@ export type MatchedSyslogEntry = {
 /**
  * Converts MatchedSyslogEntry to underlying SyslogEntry.
  */
-export function toSyslogEntry(entry: MatchedSyslogEntry): SyslogEntry {
+export function toSyslogEntry(entry: MatchedSyslogEntry): DeviceSyslogEntry {
   const {lineNum, timestamp, severity, process, message} = entry;
   return {
     lineNum,
@@ -71,7 +72,7 @@ export function initialTextFilter(): TextFilter {
  * TODO(oka): Test this function (b:268173226).
  */
 export function matchSyslogEntry(
-  entry: SyslogEntry,
+  entry: DeviceSyslogEntry,
   filter: SyslogFilter
 ): MatchedSyslogEntry | undefined {
   const {process, message} = entry;

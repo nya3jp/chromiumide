@@ -10,11 +10,11 @@ import * as commonUtil from '../../../../shared/app/common/common_util';
 import {getDriver} from '../../../../shared/app/common/driver_repository';
 import {ExecResult} from '../../../../shared/app/common/exec/types';
 import * as shutil from '../../../../shared/app/common/shutil';
+import {parseDeviceSyslogLine} from '../../../common/syslog';
 import {ReactPanel} from '../../../services/react_panel';
 import {SshIdentity} from '../ssh_identity';
 import * as sshUtil from '../ssh_util';
 import {
-  parseSyslogLine,
   SyslogViewBackendMessage,
   SyslogViewContext,
   SyslogViewFrontendMessage,
@@ -172,7 +172,9 @@ export class SyslogPanel extends ReactPanel<SyslogViewContext> {
             remainder = lines.pop()!;
             const newEntries = [];
             for (const line of lines) {
-              newEntries.push(parseSyslogLine(line, this.localSyslogReadLine));
+              newEntries.push(
+                parseDeviceSyslogLine(line, this.localSyslogReadLine)
+              );
               this.localSyslogReadLine++;
             }
             // The message is asynchronously posted.

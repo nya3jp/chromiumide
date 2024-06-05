@@ -37,9 +37,11 @@ import {
   TableVirtuosoProps,
 } from 'react-virtuoso';
 import {
+  DeviceSyslogEntry,
+  DeviceSyslogSeverity,
+} from '../../../../../src/common/syslog';
+import {
   SyslogViewContext,
-  SyslogEntry,
-  SyslogSeverity,
   SyslogViewBackendMessage,
   SyslogViewFrontendMessage,
   stringifySyslogEntries,
@@ -232,7 +234,7 @@ const COPY_MAX_TEXT = '10k';
 /** The table for the syslog. */
 function SyslogTable(props: {filter: SyslogFilter}): JSX.Element {
   const {filter} = props;
-  const [entries, setEntries] = useState<SyslogEntry[]>([]);
+  const [entries, setEntries] = useState<DeviceSyslogEntry[]>([]);
   // Send an update request every 1 second.
   useEffect(() => {
     const repeater = setInterval(() => {
@@ -503,7 +505,7 @@ function SyslogRow(props: {entry: viewModel.MatchedSyslogEntry}): JSX.Element {
 }
 
 /** Calculate the color for the syslog table row, based on the severity. */
-function sxSyslogEntry(severity?: SyslogSeverity): SxProps {
+function sxSyslogEntry(severity?: DeviceSyslogSeverity): SxProps {
   switch (severity) {
     case 'DEBUG':
     case 'INFO':
