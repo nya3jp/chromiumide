@@ -12,6 +12,43 @@ export class SimplePickItem implements vscode.QuickPickItem {
   ) {}
 }
 
+class QuickInputButton implements vscode.QuickInputButton {
+  constructor(readonly iconPath: vscode.ThemeIcon, readonly tooltip: string) {}
+}
+
+class PrefillButton extends QuickInputButton {
+  constructor(label: string) {
+    super(
+      new vscode.ThemeIcon('arrow-small-right'),
+      `prefill input box with ${label}`
+    );
+  }
+}
+
+class QuickPickItemWithButtons implements SimplePickItem {
+  constructor(
+    readonly label: string,
+    readonly buttons: QuickInputButton[],
+    readonly kind?: vscode.QuickPickItemKind,
+    readonly description?: string
+  ) {}
+}
+
+/*
+ * vscode.QuickPickItem type that has a prefill button.
+ * If an item of this type is passed to showInputBoxWithSuggestion, when the button is triggered the
+ * input box value will be prefilled with the item label.
+ */
+export class QuickPickItemWithPrefillButton extends QuickPickItemWithButtons {
+  constructor(
+    override readonly label: string,
+    override readonly kind?: vscode.QuickPickItemKind,
+    override readonly description?: string
+  ) {
+    super(label, [new PrefillButton(label)], kind, description);
+  }
+}
+
 interface InputBoxWithSuggestionsOptions {
   title?: string;
   placeholder?: string;
@@ -44,6 +81,11 @@ export function showInputBoxWithSuggestions(
       picker.onDidChangeValue(() => {
         if (!labelSet.has(picker.value)) {
           picker.items = [new SimplePickItem(picker.value), ...items];
+        }
+      }),
+      picker.onDidTriggerItemButton(e => {
+        if (e.button instanceof PrefillButton) {
+          picker.value = e.item.label;
         }
       }),
       picker.onDidAccept(() => {
