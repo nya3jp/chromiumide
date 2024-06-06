@@ -621,4 +621,22 @@ describe('Boards and packages', () => {
 
     expect(terminal.getTexts()).toEqual('cros build-packages --board brya\n');
   });
+
+  it('offers command to build image', async () => {
+    vscodeSpy.window.showQuickPick.and.returnValue({
+      label: 'test',
+    });
+
+    const terminal = new testing.fakes.FakeTerminal();
+    vscodeSpy.window.createTerminal.and.returnValue(terminal);
+
+    await vscode.commands.executeCommand(
+      'chromiumide.boardsAndPackages.buildImage',
+      Breadcrumbs.from('brya')
+    );
+
+    terminal.close({code: 0, reason: vscode.TerminalExitReason.User});
+
+    expect(terminal.getTexts()).toEqual('cros build-image --board brya test\n');
+  });
 });
