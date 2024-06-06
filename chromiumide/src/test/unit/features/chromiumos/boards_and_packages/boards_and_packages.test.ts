@@ -607,4 +607,18 @@ describe('Boards and packages', () => {
       'chromeos-base/codelab has been built for betty'
     );
   });
+
+  it('offers command to build packages', async () => {
+    const terminal = new testing.fakes.FakeTerminal();
+    vscodeSpy.window.createTerminal.and.returnValue(terminal);
+
+    await vscode.commands.executeCommand(
+      'chromiumide.boardsAndPackages.buildPackages',
+      Breadcrumbs.from('brya')
+    );
+
+    terminal.close({code: 0, reason: vscode.TerminalExitReason.User});
+
+    expect(terminal.getTexts()).toEqual('cros build-packages --board brya\n');
+  });
 });

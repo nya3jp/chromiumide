@@ -9,6 +9,7 @@ import * as config from '../../../../../shared/app/services/config';
 import {Context} from '../context';
 import {Breadcrumbs} from '../item';
 import {build, buildWithFlags} from './build';
+import {buildPackages} from './build_packages';
 import {crosWorkon} from './cros_workon';
 import {
   addFavoriteCategory,
@@ -19,6 +20,7 @@ import {
 import {openEbuild} from './open_ebuild';
 
 export enum CommandName {
+  BUILD_PACKAGES = 'chromiumide.boardsAndPackages.buildPackages',
   SET_DEFAULT_BOARD = 'chromiumide.boardsAndPackages.setDefaultBoard',
 
   FAVORITE_ADD = 'chromiumide.boardsAndPackages.favoriteAdd',
@@ -48,6 +50,12 @@ export class BoardsAndPackagesCommands implements vscode.Disposable {
   constructor(ctx: Context) {
     this.subscriptions.push(
       // Commands for board items
+      this.register(
+        CommandName.BUILD_PACKAGES,
+        async ({breadcrumbs: [board]}: Breadcrumbs) => {
+          await buildPackages(board);
+        }
+      ),
       this.register(
         CommandName.SET_DEFAULT_BOARD,
         async ({breadcrumbs: [board]}: Breadcrumbs) => {

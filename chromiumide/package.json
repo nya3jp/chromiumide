@@ -33,6 +33,11 @@
         "title": "Build"
       },
       {
+        "command": "chromiumide.boardsAndPackages.buildPackages",
+        "category": "CrOS",
+        "title": "Build packages"
+      },
+      {
         "command": "chromiumide.boardsAndPackages.buildWithFlags",
         "category": "CrOS",
         "title": "Build with Flags"
@@ -614,6 +619,11 @@
           "group": "3_build"
         },
         {
+          "command": "chromiumide.boardsAndPackages.buildPackages",
+          "when": "view == boards-and-packages && viewItem =~ /<board>/ && !(viewItem =~ /<host>/)",
+          "group": "3_build"
+        },
+        {
           "command": "chromiumide.boardsAndPackages.buildWithFlags",
           "when": "view == boards-and-packages && viewItem =~ /<package>/",
           "group": "3_build"
@@ -818,6 +828,10 @@
       "commandPalette": [
         {
           "command": "chromiumide.boardsAndPackages.build",
+          "when": "false"
+        },
+        {
+          "command": "chromiumide.boardsAndPackages.buildPackages",
           "when": "false"
         },
         {

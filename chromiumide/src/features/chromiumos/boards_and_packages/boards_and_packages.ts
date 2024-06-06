@@ -83,6 +83,7 @@ export class BoardsAndPackages implements vscode.Disposable {
           // Do nothing if the command wouldn't affect the boards and packages view, or the event
           // will be handled in other places. e.g. the default board change is handled by another
           // handler, so we do nothing for SET_DEFAULT_BOARD here.
+          case CommandName.BUILD_PACKAGES:
           case CommandName.SET_DEFAULT_BOARD:
           case CommandName.FAVORITE_ADD:
           case CommandName.FAVORITE_DELETE:
