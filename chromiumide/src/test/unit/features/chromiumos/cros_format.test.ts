@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import {getDriver} from '../../../../../shared/app/common/driver_repository';
 import {ExecResult} from '../../../../../shared/app/common/exec/types';
 import {TEST_ONLY} from '../../../../../shared/app/features/cros_format';
+import * as config from '../../../../../shared/app/services/config';
 import {
   StatusManager,
   TaskStatus,
@@ -244,13 +245,6 @@ describe('maybeConfigOrSuggestSettingDefaultFormatter', () => {
   });
 
   it('shows per-workspace suggestion when config not set', async () => {
-    const defaultFormatterConfig = FakeWorkspaceConfiguration.fromDefaults<
-      string | null
-    >('editor', new Map([['defaultFormatter', null]]), subscriptions);
-    vscodeSpy.workspace.getConfiguration
-      .withArgs('editor')
-      .and.returnValue(defaultFormatterConfig);
-
     await maybeConfigureOrSuggestSettingDefaultFormatter(
       [
         {
@@ -268,12 +262,7 @@ describe('maybeConfigOrSuggestSettingDefaultFormatter', () => {
   });
 
   it('shows per-workspace suggestion when config is another formatter', async () => {
-    const defaultFormatterConfig = FakeWorkspaceConfiguration.fromDefaults<
-      string | null
-    >('editor', new Map([['defaultFormatter', 'prettier']]), subscriptions);
-    vscodeSpy.workspace.getConfiguration
-      .withArgs('editor')
-      .and.returnValue(defaultFormatterConfig);
+    await config.vscode.editor.defaultFormatter.update('prettier');
 
     await maybeConfigureOrSuggestSettingDefaultFormatter(
       [
@@ -292,13 +281,6 @@ describe('maybeConfigOrSuggestSettingDefaultFormatter', () => {
   });
 
   it('does not show any suggestion when new folder added is not in a CrOS repo', async () => {
-    const defaultFormatterConfig = FakeWorkspaceConfiguration.fromDefaults<
-      string | null
-    >('editor', new Map([['defaultFormatter', null]]), subscriptions);
-    vscodeSpy.workspace.getConfiguration
-      .withArgs('editor')
-      .and.returnValue(defaultFormatterConfig);
-
     await maybeConfigureOrSuggestSettingDefaultFormatter(
       [
         {
@@ -311,16 +293,7 @@ describe('maybeConfigOrSuggestSettingDefaultFormatter', () => {
   });
 
   it('does not show any suggestion when config is already set to the one by extension', async () => {
-    const defaultFormatterConfig = FakeWorkspaceConfiguration.fromDefaults<
-      string | null
-    >(
-      'editor',
-      new Map([['defaultFormatter', 'Google.cros-ide']]),
-      subscriptions
-    );
-    vscodeSpy.workspace.getConfiguration
-      .withArgs('editor')
-      .and.returnValue(defaultFormatterConfig);
+    await config.vscode.editor.defaultFormatter.update('Google.cros-ide');
 
     await maybeConfigureOrSuggestSettingDefaultFormatter(
       [
@@ -334,14 +307,7 @@ describe('maybeConfigOrSuggestSettingDefaultFormatter', () => {
   });
 
   it('updates workspace default formatter config value if user says yes and suggests setting it in all workspaces', async () => {
-    const editorConfig = FakeWorkspaceConfiguration.fromDefaults<string | null>(
-      'editor',
-      new Map([['defaultFormatter', 'prettier']]),
-      subscriptions
-    );
-    vscodeSpy.workspace.getConfiguration
-      .withArgs('editor')
-      .and.returnValue(editorConfig);
+    await config.vscode.editor.defaultFormatter.update('prettier');
 
     const chromiumideConfig = FakeWorkspaceConfiguration.fromSection(
       'chromiumide',
@@ -377,23 +343,18 @@ describe('maybeConfigOrSuggestSettingDefaultFormatter', () => {
     );
 
     // Confirm default formatter is updated to the one provided by the extension.
-    expect(editorConfig.get('defaultFormatter')).toEqual('Google.cros-ide');
+    expect(config.vscode.editor.defaultFormatter.get()).toEqual(
+      'Google.cros-ide'
+    );
     expect(vscodeSpy.window.showInformationMessage).toHaveBeenCalledTimes(2);
   });
 
   it('updates workspace but not global per-workspace suggestion config if user requests so', async () => {
-    const editorConfig = FakeWorkspaceConfiguration.fromDefaults<string | null>(
-      'editor',
-      new Map([['defaultFormatter', 'prettier']]),
-      subscriptions
-    );
+    await config.vscode.editor.defaultFormatter.update('prettier');
     const chromiumideConfig = FakeWorkspaceConfiguration.fromSection(
       'chromiumide',
       subscriptions
     );
-    vscodeSpy.workspace.getConfiguration
-      .withArgs('editor')
-      .and.returnValue(editorConfig);
     vscodeSpy.workspace.getConfiguration
       .withArgs('chromiumide')
       .and.returnValue(chromiumideConfig);
@@ -426,7 +387,7 @@ describe('maybeConfigOrSuggestSettingDefaultFormatter', () => {
 
     // Users will not be prompted on the second time and default formatter remains unchanged.
     expect(vscodeSpy.window.showInformationMessage).toHaveBeenCalledTimes(1);
-    expect(editorConfig.get('defaultFormatter')).toEqual('prettier');
+    expect(config.vscode.editor.defaultFormatter.get()).toEqual('prettier');
     expect(chromiumideConfig.inspect('crosFormat.suggestSetAsDefault')).toEqual(
       jasmine.objectContaining({
         workspaceValue: false,
@@ -435,18 +396,11 @@ describe('maybeConfigOrSuggestSettingDefaultFormatter', () => {
   });
 
   it('do not suggest setting default formatter again ever if user requests so', async () => {
-    const editorConfig = FakeWorkspaceConfiguration.fromDefaults<string | null>(
-      'editor',
-      new Map([['defaultFormatter', 'prettier']]),
-      subscriptions
-    );
+    await config.vscode.editor.defaultFormatter.update('prettier');
     const chromiumideConfig = FakeWorkspaceConfiguration.fromSection(
       'chromiumide',
       subscriptions
     );
-    vscodeSpy.workspace.getConfiguration
-      .withArgs('editor')
-      .and.returnValue(editorConfig);
     vscodeSpy.workspace.getConfiguration
       .withArgs('chromiumide')
       .and.returnValue(chromiumideConfig);
@@ -479,7 +433,7 @@ describe('maybeConfigOrSuggestSettingDefaultFormatter', () => {
 
     // Users will not be prompted on the second time and default formatter remains unchanged.
     expect(vscodeSpy.window.showInformationMessage).toHaveBeenCalledTimes(1);
-    expect(editorConfig.get('defaultFormatter')).toEqual('prettier');
+    expect(config.vscode.editor.defaultFormatter.get()).toEqual('prettier');
     expect(chromiumideConfig.inspect('crosFormat.suggestSetAsDefault')).toEqual(
       jasmine.objectContaining({
         globalValue: false,
@@ -488,14 +442,7 @@ describe('maybeConfigOrSuggestSettingDefaultFormatter', () => {
   });
 
   it('updates workspace default formatter config value if always set as default is enabled', async () => {
-    const editorConfig = FakeWorkspaceConfiguration.fromDefaults<string | null>(
-      'editor',
-      new Map([['defaultFormatter', 'prettier']]),
-      subscriptions
-    );
-    vscodeSpy.workspace.getConfiguration
-      .withArgs('editor')
-      .and.returnValue(editorConfig);
+    await config.vscode.editor.defaultFormatter.update('prettier');
 
     const chromiumideConfig = FakeWorkspaceConfiguration.fromSection(
       'chromiumide',
@@ -517,7 +464,7 @@ describe('maybeConfigOrSuggestSettingDefaultFormatter', () => {
       formatterName
     );
     // Do nothing.
-    expect(editorConfig.get('defaultFormatter')).toEqual('prettier');
+    expect(config.vscode.editor.defaultFormatter.get()).toEqual('prettier');
     expect(vscodeSpy.window.showInformationMessage).not.toHaveBeenCalled();
 
     // User added a CrOS folder.
@@ -531,11 +478,13 @@ describe('maybeConfigOrSuggestSettingDefaultFormatter', () => {
     );
     // Confirm default formatter is automatically updated to the one provided by the extension
     // without prompting user at all.
-    expect(editorConfig.get('defaultFormatter')).toEqual('Google.cros-ide');
+    expect(config.vscode.editor.defaultFormatter.get()).toEqual(
+      'Google.cros-ide'
+    );
     expect(vscodeSpy.window.showInformationMessage).not.toHaveBeenCalled();
 
     // User reset default formatter to something else manually afterwards.
-    await editorConfig.update('defaultFormatter', 'prettier');
+    await config.vscode.editor.defaultFormatter.update('prettier');
     // CrOS folder is added again.
     await maybeConfigureOrSuggestSettingDefaultFormatter(
       [
@@ -546,7 +495,7 @@ describe('maybeConfigOrSuggestSettingDefaultFormatter', () => {
       formatterName
     );
     // Default formatter should retain its value set and will not be updated nor prompts user.
-    expect(editorConfig.get('defaultFormatter')).toEqual('prettier');
+    expect(config.vscode.editor.defaultFormatter.get()).toEqual('prettier');
     expect(vscodeSpy.window.showInformationMessage).not.toHaveBeenCalled();
   });
 });

@@ -4,6 +4,7 @@
 
 import * as vscode from 'vscode';
 import {readPackageJson} from '../package_json';
+import {VSCODE_DEFAULT_SETTINGS} from './vscode_default_settings';
 
 // Fake implementation of vscode.WorkspaceConfiguration.
 // It only implements a portion of WorkspaceConfiguration used by the extension; for example, index
@@ -113,13 +114,19 @@ export class FakeWorkspaceConfiguration<T> {
 
 const implicitDefaultValues = {
   string: '',
+  number: 0,
   boolean: false,
+  object: {},
   array: [],
+  null: null,
 } as const;
 
 function readDefaultsFromPackageJson(section: string): Map<string, unknown> {
   const packageJson = readPackageJson();
-  const configs = packageJson.contributes.configuration.properties;
+  const configs = {
+    ...packageJson.contributes.configuration.properties,
+    ...convertWithTypes(VSCODE_DEFAULT_SETTINGS),
+  };
 
   const defaults = new Map<string, unknown>();
   const prefix = `${section}.`;
@@ -129,8 +136,50 @@ function readDefaultsFromPackageJson(section: string): Map<string, unknown> {
     }
     const schema = configs[key];
     const defaultValue = schema.default ?? implicitDefaultValues[schema.type];
-    defaults.set(key.substring(prefix.length), defaultValue);
+    defaults.set(key.substring(prefix.length), structuredClone(defaultValue));
   }
 
   return defaults;
+}
+
+function convertWithTypes(
+  obj: Record<
+    string,
+    string | number | boolean | Record<string, unknown> | Array<unknown> | null
+  >
+): Record<
+  string,
+  {
+    type: keyof typeof implicitDefaultValues;
+    default?: unknown;
+  }
+> {
+  const res: ReturnType<typeof convertWithTypes> = {};
+
+  for (const key of Object.keys(obj)) {
+    const value = obj[key];
+
+    res[key] = {
+      type: getType(value),
+      default: value,
+    };
+  }
+
+  return res;
+}
+function getType(
+  value: string | number | boolean | Record<string, unknown> | unknown[] | null
+): 'string' | 'number' | 'boolean' | 'object' | 'array' | 'null' {
+  if (value === null) return 'null';
+  if (Array.isArray(value)) return 'array';
+
+  const ty = typeof value;
+  switch (ty) {
+    case 'string':
+    case 'number':
+    case 'boolean':
+      return ty;
+    default:
+      return 'object';
+  }
 }

@@ -8,6 +8,7 @@ import * as injectedVscode from '../unit/injected_modules/vscode';
 import {cleanState} from './clean_state';
 import {FakeCommands} from './fakes/commands';
 import {FakeWorkspaceConfiguration} from './fakes/configuration';
+import {VSCODE_DEFAULT_SETTINGS} from './fakes/vscode_default_settings';
 
 /**
  * Spy for the `vscode` module.
@@ -405,9 +406,14 @@ export function installFakeConfigs(
 ): void {
   const subscriptions: vscode.Disposable[] = [];
 
+  // Prepare fake config for the old prefix as well for testing migrator.
+  const prefixes = new Set([extensionNameLower(), 'cros-ide']);
+  for (const key of Object.keys(VSCODE_DEFAULT_SETTINGS)) {
+    prefixes.add(key.split('.')[0]);
+  }
+
   beforeEach(() => {
-    // Prepare fake config for the old prefix as well for testing migrator.
-    for (const prefix of [extensionNameLower(), 'cros-ide']) {
+    for (const prefix of [...prefixes]) {
       const fakeConfig = FakeWorkspaceConfiguration.fromSection(
         prefix,
         subscriptions

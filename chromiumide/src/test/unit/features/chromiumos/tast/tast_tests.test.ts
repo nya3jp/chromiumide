@@ -5,13 +5,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import * as config from '../../../../../../shared/app/services/config';
 import {TastTests} from '../../../../../features/chromiumos/tast/tast_tests';
 import * as services from '../../../../../services';
 import * as testing from '../../../../testing';
-import {
-  FakeWorkspaceConfiguration,
-  VoidOutputChannel,
-} from '../../../../testing/fakes';
+import {VoidOutputChannel} from '../../../../testing/fakes';
 import {FakeTextDocument} from '../../../../testing/fakes/text_document';
 
 function workspaceFolder(fsPath: string): vscode.WorkspaceFolder {
@@ -218,15 +216,7 @@ func LocalPass(ctx context.Context, s *testing.State) {
       state.subscriptions
     );
 
-    // TODO(oka): install default vscode settings in `installFakeConfigs`.
-    const filesConfig = FakeWorkspaceConfiguration.fromDefaults(
-      'files',
-      new Map([['exclude', {}]]),
-      state.subscriptions
-    );
-    vscodeSpy.workspace.getConfiguration
-      .withArgs('files')
-      .and.returnValue(filesConfig);
+    await config.vscode.files.exclude.update({});
 
     vscodeSpy.window.showWarningMessage.and.returnValue('Yes and hide symlink');
 
@@ -262,7 +252,7 @@ func LocalPass(ctx context.Context, s *testing.State) {
     expect(tabGroupsSpy.close as jasmine.Spy).toHaveBeenCalledOnceWith([
       tabToClose,
     ]);
-    expect(filesConfig.get('exclude')).toEqual({
+    expect(config.vscode.files.exclude.get()).toEqual({
       cros: true,
     });
 

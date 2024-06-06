@@ -27,7 +27,7 @@ export type PackageJson = {
     configuration: {
       properties: {
         [key: string]: {
-          type: 'string' | 'boolean' | 'array';
+          type: 'string' | 'number' | 'boolean' | 'object' | 'array';
           default?: unknown;
         };
       };
