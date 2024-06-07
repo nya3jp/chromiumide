@@ -18,8 +18,8 @@ const FORMATTER = 'Formatter';
 
 // File containing wildcards, one per line, matching files that should be
 // excluded from presubmit checks. Lines beginning with '#' are ignored.
-const _IGNORE_FILE = '.presubmitignore';
-const _IGNORED_WILDCARDS_CACHE = new Map<string, string[]>();
+const IGNORE_FILE = '.presubmitignore';
+const IGNORED_WILDCARDS_CACHE = new Map<string, string[]>();
 
 export function activate(
   context: vscode.ExtensionContext,
@@ -198,7 +198,7 @@ async function suggestSettingDefaultFormatterAlways(): Promise<void> {
 }
 
 /*
- * Get wildcards listed in a directory's _IGNORE_FILE.
+ * Get wildcards listed in a directory's IGNORE_FILE.
  *
  * Essentially a reimplementation of _get_ignore_wildcards in
  * https://source.corp.google.com/h/chromium/chromiumos/codesearch/+/main:src/repohooks/pre-upload.py?q=_get_ignore_wildcards
@@ -210,11 +210,11 @@ async function getIgnoreWildcards(
   path: string,
   outputChannel?: vscode.OutputChannel
 ): Promise<string[]> {
-  if (!_IGNORED_WILDCARDS_CACHE.has(directory)) {
-    const dotfilePath = driver.path.join(directory, _IGNORE_FILE);
+  if (!IGNORED_WILDCARDS_CACHE.has(directory)) {
+    const dotfilePath = driver.path.join(directory, IGNORE_FILE);
     if (await driver.fs.exists(dotfilePath)) {
       outputChannel?.appendLine(`Found ${dotfilePath} applicable to ${path}`);
-      _IGNORED_WILDCARDS_CACHE.set(
+      IGNORED_WILDCARDS_CACHE.set(
         directory,
         (await driver.fs.readFile(dotfilePath))
           .split('\n')
@@ -231,7 +231,7 @@ async function getIgnoreWildcards(
       );
     }
   }
-  return _IGNORED_WILDCARDS_CACHE.get(directory) ?? [];
+  return IGNORED_WILDCARDS_CACHE.get(directory) ?? [];
 }
 
 /*
@@ -257,7 +257,7 @@ async function pathIsIgnored(
     );
   }
 
-  if (driver.path.basename(path) === _IGNORE_FILE) return true;
+  if (driver.path.basename(path) === IGNORE_FILE) return true;
 
   let prefix = driver.path.dirname(path);
   while (prefix.startsWith(crosRoot)) {
@@ -268,14 +268,14 @@ async function pathIsIgnored(
     )) {
       if (driver.matchGlob(path, wildcard)) {
         outputChannel?.appendLine(
-          `Match pattern in ${prefix}/${_IGNORE_FILE}, not formatting ${path}.`
+          `Match pattern in ${prefix}/${IGNORE_FILE}, not formatting ${path}.`
         );
         return true;
       }
     }
     prefix = driver.path.dirname(prefix);
   }
-  outputChannel?.appendLine(`${_IGNORE_FILE} not found for ${path}`);
+  outputChannel?.appendLine(`${IGNORE_FILE} not found for ${path}`);
   return false;
 }
 
