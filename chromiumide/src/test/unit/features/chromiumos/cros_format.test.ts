@@ -9,15 +9,13 @@ import {maybeConfigureOrSuggestSettingDefaultFormatter} from '../../../../../sha
 import {CrosFormatEditProvider} from '../../../../../shared/app/features/cros_format/formatting_edit_provider';
 import {isPresubmitignored} from '../../../../../shared/app/features/cros_format/presubmitignore';
 import * as config from '../../../../../shared/app/services/config';
-import {
-  StatusManager,
-  TaskStatus,
-} from '../../../../../shared/app/ui/bg_task_status';
+import {TaskStatus} from '../../../../../shared/app/ui/bg_task_status';
 import * as testing from '../../../testing';
 import {
   FakeTextDocument,
   FakeWorkspaceConfiguration,
   FakeTextEditor,
+  FakeStatusManager,
 } from '../../../testing/fakes';
 
 const driver = getDriver();
@@ -29,26 +27,27 @@ describe('CrosFormatEditProvider', () => {
   const fakeExec = testing.installFakeExec();
 
   const state = testing.cleanState(async () => {
-    const crosUri = vscode.Uri.file(
-      driver.path.join(tempDir.path, 'src/some/file.md')
-    );
-    await testing.putFiles(tempDir.path, {
-      // For driver.cros.findSourceDir to find the cros repo root (based on finding chroot).
-      'chroot/etc/cros_chroot_version': 'fake chroot',
+    const crosRoot = driver.path.join(tempDir.path, 'os');
+    await testing.buildFakeChroot(crosRoot);
+
+    const crosFile = (subpath: string) =>
+      vscode.Uri.file(driver.path.join(crosRoot, subpath));
+
+    await testing.putFiles(crosRoot, {
       // For crosExeFor to find the cros executable.
-      'chromite/bin/cros': 'fakeCrosExe',
+      'chromite/bin/cros': '',
     });
-    const statusManager = jasmine.createSpyObj<StatusManager>('statusManager', [
-      'setStatus',
-    ]);
+    const statusManager = new FakeStatusManager();
     const editProvider = new CrosFormatEditProvider(
       statusManager,
-      vscode.window.createOutputChannel('unused')
+      new testing.fakes.VoidOutputChannel()
     );
+
     return {
+      crosRoot,
       statusManager,
       editProvider,
-      crosUri,
+      crosFile,
     };
   });
 
@@ -60,11 +59,10 @@ describe('CrosFormatEditProvider', () => {
     fakeExec.and.resolveTo(new Error());
 
     await state.editProvider.provideDocumentFormattingEdits(
-      new FakeTextDocument({uri: state.crosUri})
+      new FakeTextDocument({uri: state.crosFile('foo.c')})
     );
 
-    expect(state.statusManager.setStatus).toHaveBeenCalledOnceWith(
-      'Formatter',
+    expect(state.statusManager.getStatus('Formatter')).toEqual(
       TaskStatus.ERROR
     );
     expect(driver.metrics.send).toHaveBeenCalledOnceWith({
@@ -84,11 +82,10 @@ describe('CrosFormatEditProvider', () => {
     fakeExec.and.resolveTo(execResult);
 
     await state.editProvider.provideDocumentFormattingEdits(
-      new FakeTextDocument({uri: state.crosUri})
+      new FakeTextDocument({uri: state.crosFile('foo.c')})
     );
 
-    expect(state.statusManager.setStatus).toHaveBeenCalledOnceWith(
-      'Formatter',
+    expect(state.statusManager.getStatus('Formatter')).toEqual(
       TaskStatus.ERROR
     );
     expect(driver.metrics.send).toHaveBeenCalledOnceWith({
@@ -108,14 +105,11 @@ describe('CrosFormatEditProvider', () => {
     fakeExec.and.resolveTo(execResult);
 
     const edits = await state.editProvider.provideDocumentFormattingEdits(
-      new FakeTextDocument({uri: state.crosUri})
+      new FakeTextDocument({uri: state.crosFile('foo.c')})
     );
 
     expect(edits).toBeUndefined();
-    expect(state.statusManager.setStatus).toHaveBeenCalledOnceWith(
-      'Formatter',
-      TaskStatus.OK
-    );
+    expect(state.statusManager.getStatus('Formatter')).toEqual(TaskStatus.OK);
     expect(driver.metrics.send).not.toHaveBeenCalled();
   });
 
@@ -128,15 +122,12 @@ describe('CrosFormatEditProvider', () => {
     fakeExec.and.resolveTo(execResult);
 
     const edits = await state.editProvider.provideDocumentFormattingEdits(
-      new FakeTextDocument({uri: state.crosUri})
+      new FakeTextDocument({uri: state.crosFile('foo.c')})
     );
 
     expect(fakeExec).toHaveBeenCalled();
     expect(edits).toBeDefined();
-    expect(state.statusManager.setStatus).toHaveBeenCalledOnceWith(
-      'Formatter',
-      TaskStatus.OK
-    );
+    expect(state.statusManager.getStatus('Formatter')).toEqual(TaskStatus.OK);
     expect(driver.metrics.send).toHaveBeenCalledOnceWith({
       category: 'background',
       group: 'format',
@@ -145,9 +136,11 @@ describe('CrosFormatEditProvider', () => {
     });
   });
 
-  it('does not format files outside CrOS chroot', async () => {
+  it('does not format files outside CrOS', async () => {
     const edits = await state.editProvider.provideDocumentFormattingEdits(
-      new FakeTextDocument({uri: vscode.Uri.file('/not/a/cros/file.md')})
+      new FakeTextDocument({
+        uri: vscode.Uri.file(driver.path.join(tempDir.path, 'foo.c')),
+      })
     );
 
     expect(fakeExec).not.toHaveBeenCalled();
@@ -155,13 +148,13 @@ describe('CrosFormatEditProvider', () => {
     expect(driver.metrics.send).not.toHaveBeenCalled();
   });
 
-  it('does not format files that are ignored', async () => {
-    await testing.putFiles(tempDir.path, {
-      'src/some/.presubmitignore': '*.md',
+  it('does not format files that are in .presubmitignore', async () => {
+    await testing.putFiles(state.crosRoot, {
+      '.presubmitignore': '*.c',
     });
 
     const edits = await state.editProvider.provideDocumentFormattingEdits(
-      new FakeTextDocument({uri: state.crosUri})
+      new FakeTextDocument({uri: state.crosFile('foo.c')})
     );
 
     expect(fakeExec).not.toHaveBeenCalled();
@@ -170,13 +163,13 @@ describe('CrosFormatEditProvider', () => {
   });
 
   it('force format when instructed so', async () => {
-    await testing.putFiles(tempDir.path, {
-      'src/some/.presubmitignore': '*.md',
+    await testing.putFiles(state.crosRoot, {
+      '.presubmitignore': '*.c',
     });
 
     const textEditor = new FakeTextEditor(
       new FakeTextDocument({
-        uri: state.crosUri,
+        uri: state.crosFile('foo.c'),
         text: 'before fmt',
       })
     );
