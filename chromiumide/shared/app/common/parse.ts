@@ -2,19 +2,38 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-/**
- * Parse command options. Currently it is for SSH options, and since the ssh command doesn't have
- * long options, the parser doesn't support them.
- */
 export class OptionsParser {
   private p = 0;
+  private readonly line;
 
-  constructor(private readonly line: string) {}
+  /**
+   * Create a parser that parses the line representing command line options into an array.
+   *
+   * By default it doesn't support long options, which is suitable for SSH commands for example.
+   */
+  constructor(
+    line: string,
+    private readonly opts?: {
+      allowLongOptions?: boolean;
+      /** Allows args that don't follow a option switch. */
+      allowArgs?: boolean;
+      allowEqualSeparator?: boolean;
+    }
+  ) {
+    this.line = line.trim() + '\n'; // append newline as a sentinel value
+  }
 
   parseOrThrow(): string[] {
     const options: string[] = [];
 
     while (this.p < this.line.length) {
+      if (this.peek() !== '-' && this.opts?.allowArgs) {
+        const arg = this.readOptionValue();
+        if (arg) options.push(arg);
+        this.skipSpaces();
+        continue;
+      }
+
       const optionSwitch = this.readOptionSwitch();
       this.skipSpaces();
       const optionValue = this.readOptionValue();
@@ -40,7 +59,20 @@ export class OptionsParser {
     }
 
     this.next(); // read '-' and the next character
-    this.next();
+    const second = this.next();
+
+    if (second === '-' && this.opts?.allowLongOptions) {
+      for (;;) {
+        const c = this.next();
+        if (isWhite(c)) break;
+        if (c === '=' && this.opts.allowEqualSeparator) break;
+      }
+      return this.line.substring(start, this.p - 1);
+    }
+
+    if (this.peek() === '=' && this.opts?.allowEqualSeparator) {
+      this.next();
+    }
 
     return this.line.substring(start, this.p);
   }

@@ -184,6 +184,74 @@ describe('CrosFormatEditProvider', () => {
 
     expect(textEditor.document.text).toEqual('after fmt');
   });
+
+  for (const {name, content, wantOptions} of [
+    {
+      name: 'works on empty PRESUBMIT.cfg',
+      content: '',
+      wantOptions: ['--stdout'],
+    },
+    {
+      name: 'works on chromite/PRESUBMIT.cfg',
+      content: `[Hook Scripts]
+cros format = bin/cros format --check --commit \${PRESUBMIT_COMMIT} \${PRESUBMIT_FILES}
+cros lint = bin/cros lint --commit \${PRESUBMIT_COMMIT} \${PRESUBMIT_FILES}
+preupload_dump_config = bin/preupload_dump_config
+
+[Hook Overrides]
+git_cl_presubmit: false
+project_prefix_check: true
+`,
+      wantOptions: ['--stdout'],
+    },
+    {
+      name: 'works on infra/recipes/PRESUBMIT.cfg',
+      // Trimmed for brevity.
+      content: `[Hook Scripts]
+cros format = cros format --check --commit \${PRESUBMIT_COMMIT} --include '*.proto' --include 'OWNERS*' --exclude '*' \${PRESUBMIT_FILES}
+`,
+      wantOptions: [
+        '--include',
+        '*.proto',
+        '--include',
+        'OWNERS*',
+        '--exclude',
+        '*',
+        '--stdout',
+      ],
+    },
+    {
+      name: 'works on third_party/webrtc-apm/PRESUBMIT.cfg',
+      // Trimmed for brevity.
+      content: `[Hook Scripts]
+cros format: cros format --include=webrtc_apm/* --exclude=* --check --commit \${PRESUBMIT_COMMIT} -- \${PRESUBMIT_FILES}
+`,
+      wantOptions: ['--include', 'webrtc_apm/*', '--exclude', '*', '--stdout'],
+    },
+  ])
+    it(name, async () => {
+      const file = state.crosFile('foo.c');
+
+      await testing.putFiles(state.crosRoot, {'PRESUBMIT.cfg': content});
+
+      // Test that PRESUMBIT.cfg is parsed and cros format is invoked with the expected arguments.
+      fakeExec.installCallback(
+        driver.path.join(state.crosRoot, 'chromite/bin/cros'),
+        ['format', ...wantOptions, file.fsPath],
+        () =>
+          Promise.resolve({
+            exitStatus: 1,
+            stderr: '',
+            stdout: 'x',
+          })
+      );
+
+      const edits = await state.editProvider.provideDocumentFormattingEdits(
+        new FakeTextDocument({uri: file})
+      );
+
+      expect(edits?.[0].newText).toEqual('x');
+    });
 });
 
 describe('pathIsIgnored', () => {

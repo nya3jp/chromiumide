@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import {LruCache} from '../../../common/lru_cache';
+import {LruCache} from '../../../../shared/app/common/lru_cache';
 import {GitFileKey} from '../data';
 import * as git from '../git';
 import {Sink} from '../sink';

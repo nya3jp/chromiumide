@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import {LruCache} from '../../../../../common/lru_cache';
+import {LruCache} from '../../../../../../shared/app/common/lru_cache';
 import {Package} from '../../../../../features/chromiumos/boards_and_packages/package';
 import * as deployPackages from '../../../../../features/device_management/commands/deploy_package';
 import {ChrootService} from '../../../../../services/chromiumos';

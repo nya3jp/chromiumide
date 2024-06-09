@@ -5,13 +5,13 @@
 import * as vscode from 'vscode';
 import * as commonUtil from '../../../../shared/app/common/common_util';
 import {getDriver} from '../../../../shared/app/common/driver_repository';
+import {OptionsParser} from '../../../../shared/app/common/parse';
 import * as shutil from '../../../../shared/app/common/shutil';
 import {
   QuickPickItemWithPrefillButton,
   showInputBoxWithSuggestions,
 } from '../../../../shared/app/ui/input_box';
 import {MemoryOutputChannel} from '../../../common/memory_output_channel';
-import {OptionsParser} from '../../../common/parse';
 import {TeeOutputChannel} from '../../../common/tee_output_channel';
 import {
   createShowLogsButton,

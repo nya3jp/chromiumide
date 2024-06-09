@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import * as util from 'util';
-import {LruCache} from '../../../common/lru_cache';
+import {LruCache} from '../../../../shared/app/common/lru_cache';
 
 describe('LRU cache', () => {
   it('works correctly', () => {

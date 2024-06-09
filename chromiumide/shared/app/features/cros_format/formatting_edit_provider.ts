@@ -6,8 +6,10 @@ import * as vscode from 'vscode';
 import {crosExeFromCrosRoot} from '../../common/chromiumos/cros';
 import * as commonUtil from '../../common/common_util';
 import {getDriver} from '../../common/driver_repository';
+import {LruCache} from '../../common/lru_cache';
+import {OptionsParser} from '../../common/parse';
+import {PresubmitCfg} from '../../common/presubmit_cfg';
 import {StatusManager, TaskStatus} from '../../ui/bg_task_status';
-import {getUiLogger} from '../../ui/log';
 import {isPresubmitignored} from './presubmitignore';
 
 const driver = getDriver();
@@ -18,6 +20,9 @@ export const FORMATTER = 'Formatter';
 export class CrosFormatEditProvider
   implements vscode.DocumentFormattingEditProvider
 {
+  // Maps file path to cros format command.
+  private readonly argsCache = new LruCache<string, string[]>(10);
+
   constructor(
     private readonly statusManager: StatusManager,
     private readonly output: vscode.OutputChannel
@@ -67,15 +72,33 @@ export class CrosFormatEditProvider
       `${force ? 'Force formatting' : 'Formatting'} ${fsPath}...`
     );
 
-    const crosExe = crosExeFromCrosRoot(crosRoot);
-    const formatterOutput = await commonUtil.exec(
-      crosExe,
-      ['format', '--stdout', fsPath],
-      {
-        logger: getUiLogger(),
-        ignoreNonZeroExit: true,
+    let args = this.argsCache.get(fsPath);
+    if (!args) {
+      const constructedArgs = await this.constructCrosFormatCommand(
+        document,
+        crosRoot,
+        force
+      );
+      if (constructedArgs instanceof Error) {
+        this.output.appendLine(constructedArgs.message);
+        this.statusManager.setStatus(FORMATTER, TaskStatus.ERROR);
+        driver.metrics.send({
+          category: 'error',
+          group: 'format',
+          name: 'cros_format_parse_presubmit_cfg_error',
+          description: 'parsing presubmit.cfg for cros format command failed',
+        });
+        return;
       }
-    );
+      args = constructedArgs;
+      this.argsCache.set(fsPath, args);
+    }
+
+    const formatterOutput = await commonUtil.exec(args[0], args.slice(1), {
+      logger: this.output,
+      ignoreNonZeroExit: true,
+      cwd: crosRoot,
+    });
 
     if (formatterOutput instanceof Error) {
       this.output.appendLine(formatterOutput.message);
@@ -135,7 +158,9 @@ export class CrosFormatEditProvider
       // cros format tool may exit with status code 66 for file not found but it should never occur
       // for our feature since we are passing an opened document.
       default: {
-        this.output.appendLine(formatterOutput.stderr);
+        this.output.appendLine(
+          `exit code ${formatterOutput.exitStatus}: ${formatterOutput.stderr}`
+        );
         this.statusManager.setStatus(FORMATTER, TaskStatus.ERROR);
         driver.metrics.send({
           category: 'error',
@@ -146,5 +171,67 @@ export class CrosFormatEditProvider
         return;
       }
     }
+  }
+
+  /**
+   * Constructs the command that should be executed to format the given file. If PRESUBMIT.cfg is
+   * configured to run cros format, it constructs the command based on the config. Otherwise it
+   * returns the default command.
+   */
+  private async constructCrosFormatCommand(
+    document: vscode.TextDocument,
+    crosRoot: string,
+    forceFormat: boolean
+  ): Promise<string[] | Error> {
+    const crosExe = crosExeFromCrosRoot(crosRoot);
+    const defaultCommand = [crosExe, 'format', '--stdout', document.uri.fsPath];
+
+    if (forceFormat) return defaultCommand;
+
+    const cfg = await PresubmitCfg.forDocument(document, crosRoot);
+    // As of its writing no PRESUBMIT.cfg has more than one cros format entries.
+    const command = cfg?.crosFormatRunAsHookScript()?.[0];
+    if (!command) return defaultCommand;
+
+    const parser = new OptionsParser(command, {
+      allowArgs: true,
+      allowLongOptions: true,
+      allowEqualSeparator: true,
+    });
+    let args;
+    try {
+      args = parser.parseOrThrow();
+    } catch (e) {
+      return new Error(
+        `parse cros format commad in PRESUBMIT.cfg for ${document.uri.fsPath}: ${e}`
+      );
+    }
+    // Update args so that the command outputs formatted text.
+    args[0] = crosExe; // Replace 'bin/cros' (for chromite) or 'cros'.
+    const endOfOptions = args.indexOf('--');
+    if (endOfOptions >= 0) args.splice(endOfOptions);
+    remove(args, '--check');
+    remove(args, '--commit', /.*/);
+    remove(args, '${PRESUBMIT_FILES}');
+
+    args.push('--stdout', document.uri.fsPath);
+
+    return args;
+  }
+}
+
+/** Removes every subslice in `a` that matches `rs`. */
+function remove(a: string[], ...rs: (RegExp | string)[]) {
+  if (rs.length === 0) return;
+  for (let i = 0; i < a.length - rs.length + 1; ) {
+    if (
+      rs.every((r, j) =>
+        r instanceof RegExp ? r.test(a[i + j]) : r === a[i + j]
+      )
+    ) {
+      a.splice(i, rs.length);
+      continue;
+    }
+    i++;
   }
 }
