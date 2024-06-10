@@ -7,11 +7,14 @@ import * as commonUtil from '../../../../shared/app/common/common_util';
 import {getDriver} from '../../../../shared/app/common/driver_repository';
 import {OptionsParser} from '../../../../shared/app/common/parse';
 import * as shutil from '../../../../shared/app/common/shutil';
+import {assertNever} from '../../../../shared/app/common/typecheck';
 import {
   QuickPickItemWithPrefillButton,
   showInputBoxWithSuggestions,
 } from '../../../../shared/app/ui/input_box';
 import {MemoryOutputChannel} from '../../../common/memory_output_channel';
+import {findProcessUsingPort} from '../../../common/net_util';
+import {killGracefully} from '../../../common/processes';
 import {TeeOutputChannel} from '../../../common/tee_output_channel';
 import {
   createShowLogsButton,
@@ -23,12 +26,15 @@ import {CommandContext, promptKnownHostnameIfNeeded} from './common';
 
 const driver = getDriver();
 
+/**
+ * @returns 'edit options' if editing the extra options is requested.
+ */
 export async function connectToDeviceForShell(
   context: CommandContext,
   selectedHostname?: string,
   extraOptions?: string[],
-  onDidFinishForTesting?: vscode.EventEmitter<void>
-): Promise<void> {
+  optsForTesting?: OptionsForTesting
+): Promise<undefined | 'edit options'> {
   driver.metrics.send({
     category: 'interactive',
     group: 'device',
@@ -44,6 +50,15 @@ export async function connectToDeviceForShell(
   if (!hostname) {
     return;
   }
+
+  const choice = await maybeWarnUsedPorts(
+    extraOptions,
+    context.output,
+    optsForTesting
+  );
+  if (choice === 'edit options') return choice;
+  if (choice === 'give up') return;
+  if (choice) assertNever(choice);
 
   // Create a new terminal.
   const terminal = vscode.window.createTerminal(hostname);
@@ -66,7 +81,7 @@ export async function connectToDeviceForShell(
         await checkSshConnection(context, hostname);
       }
 
-      onDidFinishForTesting?.fire();
+      optsForTesting?.onDidFinishEmitter?.fire();
     }
   );
 }
@@ -108,7 +123,7 @@ async function checkSshConnection(
 export async function connectToDeviceForShellWithOptions(
   context: CommandContext,
   selectedHostname?: string,
-  onDidFinishForTesting?: vscode.EventEmitter<void>
+  optsForTesting?: OptionsForTesting
 ): Promise<void> {
   let initialValue: string | undefined = undefined;
   for (;;) {
@@ -131,20 +146,22 @@ export async function connectToDeviceForShellWithOptions(
     });
     if (optionsString === undefined) return;
 
+    initialValue = optionsString;
+
     const options = parseOptions(optionsString.trim() + '\n');
     if (options instanceof Error) {
       void vscode.window.showErrorMessage(options.message);
-      initialValue = optionsString;
       // Allow the user to fix the string and try again.
       continue;
     }
 
-    await connectToDeviceForShell(
+    const choice = await connectToDeviceForShell(
       context,
       selectedHostname,
       options,
-      onDidFinishForTesting
+      optsForTesting
     );
+    if (choice === 'edit options') continue;
 
     break;
   }
@@ -158,3 +175,70 @@ function parseOptions(optionsString: string): string[] | Error {
     return e as Error;
   }
 }
+
+/**
+ * Blocks until the user responds if the ports that will be assigned by the options are used.
+ *
+ * @returns The user's choice. undefined if we should run the SSH command, 'edit options' if we
+ * should let the user edit the options, and 'give up' if the entire operation should be given up.
+ */
+async function maybeWarnUsedPorts(
+  extraOptions: string[] | undefined,
+  output: vscode.OutputChannel,
+  optsForTesting?: OptionsForTesting
+): Promise<undefined | 'edit options' | 'give up'> {
+  if (!extraOptions) return;
+
+  const ports = [];
+
+  for (let i = 0; i < extraOptions.length - 1; i++) {
+    if (extraOptions[i] === '-L') {
+      const port = parseInt(extraOptions[i + 1].split(':')[0], 10);
+      if (port && !isNaN(port)) {
+        ports.push(port);
+      }
+    }
+  }
+
+  for (const port of ports) {
+    const proc = await findProcessUsingPort(port, {output});
+    if (proc instanceof Error) {
+      output.appendLine(`Failed to find a process using port ${port}: ${proc}`);
+      continue;
+    }
+    if (!proc) continue;
+
+    const message = `Port ${port} is already used by ${proc.name}[${proc.pid}].`;
+
+    const KILL_IT = `Kill ${proc.name}` as const;
+    const EDIT_OPTIONS = 'Edit options';
+    const RUN_ANYWAY = 'Run anyway';
+
+    const choice = await vscode.window.showWarningMessage(
+      message,
+      {
+        modal: true,
+      },
+      KILL_IT,
+      EDIT_OPTIONS,
+      RUN_ANYWAY
+      // 'Cancel' is added as the last button automatically.
+    );
+    if (!choice) return 'give up'; // cancel
+    if (choice === EDIT_OPTIONS) return 'edit options';
+    if (choice === RUN_ANYWAY) return;
+
+    ((_: `Kill ${string}`) => {})(choice); // typecheck
+
+    const killed = await killGracefully(proc, {
+      output,
+      interval: optsForTesting?.pollInterval,
+    });
+    if (!killed) return 'give up';
+  }
+}
+
+type OptionsForTesting = {
+  onDidFinishEmitter?: vscode.EventEmitter<void>;
+  pollInterval?: number;
+};
