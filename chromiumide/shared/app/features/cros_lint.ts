@@ -36,16 +36,27 @@ export function activate(
   context.subscriptions.push(
     textEditorsWatcher.onDidActivate(document => {
       void updateDiagnosticsWrapper(document, collection, statusManager, log);
-    })
-  );
-  context.subscriptions.push(
+    }),
     vscode.workspace.onDidSaveTextDocument(document => {
       void updateDiagnosticsWrapper(document, collection, statusManager, log);
-    })
-  );
-  context.subscriptions.push(
+    }),
     textEditorsWatcher.onDidClose(document => {
       collection.delete(document.uri);
+    }),
+    config.lint.enabled.onDidChange(enabled => {
+      if (!enabled) {
+        // Empty all diagnostics if user switched off linting.
+        collection.clear();
+        return;
+      } else if (vscode.window.activeTextEditor) {
+        // Updating diagnostics for the active document if user switched on linting.
+        void updateDiagnosticsWrapper(
+          vscode.window.activeTextEditor.document,
+          collection,
+          statusManager,
+          log
+        );
+      }
     })
   );
 }
@@ -289,6 +300,10 @@ async function updateDiagnosticsWrapper(
   statusManager: bgTaskStatus.StatusManager,
   log: logs.LoggingBundle
 ): Promise<void> {
+  // Clear collection if lint is disabled.
+  if (!config.lint.enabled.get()) {
+    collection.clear();
+  }
   try {
     await updateDiagnostics(document, collection, statusManager, log);
   } catch (err) {

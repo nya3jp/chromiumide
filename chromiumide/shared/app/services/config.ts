@@ -182,6 +182,10 @@ export const hints = {
   tooLargeWorkspace: new ConfigValue<boolean>('hints.tooLargeWorkspace'),
 };
 
+export const lint = {
+  enabled: new ConfigValue<boolean>('lint.enabled'),
+};
+
 export const underDevelopment = {
   autoninjaImprovements: new ConfigValue<boolean>(
     'underDevelopment.autoninjaImprovements'

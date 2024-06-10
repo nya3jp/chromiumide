@@ -1145,6 +1145,11 @@
           "description": "Warn if very large directory is used as workspace folder",
           "default": true
         },
+        "chromiumide.lint.enabled": {
+          "type": "boolean",
+          "description": "Enable linting by ChromiumIDE",
+          "default": true
+        },
         "chromiumide.ownersFiles.links": {
           "type": "boolean",
           "description": "Make references to other OWNERS files clickable.",
