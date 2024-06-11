@@ -66,15 +66,10 @@ describe('Cros format feature', () => {
       );
 
     const crosRoot = driver.path.join(tempDir.path, 'os');
-    await testing.buildFakeChroot(crosRoot);
+    await testing.buildFakeChromeos(crosRoot);
 
     const crosFile = (subpath: string) =>
       vscode.Uri.file(driver.path.join(crosRoot, subpath));
-
-    await testing.putFiles(crosRoot, {
-      // For crosExeFor to find the cros executable.
-      'chromite/bin/cros': '',
-    });
 
     return {
       crosRoot,
