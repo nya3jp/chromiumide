@@ -8,7 +8,7 @@ import {registerDriver} from './common/driver_repository';
 import {LoggingBundle, createLinterLoggingBundle} from './common/logs';
 import * as feedback from './common/metrics/feedback';
 import {CrosFormatFeature} from './features/cros_format';
-import * as crosLint from './features/cros_lint';
+import * as lint from './features/lint';
 import * as bgTaskStatus from './ui/bg_task_status';
 
 /**
@@ -29,7 +29,7 @@ export async function activate(
   const statusManager = bgTaskStatus.activate(context);
   // The logger that should be used by linters/code-formatters.
   const linterLogger = createLinterLoggingBundle(context);
-  crosLint.activate(context, statusManager, linterLogger);
+  lint.activate(context, statusManager, linterLogger);
 
   context.subscriptions.push(
     new CrosFormatFeature(context.extension.id, statusManager)

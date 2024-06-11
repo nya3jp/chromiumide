@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import * as crosLint from '../../../../shared/app/features/cros_lint';
+import {CrosLintConfig} from '../../../../shared/app/features/lint/cros_lint_config';
+import {GoLintConfig} from '../../../../shared/app/features/lint/go_lint_config';
+import {LibchromeLintConfig} from '../../../../shared/app/features/lint/libchrome_lint_config';
 import * as extensionTesting from '../extension_testing';
 
 const cppFileName = 'cros-disks/aaa.h';
@@ -158,7 +160,12 @@ describe('Lint Integration', () => {
   it('parses C++ errors', async () => {
     const uri = vscode.Uri.from({scheme: scheme, path: cppFileName});
     const textDocument = await vscode.workspace.openTextDocument(uri);
-    const actual = crosLint.parseCrosLintCpp(cppLintOutput, '', textDocument);
+
+    const actual = new CrosLintConfig('cpp').parse(
+      cppLintOutput,
+      '',
+      textDocument
+    );
     await extensionTesting.closeDocument(textDocument);
     const expected = [
       warning(
@@ -184,7 +191,7 @@ describe('Lint Integration', () => {
   it('parses libchrome errors', async () => {
     const uri = vscode.Uri.from({scheme: scheme, path: libchromeFileName});
     const textDocument = await vscode.workspace.openTextDocument(uri);
-    const actual = crosLint.parseLibchromeCheck(
+    const actual = new LibchromeLintConfig().parse(
       '',
       libchromeLintOutput,
       textDocument
@@ -214,7 +221,7 @@ describe('Lint Integration', () => {
   it('parses Python errors', async () => {
     const uri = vscode.Uri.from({scheme: scheme, path: pythonFileName});
     const textDocument = await vscode.workspace.openTextDocument(uri);
-    const actual = crosLint.parseCrosLintPython(
+    const actual = new CrosLintConfig('python').parse(
       pythonLintOutput,
       '',
       textDocument
@@ -252,7 +259,7 @@ describe('Lint Integration', () => {
   it('parses shell errors', async () => {
     const uri = vscode.Uri.from({scheme: scheme, path: shellFileName});
     const textDocument = await vscode.workspace.openTextDocument(uri);
-    const actual = crosLint.parseCrosLintShell(
+    const actual = new CrosLintConfig('shellscript').parse(
       shellLintOutput,
       '',
       textDocument
@@ -290,7 +297,11 @@ describe('Lint Integration', () => {
   it('parses GN errors', async () => {
     const uri = vscode.Uri.from({scheme: scheme, path: gnFileName});
     const textDocument = await vscode.workspace.openTextDocument(uri);
-    const actual = crosLint.parseCrosLintGn(gnLintOutput, '', textDocument);
+    const actual = new CrosLintConfig('gn').parse(
+      gnLintOutput,
+      '',
+      textDocument
+    );
     await extensionTesting.closeDocument(textDocument);
     const expected = [
       warning(
@@ -316,7 +327,7 @@ describe('Lint Integration', () => {
   it('parses go errors in tast', async () => {
     const uri = vscode.Uri.from({scheme: scheme, path: goFileNameTast});
     const textDocument = await vscode.workspace.openTextDocument(uri);
-    const actual = crosLint.parseCrosLintGo(goLintOutputTast, '', textDocument);
+    const actual = new GoLintConfig().parse(goLintOutputTast, '', textDocument);
     await extensionTesting.closeDocument(textDocument);
     const expected = [
       warning(
@@ -342,7 +353,7 @@ describe('Lint Integration', () => {
   it('parses go errors outside of tast', async () => {
     const uri = vscode.Uri.from({scheme: scheme, path: goFileName});
     const textDocument = await vscode.workspace.openTextDocument(uri);
-    const actual = crosLint.parseCrosLintGo(goLintOutput, '', textDocument);
+    const actual = new GoLintConfig().parse(goLintOutput, '', textDocument);
     await extensionTesting.closeDocument(textDocument);
     const expected = [
       warning(
@@ -368,7 +379,7 @@ describe('Lint Integration', () => {
   it('handles absolute document paths when parsing Python errors', async () => {
     const uri = vscode.Uri.from({scheme: scheme, path: pythonAbsoluteFileName});
     const textDocument = await vscode.workspace.openTextDocument(uri);
-    const actual = crosLint.parseCrosLintPython(
+    const actual = new CrosLintConfig('python').parse(
       pythonLintOutput,
       '',
       textDocument
