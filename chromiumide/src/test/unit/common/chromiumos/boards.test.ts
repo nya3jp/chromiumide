@@ -17,7 +17,7 @@ async function prepareBoardsDir(td: string): Promise<{
   chroot: string;
   out: string;
 }> {
-  const chroot = await testing.buildFakeChroot(td);
+  const {chroot} = await testing.buildFakeChromeos(td);
   await testing.putFiles(chroot, {
     '/build/amd64-generic/x': 'x',
     '/build/betty-pi-arc/x': 'x',
@@ -68,7 +68,7 @@ describe('getAllChromeosBoards', () => {
   const fakeExec = testing.installFakeExec();
   const tempDir = testing.tempDir();
   testing.cleanState(async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
   });
 
   it('returns all CrOS boards', async () => {

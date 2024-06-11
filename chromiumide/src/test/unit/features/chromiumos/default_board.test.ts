@@ -21,7 +21,7 @@ describe('getOrSelectDefaultBoard on vscode', () => {
 
   it('returns stored board', async () => {
     await config.board.update('amd64-generic');
-    const chroot = await testing.buildFakeChroot(tempDir.path);
+    const {chroot} = await testing.buildFakeChromeos(tempDir.path);
 
     expect(await defaultBoard.getOrPromptToSelectDefaultBoard(chroot)).toEqual(
       Board.newBoard('amd64-generic')
@@ -29,7 +29,7 @@ describe('getOrSelectDefaultBoard on vscode', () => {
   });
 
   it('returns error if no board has been setup', async () => {
-    const chroot = await testing.buildFakeChroot(tempDir.path);
+    const {chroot} = await testing.buildFakeChromeos(tempDir.path);
 
     const error = await defaultBoard.getOrPromptToSelectDefaultBoard(chroot);
     expect(error).toBeInstanceOf(NoBoardError);
@@ -40,7 +40,7 @@ describe('getOrSelectDefaultBoard on vscode', () => {
   });
 
   it('shows default board', async () => {
-    const chroot = await testing.buildFakeChroot(tempDir.path);
+    const {chroot} = await testing.buildFakeChromeos(tempDir.path);
     await testing.putFiles(chroot, {
       '/build/amd64-generic/x': 'x',
       '/build/bin/x': 'x',
@@ -61,7 +61,7 @@ describe('getOrSelectDefaultBoard on vscode', () => {
   });
 
   it('shows boards to select', async () => {
-    const chroot = await testing.buildFakeChroot(tempDir.path);
+    const {chroot} = await testing.buildFakeChromeos(tempDir.path);
     await testing.putFiles(chroot, {
       '/build/amd64-generic/x': 'x',
       '/build/bin/x': 'x',
@@ -91,7 +91,7 @@ describe('getOrSelectDefaultBoard on vscode', () => {
   });
 
   it('returns undefined if message is dismissed', async () => {
-    const chroot = await testing.buildFakeChroot(tempDir.path);
+    const {chroot} = await testing.buildFakeChromeos(tempDir.path);
     await testing.putFiles(chroot, {
       '/build/amd64-generic/x': 'x',
       '/build/bin/x': 'x',
@@ -112,7 +112,7 @@ describe('getOrSelectDefaultBoard on vscode', () => {
   });
 
   it('returns undefined if picker is dismissed', async () => {
-    const chroot = await testing.buildFakeChroot(tempDir.path);
+    const {chroot} = await testing.buildFakeChromeos(tempDir.path);
     await testing.putFiles(chroot, {
       '/build/amd64-generic/x': 'x',
       '/build/bin/x': 'x',
@@ -145,7 +145,7 @@ describe('getOrSelectDefaultBoard on cider', () => {
   installFakeConfigs(vscodeSpy, vscodeEmitters);
   const fakeExec = testing.installFakeExec();
   const state = testing.cleanState(async () => {
-    const chroot = await testing.buildFakeChroot(tempDir.path);
+    const {chroot} = await testing.buildFakeChromeos(tempDir.path);
     return {chroot};
   });
 

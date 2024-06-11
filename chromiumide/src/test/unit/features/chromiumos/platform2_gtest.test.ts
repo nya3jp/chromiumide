@@ -31,7 +31,7 @@ describe('Platform2Gtest', () => {
 
   const state = testing.cleanState(async () => {
     const chromiumos = tempDir.path;
-    await testing.buildFakeChroot(chromiumos);
+    await testing.buildFakeChromeos(chromiumos);
 
     const sut = new Platform2Gtest(
       chromiumos,

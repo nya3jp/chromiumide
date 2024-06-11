@@ -68,8 +68,8 @@ export async function prepareCommonFakes(
 ): Promise<CommandContext> {
   const {chromiumos, tastTestConfig, boardConfig, deviceConfig} = config;
 
-  // Prepare a fake chroot.
-  await testing.buildFakeChroot(chromiumos);
+  // Prepare a fake chromeos.
+  await testing.buildFakeChromeos(chromiumos);
 
   // Prepare a fake device.
   const sshServer = new FakeSshServer();

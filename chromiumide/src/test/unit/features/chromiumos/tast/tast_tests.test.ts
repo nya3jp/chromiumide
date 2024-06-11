@@ -28,7 +28,7 @@ describe('TastTests', () => {
   const state = testing.cleanState(async () => {
     const chromiumosRoot = tempDir.path;
 
-    await testing.buildFakeChroot(chromiumosRoot);
+    await testing.buildFakeChromeos(chromiumosRoot);
     const chrootService =
       services.chromiumos.ChrootService.maybeCreate(chromiumosRoot)!;
 

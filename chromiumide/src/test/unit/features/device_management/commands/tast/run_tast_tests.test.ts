@@ -31,7 +31,7 @@ describe('runTastTests', () => {
   });
 
   it('runs Tast tests on device', async () => {
-    // Prepare a fake chroot.
+    // Prepare a fake chromeos.
     const chromiumos = tempDir.path;
 
     const context = await prepareCommonFakes(
@@ -112,7 +112,7 @@ func ChromeFixture(ctx context.Context, s *testing.State) {}
   });
 
   it('notifies results to the user', async () => {
-    // Prepare a fake chroot.
+    // Prepare a fake chromeos.
     const chromiumos = tempDir.path;
 
     const context = await prepareCommonFakes(

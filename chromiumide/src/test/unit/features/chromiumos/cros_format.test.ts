@@ -353,7 +353,7 @@ describe('maybeConfigureOrSuggestSettingDefaultFormatter', () => {
 
   const subscriptions: vscode.Disposable[] = [];
   testing.cleanState(async () => {
-    await testing.buildFakeChroot(tempDirCrosRoot.path);
+    await testing.buildFakeChromeos(tempDirCrosRoot.path);
   });
 
   it('shows per-workspace suggestion when config not set', async () => {

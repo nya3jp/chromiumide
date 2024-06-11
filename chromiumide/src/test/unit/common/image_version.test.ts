@@ -55,7 +55,7 @@ describe('Get chrome milestones', () => {
   const tempDir = testing.tempDir();
 
   it('successfully', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     // Shortened from real example.
     const FAKE_STDOUT = `79c960cd2d079c492fbefa9ce767cdb3dff1cf4a refs/heads/green

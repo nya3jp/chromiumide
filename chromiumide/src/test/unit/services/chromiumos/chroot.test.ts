@@ -14,7 +14,7 @@ describe('chroot service exec', () => {
   fakes.installFakeSudo(fakeExec);
 
   it('calls cros_sdk if outside chroot', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     const chromiumosRoot = tempDir.path;
     const cros = services.chromiumos.ChrootService.maybeCreate(
@@ -36,7 +36,7 @@ describe('chroot service exec', () => {
   });
 
   it('passes through error from cros_sdk command', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     const chromiumosRoot = tempDir.path;
     const cros = services.chromiumos.ChrootService.maybeCreate(

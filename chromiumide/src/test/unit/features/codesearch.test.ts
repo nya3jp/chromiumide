@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import * as config from '../../../../shared/app/services/config';
 import * as codesearch from '../../../features/codesearch';
 import {
-  buildFakeChroot,
+  buildFakeChromeos,
   cleanState,
   installFakeExec,
   tempDir,
@@ -67,7 +67,7 @@ describe('CodeSearch: opening current file', () => {
   const temp = tempDir();
 
   const state = cleanState(async () => {
-    await buildFakeChroot(temp.path);
+    await buildFakeChromeos(temp.path);
 
     const documentFileName = path.join(
       temp.path,
@@ -199,7 +199,7 @@ describe('CodeSearch: open files', () => {
   const temp = tempDir();
 
   const state = cleanState(async () => {
-    await buildFakeChroot(temp.path);
+    await buildFakeChromeos(temp.path);
 
     const filepathA = path.join(
       temp.path,

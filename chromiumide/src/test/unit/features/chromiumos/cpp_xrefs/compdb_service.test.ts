@@ -18,7 +18,7 @@ describe('Compdb service', () => {
   fakes.installFakeSudo(fakeExec);
 
   const state = testing.cleanState(async () => {
-    const chroot = await testing.buildFakeChroot(tempdir.path);
+    const {chroot} = await testing.buildFakeChromeos(tempdir.path);
     const chromiumosRoot = commonUtil.crosRoot(chroot);
     const out = commonUtil.crosOutDir(chromiumosRoot);
     const output = vscode.window.createOutputChannel('fake');

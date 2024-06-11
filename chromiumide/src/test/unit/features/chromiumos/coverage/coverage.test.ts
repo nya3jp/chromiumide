@@ -46,7 +46,7 @@ describe('Test coverage', () => {
     );
 
     const chromiumosRoot = tempDir.path;
-    const chroot = await testing.buildFakeChroot(chromiumosRoot);
+    const {chroot} = await testing.buildFakeChromeos(chromiumosRoot);
     await testing.putFiles(chroot, {
       [coverageJsonPath]: coverageJsonContents,
     });

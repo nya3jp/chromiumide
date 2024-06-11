@@ -34,7 +34,7 @@ describe('C++ xrefs', () => {
 
   const state = testing.cleanState(async () => {
     const statusManager = new FakeStatusManager();
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
     const chrootService = ChrootService.maybeCreate(tempDir.path, false)!;
     const cppXrefs = new CppXrefs(statusManager);
     const chromiumosCppXrefs = new ChromiumosCppXrefs(chrootService, cppXrefs);

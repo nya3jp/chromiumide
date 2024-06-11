@@ -58,19 +58,6 @@ async function repoInit(root: string) {
 }
 
 /**
- * Builds fake chroot environment under tempDir, and returns the path to the fake chroot
- * (`${tempDir}/chroot`).
- *
- * @deprecated Use {@link buildFakeChromeos} instead, that can set up files other than ones for
- * chroot.
- */
-export async function buildFakeChroot(tempDir: string): Promise<string> {
-  await repoInit(tempDir);
-  await putFiles(tempDir, {'chroot/etc/cros_chroot_version': '42'});
-  return path.join(tempDir, 'chroot');
-}
-
-/**
  * Builds fake chromeos environment under the given directory. This function can be expanded to set
  * up files chromeos features require in common as needed, but tests should not depend on particular
  * constants the function sets up (such as 42 for chroot_version); for that a test should overwrite

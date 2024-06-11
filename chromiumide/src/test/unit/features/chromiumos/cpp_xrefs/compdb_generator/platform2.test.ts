@@ -24,7 +24,7 @@ describe('platform2 compdb generator', () => {
   const temp = testing.tempDir();
   const state = testing.cleanState(async () => {
     const osDir = temp.path;
-    const chroot = await testing.buildFakeChroot(osDir);
+    const {chroot} = await testing.buildFakeChromeos(osDir);
     const chromiumosRoot = commonUtil.crosRoot(chroot);
 
     await testing.putFiles(chromiumosRoot, {

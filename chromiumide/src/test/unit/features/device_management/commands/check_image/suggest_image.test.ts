@@ -129,7 +129,7 @@ describe('Create quick pick to choose image within correct version range', () =>
   }
 
   beforeEach(async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
   });
 
   afterEach(() => {

@@ -16,7 +16,7 @@ describe('SSH identity', () => {
   it('returns partner testing rsa when available', async () => {
     const chromiumos = tempDir.path;
 
-    await testing.buildFakeChroot(chromiumos);
+    await testing.buildFakeChromeos(chromiumos);
 
     // Open a folder under chromiumos root
     vscodeGetters.workspace.workspaceFolders.and.returnValue([

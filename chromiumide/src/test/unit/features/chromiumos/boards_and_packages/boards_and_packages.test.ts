@@ -42,7 +42,7 @@ describe('Boards and packages', () => {
 
     const chromiumosRoot = tempDir.path;
 
-    const chroot = await testing.buildFakeChroot(chromiumosRoot);
+    const {chroot} = await testing.buildFakeChromeos(chromiumosRoot);
 
     const chrootService = ChrootService.maybeCreate(
       chromiumosRoot,

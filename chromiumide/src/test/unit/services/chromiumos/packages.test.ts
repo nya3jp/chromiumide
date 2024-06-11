@@ -12,7 +12,7 @@ describe('Packages', () => {
   const tempDir = testing.tempDir();
 
   it('returns package information', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     const packages = Packages.getOrCreate(
       services.chromiumos.ChrootService.maybeCreate(tempDir.path, false)!
@@ -70,7 +70,7 @@ PLATFORM_SUBDIR="camera/common"
   });
 
   it('fromFilepath can be called concurrently', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     const fooPackageInfo = {
       sourceDir: 'foo',

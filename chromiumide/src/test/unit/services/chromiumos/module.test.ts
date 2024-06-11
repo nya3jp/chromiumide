@@ -14,7 +14,7 @@ describe('ChromiumosServiceModule', () => {
   const {vscodeGetters} = testing.installVscodeDouble();
 
   it('sends event after constructor returns', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     vscodeGetters.workspace.workspaceFolders.and.returnValue([
       {

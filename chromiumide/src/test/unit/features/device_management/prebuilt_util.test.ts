@@ -14,7 +14,7 @@ describe('Prebuilt utilities', () => {
   const tempDir = testing.tempDir();
 
   it('list available release images', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     const FAKE_STDOUT = `gs://chromeos-image-archive/xyz-release/R100-10000.0.0/image.zip
 gs://chromeos-image-archive/xyz-release/R100-10001.0.0/image.zip
@@ -49,7 +49,7 @@ gs://chromeos-image-archive/xyz-release/R99-9901.0.0/image.zip
   });
 
   it('list available postsubmit images', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     const FAKE_STDOUT = `gs://chromeos-image-archive/xyz-postsubmit/R99-10000.0.0-10001-1000000000000000000/image.zip
 gs://chromeos-image-archive/xyz-postsubmit/R100-10000.0.0-10001-1000000000000000005/image.zip
@@ -82,7 +82,7 @@ gs://chromeos-image-archive/xyz-postsubmit/R102-10010.0.0-10100-1000000000000100
   });
 
   it('does not return error on no result found', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     fakes.installChrootCommandHandler(
       fakeExec,

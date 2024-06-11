@@ -178,7 +178,7 @@ describe('deploy package command', () => {
   });
 
   it('runs successfully', async () => {
-    // Prepare a fake chroot.
+    // Prepare a fake chromeos.
     const chromiumos = tempDir.path;
 
     const context = await prepareCommonFakes(

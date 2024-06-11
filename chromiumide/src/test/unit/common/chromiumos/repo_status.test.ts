@@ -10,7 +10,7 @@ describe('repo status', () => {
   const tempDir = testing.tempDir();
 
   const state = testing.cleanState(async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
     const chrootService = services.chromiumos.ChrootService.maybeCreate(
       tempDir.path,
       false

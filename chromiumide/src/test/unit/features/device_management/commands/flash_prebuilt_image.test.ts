@@ -26,7 +26,7 @@ describe('Flash image to device', () => {
   const tempDir = testing.tempDir();
 
   const state = testing.cleanState(async () => {
-    const chroot = await testing.buildFakeChroot(tempDir.path);
+    const {chroot} = await testing.buildFakeChromeos(tempDir.path);
     const chromiumosRoot = crosRoot(chroot);
     return {chromiumosRoot};
   });

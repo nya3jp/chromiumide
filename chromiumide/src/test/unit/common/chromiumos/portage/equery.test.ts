@@ -42,7 +42,7 @@ describe('equery use flag', () => {
   const tempDir = testing.tempDir();
 
   it('on board trogdor', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     const board = Board.newBoard('trogdor');
     const packageName = 'chromeos-base/libchrome';
@@ -81,7 +81,7 @@ Total: 1 package (1 reinstall, 1 binary), Size of downloads: 0 KiB
   });
 
   it('on host', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     const board = HOST;
     const packageName = 'chromeos-base/libbrillo';
@@ -118,7 +118,7 @@ Total: 1 package (1 reinstall, 1 binary), Size of downloads: 0 KiB
   });
 
   it('fails with command not found error', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     const board = Board.newBoard('hatch');
     const packageName = 'chromeos-base/libchrome';
@@ -144,7 +144,7 @@ Total: 1 package (1 reinstall, 1 binary), Size of downloads: 0 KiB
   });
 
   it('fails with no binary package error with no suggestion', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     const board = Board.newBoard('trogdor');
     const packageName = 'abcdef';
@@ -176,7 +176,7 @@ emerge: searching for similar names... nothing similar found.
 
   it('fails with no binary package error with single suggestion', async () => {
     // Do not install fake chroot command handler i.e. should give command not found error.
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     const board = Board.newBoard('trogdor');
     const packageName = 'foo';
@@ -212,7 +212,7 @@ emerge: Maybe you meant sys-block/fio?
 
   it('fails with no binary package error with multiple suggestions', async () => {
     // Do not install fake chroot command handler i.e. should give command not found error.
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     const board = Board.newBoard('trogdor');
     const packageName = 'libchro';

@@ -20,7 +20,7 @@ describe('hints', () => {
   });
 
   it('should warn if chromiumos is workspace folder', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     hints.activate({subscriptions} as vscode.ExtensionContext);
 
@@ -51,7 +51,7 @@ describe('hints', () => {
   });
 
   it('should not warn if chromiumos/src is workspace folder', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     hints.activate({subscriptions} as vscode.ExtensionContext);
 
@@ -75,7 +75,7 @@ describe('hints', () => {
   });
 
   it('should not warn chromiumos workspace folder if user requests', async () => {
-    await testing.buildFakeChroot(tempDir.path);
+    await testing.buildFakeChromeos(tempDir.path);
 
     hints.activate({subscriptions} as vscode.ExtensionContext);
 
