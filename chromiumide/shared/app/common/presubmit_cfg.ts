@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import {ConfigParser} from './configparser';
 import {getDriver} from './driver_repository';
+import {LruCache} from './lru_cache';
 
 const driver = getDriver();
 
@@ -17,6 +18,9 @@ enum Section {
    */
   HookScripts = 'Hook Scripts',
 }
+
+// Maps document filepath to PresubmitCfg instance.
+const GLOBAL_CACHE = new LruCache<string, PresubmitCfg | 'undefined'>(10);
 
 /**
  * Accessor for the repository's PRESUBMIT.cfg file.
@@ -38,25 +42,35 @@ export class PresubmitCfg {
    * Finds the repository the document resides, reads the PRESUBMIT.cfg file in the
    * repository, and returns its accessor as a PresubmitCfg instance.
    *
-   * @param crosRoot Absolute path of the CrOS checkout the document belogns to.
+   * @param crosRoot Absolute path of the CrOS checkout the document belongs to.
    */
   static async forDocument(
     document: vscode.TextDocument,
-    crosRoot: string
+    crosRoot: string,
+    cache: typeof GLOBAL_CACHE | undefined = GLOBAL_CACHE
   ): Promise<PresubmitCfg | undefined> {
     if (crosRoot === '/') {
       // Prevent infinite loop in the following loop.
       throw new Error("Internal error: crosRoot should not be '/'");
     }
 
+    const cached = cache?.get(document.fileName);
+    if (cached) {
+      return cached === 'undefined' ? undefined : cached;
+    }
+
     let prefix = document.fileName;
     while (prefix.startsWith(crosRoot)) {
       const cand = driver.path.join(prefix, PRESUBMIT_CFG);
       if (await driver.fs.exists(cand)) {
-        return new PresubmitCfg(await driver.fs.readFile(cand), prefix);
+        const cfg = new PresubmitCfg(await driver.fs.readFile(cand), prefix);
+        cache?.set(document.fileName, cfg);
+        return cfg;
       }
       prefix = driver.path.dirname(prefix);
     }
+
+    cache?.set(document.fileName, 'undefined');
   }
 
   private keyValues(section: Section): Record<string, string> | undefined {
