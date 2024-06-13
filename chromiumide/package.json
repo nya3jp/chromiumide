@@ -1460,7 +1460,7 @@
     "fix-json": "wireit",
     "preupload": "wireit",
     "vscode:prepublish": "wireit",
-    "postinstall": "cd server && npm ci && cd .."
+    "postinstall": "cd server && npm ci && cd .. && rm -f .eslintcache"
   },
   "wireit": {
     "build": {
@@ -1525,7 +1525,7 @@
       ]
     },
     "lint-code": {
-      "command": "gts lint",
+      "command": "eslint lint '**/*.ts' '**/*.js' '**/*.tsx' '**/*.jsx' --no-error-on-unmatched-pattern --cache",
       "output": []
     },
     "lint-json": {
