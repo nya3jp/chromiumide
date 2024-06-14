@@ -196,10 +196,13 @@ export function withTimeout<T>(
 /**
  * Finds the root directory of the Git repository containing the filePath,
  * which can be a regular file or a directory.
- * Returns undefined if the file is not under a Git repository.
+ * @param root directory where the search should end at (exclusive, root can not be the git root
+ * directory). Default is root '/'.
+ * @returns undefined if the file is not under a Git repository.
  */
 export async function findGitDir(
-  filePath: string
+  filePath: string,
+  root = '/'
 ): Promise<string | undefined> {
   let dir: string;
   if (!(await driver.fs.exists(filePath))) {
@@ -211,15 +214,18 @@ export async function findGitDir(
     dir = driver.path.dirname(filePath);
   }
 
-  while (!(await driver.fs.exists(driver.path.join(dir, '.git')))) {
-    const parent = driver.path.dirname(dir);
-    if (parent === dir) {
-      return undefined;
-    }
-    dir = parent;
+  if (driver.path.relative(root, dir).startsWith('..')) {
+    throw new Error(`internal error: findGitDir: ${dir} must be under ${root}`);
   }
 
-  return dir;
+  while (dir !== root) {
+    if (await driver.fs.exists(driver.path.join(dir, '.git'))) {
+      return dir;
+    }
+    dir = driver.path.dirname(dir);
+  }
+
+  return undefined;
 }
 
 export type Job<T> = () => Promise<T>;

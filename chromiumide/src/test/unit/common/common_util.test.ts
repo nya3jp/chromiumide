@@ -314,13 +314,18 @@ function assertNotGitRepository(tempDir: string) {
   }
 }
 
-describe('getGitDir', () => {
+describe('findGitDir', () => {
   const tempDir = testing.tempDir();
+  const fullPath = (p: string) => path.join(tempDir.path, p);
+
+  it('throws error when file is not under root', async () => {
+    await expectAsync(
+      commonUtil.findGitDir(fullPath('a/b/c'), fullPath('x'))
+    ).toBeRejectedWithError(/must be under/);
+  });
 
   it('returns Git root directory', async () => {
     assertNotGitRepository(tempDir.path);
-    const fullPath = (p: string) => path.join(tempDir.path, p);
-
     await testing.putFiles(tempDir.path, {
       'a/b/c/d.txt': '',
       'a/e.txt': '',
