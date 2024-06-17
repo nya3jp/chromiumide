@@ -105,7 +105,7 @@ describe('Kernel C++ xrefs', () => {
           // thinking it was not updated. However in unit tests it's possible for the file to be
           // updated in a very quick succession unless we have the following line to ensure there to
           // be at least 1 ms difference.
-          await new Promise(resolve => setTimeout(resolve, 1));
+          await new Promise(resolve => setTimeout(resolve, 2));
 
           await fs.promises.writeFile(chrootCompdb, '{}', 'utf8');
           emergeCallCount++;
