@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as fs from 'fs';
 import * as vscode from 'vscode';
 import {getDriver} from '../../../../../shared/app/common/driver_repository';
 import {ExecResult} from '../../../../../shared/app/common/exec/types';
@@ -90,6 +91,11 @@ describe('Cros format feature', () => {
   });
 
   it('shows error when the command fails (execution error)', async () => {
+    await fs.promises.writeFile(
+      state.crosFile('PRESUBMIT.cfg').fsPath,
+      '[Hook Scripts]\ncros format = cros format --check --commit ${PRESUBMIT_COMMIT} ${PRESUBMIT_FILES}\n'
+    );
+
     fakeExec.and.resolveTo(new Error());
 
     await state.format(new FakeTextDocument({uri: state.crosFile('foo.c')}));
@@ -106,6 +112,11 @@ describe('Cros format feature', () => {
   });
 
   it('shows error when the command fails due to file syntax error', async () => {
+    await fs.promises.writeFile(
+      state.crosFile('PRESUBMIT.cfg').fsPath,
+      '[Hook Scripts]\ncros format = cros format --check --commit ${PRESUBMIT_COMMIT} ${PRESUBMIT_FILES}\n'
+    );
+
     const execResult: ExecResult = {
       exitStatus: 65,
       stderr: 'stderr',
@@ -127,6 +138,11 @@ describe('Cros format feature', () => {
   });
 
   it('does not format code that is already formatted correctly', async () => {
+    await fs.promises.writeFile(
+      state.crosFile('PRESUBMIT.cfg').fsPath,
+      '[Hook Scripts]\ncros format = cros format --check --commit ${PRESUBMIT_COMMIT} ${PRESUBMIT_FILES}\n'
+    );
+
     const execResult: ExecResult = {
       exitStatus: 0,
       stderr: '',
@@ -144,6 +160,11 @@ describe('Cros format feature', () => {
   });
 
   it('formats code', async () => {
+    await fs.promises.writeFile(
+      state.crosFile('PRESUBMIT.cfg').fsPath,
+      '[Hook Scripts]\ncros format = cros format --check --commit ${PRESUBMIT_COMMIT} ${PRESUBMIT_FILES}\n'
+    );
+
     const execResult: ExecResult = {
       exitStatus: 1,
       stderr: '',
@@ -167,6 +188,11 @@ describe('Cros format feature', () => {
   });
 
   it('does not format files outside CrOS', async () => {
+    await fs.promises.writeFile(
+      state.crosFile('PRESUBMIT.cfg').fsPath,
+      '[Hook Scripts]\ncros format = cros format --check --commit ${PRESUBMIT_COMMIT} ${PRESUBMIT_FILES}\n'
+    );
+
     const edits = await state.format(
       new FakeTextDocument({
         uri: vscode.Uri.file(driver.path.join(tempDir.path, 'foo.c')),
@@ -179,6 +205,11 @@ describe('Cros format feature', () => {
   });
 
   it('does not format files that are in .presubmitignore', async () => {
+    await fs.promises.writeFile(
+      state.crosFile('PRESUBMIT.cfg').fsPath,
+      '[Hook Scripts]\ncros format = cros format --check --commit ${PRESUBMIT_COMMIT} ${PRESUBMIT_FILES}\n'
+    );
+
     await testing.putFiles(state.crosRoot, {
       '.presubmitignore': '*.c',
     });
@@ -193,6 +224,11 @@ describe('Cros format feature', () => {
   });
 
   it('force format when instructed so', async () => {
+    await fs.promises.writeFile(
+      state.crosFile('PRESUBMIT.cfg').fsPath,
+      '[Hook Scripts]\ncros format = cros format --check --commit ${PRESUBMIT_COMMIT} ${PRESUBMIT_FILES}\n'
+    );
+
     await testing.putFiles(state.crosRoot, {
       '.presubmitignore': '*.c',
     });
@@ -219,9 +255,9 @@ describe('Cros format feature', () => {
 
   for (const {name, content, wantOptions} of [
     {
-      name: 'works on empty PRESUBMIT.cfg',
+      name: 'not work on empty PRESUBMIT.cfg',
       content: '',
-      wantOptions: ['--stdout'],
+      wantOptions: undefined,
     },
     {
       name: 'works on chromite/PRESUBMIT.cfg',
@@ -262,25 +298,33 @@ cros format: cros format --include=webrtc_apm/* --exclude=* --check --commit \${
     },
   ])
     it(name, async () => {
+      // Test that PRESUMBIT.cfg is parsed and cros format is invoked with the expected arguments.
+
       const file = state.crosFile('foo.c');
 
       await testing.putFiles(state.crosRoot, {'PRESUBMIT.cfg': content});
 
-      // Test that PRESUMBIT.cfg is parsed and cros format is invoked with the expected arguments.
-      fakeExec.installCallback(
-        driver.path.join(state.crosRoot, 'chromite/bin/cros'),
-        ['format', ...wantOptions, file.fsPath],
-        () =>
-          Promise.resolve({
-            exitStatus: 1,
-            stderr: '',
-            stdout: 'x',
-          })
+      fakeExec.and.callFake(() =>
+        Promise.resolve({
+          exitStatus: 1,
+          stderr: '',
+          stdout: 'x',
+        })
       );
 
       const edits = await state.format(new FakeTextDocument({uri: file}));
 
-      expect(edits?.[0].newText).toEqual('x');
+      if (wantOptions) {
+        expect(edits![0].newText).toEqual('x');
+        expect(fakeExec).toHaveBeenCalledOnceWith(
+          driver.path.join(state.crosRoot, 'chromite/bin/cros'),
+          ['format', ...wantOptions, file.fsPath],
+          jasmine.anything()
+        );
+      } else {
+        expect(edits).toBeUndefined();
+        expect(fakeExec).not.toHaveBeenCalled();
+      }
     });
 });
 

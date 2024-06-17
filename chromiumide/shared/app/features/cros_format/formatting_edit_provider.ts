@@ -81,6 +81,9 @@ export class CrosFormatEditProvider
         });
         return;
       }
+      if (constructedArgs === undefined) {
+        return;
+      }
       args = constructedArgs;
       this.argsCache.set(fsPath, args);
     }
@@ -165,24 +168,29 @@ export class CrosFormatEditProvider
   }
 
   /**
-   * Constructs the command that should be executed to format the given file. If PRESUBMIT.cfg is
-   * configured to run cros format, it constructs the command based on the config. Otherwise it
-   * returns the default command.
+   * Constructs the command that should be executed to format the given file. If `forceFormat` is
+   * true, returns the command that formats the file unconditionally. Otherwise, if PRESUBMIT.cfg is
+   * configured to run cros format, it constructs the command based on the config; otherwise returns
+   * undefined, meaning the file is not formatted on upload and the IDE should not run the
+   * formatter.
    */
   private async constructCrosFormatCommand(
     document: vscode.TextDocument,
     crosRoot: string,
     forceFormat: boolean
-  ): Promise<string[] | Error> {
+  ): Promise<string[] | undefined | Error> {
     const crosExe = crosExeFromCrosRoot(crosRoot);
     const defaultCommand = [crosExe, 'format', '--stdout', document.uri.fsPath];
 
     if (forceFormat) return defaultCommand;
 
     const cfg = await PresubmitCfg.forDocument(document, crosRoot);
+    // Don't format if PRESUBMIT.cfg doesn't exist.
+    if (!cfg) return undefined;
     // As of its writing no PRESUBMIT.cfg has more than one cros format entries.
-    const command = cfg?.crosFormatRunAsHookScript()?.[0];
-    if (!command) return defaultCommand;
+    const command = cfg.crosFormatRunAsHookScript()?.[0];
+    // Don't format if PRESUBMIT.cfg instructs not to run cros format.
+    if (!command) return undefined;
 
     const parser = new OptionsParser(command, {
       allowArgs: true,
