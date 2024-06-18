@@ -48,7 +48,9 @@ echo "Running npm install"
 npm install
 
 echo "Running npm cq-tests"
-npm run cq-test
+# Set CI=true for logs optimized for non-interactive environments.
+# See WIREIT_LOGGER in https://github.com/google/wireit.
+env CI=true npm run cq-test
 
 echo "Removing temp directory"
 rm -rf "${temp_dir}"
