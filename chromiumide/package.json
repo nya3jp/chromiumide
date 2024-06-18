@@ -1562,7 +1562,6 @@
     "cq-test": {
       "dependencies": [
         "unit-test",
-        "unit-test-parallel",
         "integration-test",
         "check",
         "lint"
