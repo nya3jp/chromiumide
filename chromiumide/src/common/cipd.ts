@@ -7,10 +7,10 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as commonUtil from '../../shared/app/common/common_util';
+import {extraEnvForDepotTools} from '../../shared/app/common/depot_tools';
 import {getDriver} from '../../shared/app/common/driver_repository';
 import {AbnormalExitError} from '../../shared/app/common/exec/types';
 import * as config from '../../shared/app/services/config';
-import {extraEnvForDepotTools} from './depot_tools';
 import {Mutex} from './mutex';
 
 const driver = getDriver();

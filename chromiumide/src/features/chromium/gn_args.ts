@@ -6,11 +6,11 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as commonUtil from '../../../shared/app/common/common_util';
+import {extraEnvForDepotTools} from '../../../shared/app/common/depot_tools';
 import {
   AbnormalExitError,
   CancelledError,
 } from '../../../shared/app/common/exec/types';
-import {extraEnvForDepotTools} from '../../common/depot_tools';
 
 export type TargetOs =
   | 'linux'

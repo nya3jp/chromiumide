@@ -6,7 +6,7 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 import * as commonUtil from '../../../shared/app/common/common_util';
-import {extraEnvForDepotTools} from '../../common/depot_tools';
+import {extraEnvForDepotTools} from '../../../shared/app/common/depot_tools';
 import {Sink} from './sink';
 
 /** Kind of a Git remote repository */

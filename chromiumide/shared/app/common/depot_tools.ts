@@ -2,13 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
 import * as vscode from 'vscode';
-import * as commonUtil from '../../shared/app/common/common_util';
-import {getDriver} from '../../shared/app/common/driver_repository';
-import * as config from '../../shared/app/services/config';
+import * as config from '../services/config';
+import * as commonUtil from './common_util';
+import {getDriver} from './driver_repository';
+import {extensionName} from './extension_name';
 
 const driver = getDriver();
 
@@ -55,8 +53,8 @@ async function promptForDepotToolsPath(): Promise<string | undefined> {
   let candidatePath = config.paths.depotTools.get();
   do {
     let warnMsg = candidatePath
-      ? `ChromiumIDE: The 'cros' command was not in:\n\n${candidatePath}\n\n`
-      : 'ChromiumIDE: The depot tools path was not set. ';
+      ? `${extensionName()}: The 'cros' command was not in:\n\n${candidatePath}\n\n`
+      : `${extensionName()}: The depot tools path was not set. `;
 
     warnMsg += 'Select a valid depot_tools directory.';
 
@@ -70,8 +68,8 @@ async function promptForDepotToolsPath(): Promise<string | undefined> {
     );
     if (choice === 'Select directory') {
       const depotToolsUri = await vscode.window.showOpenDialog({
-        title: 'ChromiumIDE: Please select the depot_tools directory',
-        defaultUri: vscode.Uri.parse(os.homedir()),
+        title: `${extensionName()}: Please select the depot_tools directory`,
+        defaultUri: vscode.Uri.parse(driver.os.homedir()),
         canSelectMany: false,
         canSelectFiles: false,
         canSelectFolders: true,
@@ -79,14 +77,13 @@ async function promptForDepotToolsPath(): Promise<string | undefined> {
 
       if (depotToolsUri) {
         candidatePath = depotToolsUri[0].fsPath;
-        const expectedCrosPath = path.join(candidatePath, 'cros');
-
-        const crosExists = await fs.statSync(expectedCrosPath, {
-          throwIfNoEntry: false,
-        });
+        const expectedCrosPath = driver.path.join(candidatePath, 'cros');
 
         // If the path doesn't appear to contain depot tools, warn...
-        if (crosExists && crosExists.isFile()) {
+        if (
+          (await driver.fs.exists(expectedCrosPath)) &&
+          !(await driver.fs.isDirectory(expectedCrosPath))
+        ) {
           resultPath = candidatePath;
         }
       }
@@ -104,7 +101,7 @@ async function depotToolsPath(): Promise<{PATH: string}> {
   const depotToolsConfig = config.paths.depotTools.get();
   const pathVar = await driver.getUserEnvPath();
   const originalPath = pathVar instanceof Error ? undefined : pathVar;
-  const homeDepotTools = path.join(os.homedir(), 'depot_tools');
+  const homeDepotTools = driver.path.join(driver.os.homedir(), 'depot_tools');
 
   const expandedPath: string[] = [];
   if (depotToolsConfig) {

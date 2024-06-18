@@ -9,6 +9,7 @@ import {CrosImpl} from './cros';
 import {realExec} from './exec';
 import {FsImpl} from './fs';
 import {MetricsImpl} from './metrics/metrics';
+import {OsImpl} from './os';
 import {PathImpl} from './path';
 
 export class DriverImpl implements Driver {
@@ -18,6 +19,7 @@ export class DriverImpl implements Driver {
 
   readonly cros = new CrosImpl();
   readonly fs = new FsImpl();
+  readonly os = new OsImpl();
   readonly path = new PathImpl();
   readonly metrics = new MetricsImpl();
   exec = (

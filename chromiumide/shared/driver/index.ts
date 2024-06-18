@@ -7,6 +7,7 @@ import {ExecOptions, ExecResult} from '../app/common/exec/types';
 import {Cros} from './cros';
 import {Fs} from './fs';
 import {Metrics} from './metrics';
+import {Os} from './os';
 import {Path} from './path';
 
 export enum Platform {
@@ -18,6 +19,7 @@ export type Driver = Readonly<{
   platform(): Platform;
   cros: Cros;
   fs: Fs;
+  os: Os;
   path: Path;
   metrics: Metrics;
   exec: (
