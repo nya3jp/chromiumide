@@ -19,6 +19,7 @@ export async function maybeConfigureOrSuggestSettingDefaultFormatter(
   output?: vscode.OutputChannel,
   platform = driver.platform()
 ): Promise<void> {
+  const alwaysDefaultOptionEnabled = platform === Platform.CIDER;
   output?.appendLine(
     `New workspace folders added (${folders
       .map(f => f.uri.path)
@@ -28,7 +29,7 @@ export async function maybeConfigureOrSuggestSettingDefaultFormatter(
       config.crosFormat.suggestSetAsDefault.get() ? 'enabled' : 'disabled'
     }.`
   );
-  if (platform === Platform.CIDER) {
+  if (alwaysDefaultOptionEnabled) {
     output?.appendLine(
       `Always set as default in CrOS workspace option is ${
         config.crosFormat.alwaysDefaultInCros.get() ? 'enabled' : 'disabled'
@@ -46,7 +47,7 @@ export async function maybeConfigureOrSuggestSettingDefaultFormatter(
   if (
     config.vscode.editor.defaultFormatter.get() === extensionId ||
     !config.crosFormat.suggestSetAsDefault.get() ||
-    (platform === Platform.CIDER &&
+    (alwaysDefaultOptionEnabled &&
       config.crosFormat.alwaysDefaultInCros.get() &&
       config.crosFormat.hasBeenSetAsDefaultInThisWorkspace.get())
   ) {
@@ -55,7 +56,7 @@ export async function maybeConfigureOrSuggestSettingDefaultFormatter(
 
   // If user has enabled the "always set as default in CrOS workspaces" option (cider only).
   if (
-    platform === Platform.CIDER &&
+    alwaysDefaultOptionEnabled &&
     config.crosFormat.alwaysDefaultInCros.get()
   ) {
     if (
@@ -96,6 +97,7 @@ async function suggestSettingDefaultFormatterInThisWorkspace(
   output?: vscode.OutputChannel,
   platform = driver.platform()
 ): Promise<void> {
+  const alwaysDefaultOptionEnabled = platform === Platform.CIDER;
   // If the workspace folder is in a CrOS repo, suggest setting cros format as the workspace
   // default formatter.
   const CHOICE_YES = 'Yes';
@@ -116,7 +118,7 @@ async function suggestSettingDefaultFormatterInThisWorkspace(
     // Since user said yes to this prompt, they might want to always set the default formatter
     // automatically. Ask if they have not disabled the suggestion.
     if (
-      platform === Platform.CIDER &&
+      alwaysDefaultOptionEnabled &&
       config.crosFormat.suggestAlwaysDefaultInCros.get()
     ) {
       await suggestSettingDefaultFormatterAlways();
