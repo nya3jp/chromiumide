@@ -464,7 +464,7 @@ export class OutputDirectoriesDataProvider
 
     const topLevelOutDirNames = await this.findTopLevelOutDirNames();
     this.outputChannel.appendLine(
-      'Found the following top-level output directories:'
+      `Found the following top-level output directories in ${this.srcPath}:`
     );
     this.outputChannel.appendLine(
       topLevelOutDirNames.map(each => `- ${each}`).join('\n')
@@ -565,8 +565,22 @@ export class OutputDirectoriesDataProvider
   private async findSubDirectoriesInTopLevelOutDir(
     topLevelOutDirName: string
   ): Promise<Node[]> {
+    const outDirPath = path.join(this.srcPath, topLevelOutDirName);
     const entries = await vscode.workspace.fs.readDirectory(
-      vscode.Uri.file(path.join(this.srcPath, topLevelOutDirName))
+      vscode.Uri.file(outDirPath)
+    );
+    this.outputChannel.appendLine(
+      `Found ${entries.length} entries in top level directory ${outDirPath}: ${
+        entries.filter(([_name, type]) => type === vscode.FileType.Directory)
+          .length
+      } directories, ${
+        entries.filter(
+          ([_name, type]) =>
+            type === (vscode.FileType.Directory | vscode.FileType.SymbolicLink)
+        ).length
+      } links to a directory, ${
+        entries.filter(([_name, type]) => type === vscode.FileType.File).length
+      } files`
     );
 
     const nodes: Node[] = [];
@@ -597,8 +611,7 @@ export class OutputDirectoriesDataProvider
               path.join(this.srcPath, outName)
             );
             const absoluteLinkTarget = path.resolve(
-              this.srcPath,
-              topLevelOutDirName,
+              outDirPath,
               relativeLinkTarget
             );
             let targetOutDir: string | null = null;
@@ -626,11 +639,21 @@ export class OutputDirectoriesDataProvider
             // It looks like this output directory is only one level deep. A lot of Chromium tooling
             // expects output directories to always be exactly two levels deep. Thus, abort here and
             // return an empty list for this top level output directory.
-            throw new Error();
+            throw new Error(
+              `internal error: found args.gn in ${outDirPath} but output directory should be two levels deep`
+            );
           }
+
+          this.outputChannel.appendLine(
+            `Found unknown entry: ${path.join(
+              outDirPath,
+              name
+            )} of type ${fileType}`
+          );
         })
       );
     } catch (error) {
+      this.outputChannel.appendLine((error as Error).message);
       return [];
     }
 
