@@ -11,9 +11,17 @@ export type Fs = Readonly<{
   mTime(path: string): Promise<number>;
   aTime(path: string): Promise<number>;
   readdir(path: string): Promise<string[]>;
-  rm(path: string, opts?: {force?: boolean}): Promise<void>;
+  rm(
+    path: string,
+    opts?: {force?: boolean; recursive?: boolean}
+  ): Promise<void>;
   watch(
     path: string,
     listener?: (eventType: string, fileName: string | null) => void
   ): void;
+
+  // VSCode only
+  mkdtemp(prefix: string): Promise<string>;
+  writeFile(file: string, data: string): Promise<void>;
+  mkdir(path: string, options?: {recursive?: boolean}): Promise<void>;
 }>;
