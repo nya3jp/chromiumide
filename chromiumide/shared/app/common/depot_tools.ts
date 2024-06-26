@@ -20,11 +20,11 @@ let promptedForMissingDepotTools = false;
  * preference to the custom setting and a fallback on a default.
  */
 export async function extraEnvForDepotTools(): Promise<{PATH: string}> {
-  let extraEnv = await depotToolsPath();
+  let path = await depotToolsPath();
 
   // The `cros` command should be in depot tools and available.
   const whichCros = await commonUtil.exec('which', ['cros'], {
-    extraEnv,
+    extraEnv: {PATH: path},
   });
 
   // If it's not prompt the user until ok or canceled.
@@ -32,13 +32,13 @@ export async function extraEnvForDepotTools(): Promise<{PATH: string}> {
     const validatedPath = await promptForDepotToolsPath();
     if (validatedPath) {
       await config.paths.depotTools.update(validatedPath);
-      extraEnv = await depotToolsPath();
+      path = await depotToolsPath();
       await vscode.window.showInformationMessage(
         `Depot Tools path updated to: ${validatedPath}`
       );
     }
   }
-  return extraEnv;
+  return {PATH: path};
 }
 
 /**
@@ -97,7 +97,7 @@ async function promptForDepotToolsPath(): Promise<string | undefined> {
   return resultPath;
 }
 
-async function depotToolsPath(): Promise<{PATH: string}> {
+async function depotToolsPath(): Promise<string> {
   const depotToolsConfig = config.paths.depotTools.get();
   const pathVar = await driver.getUserEnvPath();
   const originalPath = pathVar instanceof Error ? undefined : pathVar;
@@ -112,9 +112,7 @@ async function depotToolsPath(): Promise<{PATH: string}> {
   }
   expandedPath.push(homeDepotTools);
 
-  return {
-    PATH: expandedPath.join(':'),
-  };
+  return expandedPath.join(':');
 }
 
 /**
