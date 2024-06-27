@@ -64,23 +64,12 @@ export class CrosFormatEditProvider
       `${force ? 'Force formatting' : 'Formatting'} ${fsPath}...`
     );
 
-    let tempDir;
-    try {
-      // Directory to store file for formatting. This is a VSCode only workaround until cros format
-      // supports reading input from stdin and getting filename separately. (b/343619614)
-      tempDir = await driver.fs.mkdtemp('/tmp/chromiumide-cros-format');
-    } catch (e) {
-      this.output.appendLine(`Failed to create a tempdir: ${e}`);
-    }
-
     let args = this.argsCache.get(fsPath);
-    // Cache shouldn't be used if a temporary file should be used in command.
-    if (!args || tempDir) {
+    if (!args) {
       const constructedArgs = await this.constructCrosFormatCommand(
         document,
         crosRoot,
-        force,
-        tempDir
+        force
       );
       if (constructedArgs instanceof Error) {
         this.output.appendLine(constructedArgs.message);
@@ -109,10 +98,6 @@ export class CrosFormatEditProvider
       cwd: crosRoot,
       extraEnv: await extraEnvForDepotTools(),
     });
-
-    if (tempDir) {
-      await driver.fs.rm(tempDir, {recursive: true});
-    }
 
     if (formatterOutput instanceof Error) {
       this.output.appendLine(formatterOutput.message);
@@ -201,8 +186,7 @@ export class CrosFormatEditProvider
   private async constructCrosFormatCommand(
     document: vscode.TextDocument,
     crosRoot: string,
-    forceFormat: boolean,
-    tempDir?: string
+    forceFormat: boolean
   ): Promise<string[] | undefined | Error> {
     const crosExe = crosExeFromCrosRoot(crosRoot);
     const defaultCommand = [crosExe, 'format', '--stdout', document.uri.fsPath];
@@ -261,16 +245,7 @@ export class CrosFormatEditProvider
     remove(args, '--commit', /.*/);
     remove(args, '${PRESUBMIT_FILES}');
 
-    let filePath = document.uri.fsPath;
-    if (tempDir) {
-      const content = document.getText();
-      filePath = driver.path.join(tempDir, filePath);
-      await driver.fs.mkdir(driver.path.dirname(filePath), {recursive: true});
-      await driver.fs.writeFile(filePath, content);
-    }
-
-    args.push('--stdout', filePath);
-
+    args.push('--stdout', document.uri.fsPath);
     return args;
   }
 }

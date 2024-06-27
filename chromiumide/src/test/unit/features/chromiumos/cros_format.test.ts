@@ -375,11 +375,7 @@ cros format = cros format --check --commit \${PRESUBMIT_COMMIT} --include "*/DIR
         expect(edits![0].newText).toEqual('x');
         expect(fakeExec).toHaveBeenCalledWith(
           driver.path.join(state.crosRoot, 'chromite/bin/cros'),
-          [
-            'format',
-            ...wantOptions,
-            jasmine.stringContaining('/' + driver.path.basename(file.fsPath)),
-          ],
+          ['format', ...wantOptions, file.fsPath],
           jasmine.anything()
         );
       } else {

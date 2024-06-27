@@ -35,10 +35,7 @@ export class FsImpl implements Fs {
   readdir(path: string): Promise<string[]> {
     return fs.promises.readdir(path);
   }
-  rm(
-    path: string,
-    opts?: {force?: boolean; recursive?: boolean}
-  ): Promise<void> {
+  rm(path: string, opts?: {force?: boolean}): Promise<void> {
     return fs.promises.rm(path, opts);
   }
   watch(
@@ -46,14 +43,5 @@ export class FsImpl implements Fs {
     listener?: (eventType: string, fileName: string | null) => void
   ): void {
     fs.watch(path, listener);
-  }
-  mkdtemp(prefix: string): Promise<string> {
-    return fs.promises.mkdtemp(prefix);
-  }
-  writeFile(file: string, data: string): Promise<void> {
-    return fs.promises.writeFile(file, data);
-  }
-  async mkdir(path: string, options?: {recursive?: boolean}): Promise<void> {
-    await fs.promises.mkdir(path, options);
   }
 }
