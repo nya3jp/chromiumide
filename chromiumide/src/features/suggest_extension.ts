@@ -36,6 +36,14 @@ export function activate(context: vscode.ExtensionContext): void {
       suggestOnlyInCodeServer: true,
     },
     {
+      languageIds: ['proto'],
+      extensionId: 'zxh404.vscode-proto3',
+      message:
+        'vscode-proto3 provides rich language support for protobuf3 files. ' +
+        'Would you like to install it?',
+      availableForCodeServer: false,
+    },
+    {
       languageIds: ['sepolicy'],
       extensionId: 'google.selinux-policy-languages',
       message:
