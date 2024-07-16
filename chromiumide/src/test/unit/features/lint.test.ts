@@ -26,6 +26,7 @@ describe('Linter integration', () => {
   });
 
   it('honors PRESUBMIT.cfg for cros lint', async () => {
+    const projectPath = 'infra/recipes';
     await testing.putFiles(state.chromeosRoot, {
       'infra/recipes/.git/config': '',
       // Some fields are removed from the real content for brevity.
@@ -54,14 +55,17 @@ no cros lint = echo hello
       args: [
         'lint',
         '--exclude',
-        'recipes_release/protos/*.py',
+        path.join(
+          state.chromeosRoot,
+          projectPath,
+          'recipes_release/protos/*.py'
+        ),
         '--exclude',
-        '.recipe_deps/',
+        path.join(state.chromeosRoot, projectPath, '.recipe_deps/'),
         '--exclude',
-        'recipes.py',
-        'recipes.py', // relative path from the directory with PRESUBMIT.cfg
+        path.join(state.chromeosRoot, projectPath, 'recipes.py'),
+        path.join(state.chromeosRoot, projectPath, 'recipes.py'),
       ],
-      cwd: path.join(state.chromeosRoot, 'infra/recipes'),
       extraEnv: {},
     });
 
@@ -74,14 +78,21 @@ no cros lint = echo hello
       args: [
         'lint',
         '--exclude',
-        'recipes_release/protos/*.py',
+        path.join(
+          state.chromeosRoot,
+          projectPath,
+          'recipes_release/protos/*.py'
+        ),
         '--exclude',
-        '.recipe_deps/',
+        path.join(state.chromeosRoot, projectPath, '.recipe_deps/'),
         '--exclude',
-        'recipes.py',
-        'recipes/test_plan_filtering.py',
+        path.join(state.chromeosRoot, projectPath, 'recipes.py'),
+        path.join(
+          state.chromeosRoot,
+          projectPath,
+          'recipes/test_plan_filtering.py'
+        ),
       ],
-      cwd: path.join(state.chromeosRoot, 'infra/recipes'),
       extraEnv: {},
     });
 

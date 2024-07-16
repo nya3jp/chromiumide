@@ -18,4 +18,8 @@ export class PathImpl implements Path {
   relative(from: string, to: string): string {
     return path.relative(from, to);
   }
+  resolve(...paths: string[]): string {
+    return path.resolve(...paths);
+  }
+  sep = path.sep;
 }

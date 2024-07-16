@@ -8,4 +8,6 @@ export type Path = Readonly<{
   basename: (path: string, suffix?: string | undefined) => string;
   /** {@link https://nodejs.org/api/path.html#pathrelativefrom-to} */
   relative: (from: string, to: string) => string;
+  resolve: (...paths: string[]) => string;
+  sep: string;
 }>;

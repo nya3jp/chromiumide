@@ -69,20 +69,27 @@ export class CrosLintConfig implements LintConfig {
     remove(command, '--commit', /.*/);
     remove(command, '${PRESUBMIT_FILES}');
 
+    const cwd = this.cwd(crosExe, presubmitCfg.root);
+
+    replaceArg(command, '--exclude', (v: string) => {
+      return (
+        driver.path.resolve(cwd, v) +
+        (v.endsWith(driver.path.sep) ? driver.path.sep : '')
+      );
+    });
+    replaceArg(command, '--include', (v: string) => {
+      return driver.path.resolve(cwd, v);
+    });
+
     if (this.languageId === 'shellscript') {
       command.push('--output=parseable');
     }
 
-    const cwd = this.cwd(crosExe, presubmitCfg.root);
-
-    // The path to the file must be specified with the relative path so that --exclude and --include
-    // paths are honored.
-    command.push(driver.path.relative(cwd, document.fileName));
+    command.push(document.fileName);
 
     return {
       name: command[0],
       args: command.slice(1),
-      cwd,
       extraEnv: {...(await this.extraEnv(crosExe))},
     };
   }
@@ -314,5 +321,22 @@ function remove(a: string[], ...rs: (RegExp | string)[]) {
       continue;
     }
     i++;
+  }
+}
+
+/** Apply given transform function to all specified args in the command.
+ */
+function replaceArg(
+  command: string[],
+  arg: string,
+  transform: (v: string) => string
+) {
+  let i = 0;
+  while (i <= command.length) {
+    if (command[i] === arg) {
+      command[i + 1] = transform(command[i + 1]);
+      i += 1;
+    }
+    i += 1;
   }
 }
