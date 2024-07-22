@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as childProcess from 'child_process';
 import * as ssh from 'ssh2';
 import {SshIdentity} from '../../../../features/device_management/ssh_identity';
 import type * as vscode from 'vscode';
@@ -48,7 +49,7 @@ Build: $Id: fec0d226b2c2cce1567d5f59169660cf61dc1efe $
 export class FakeSshServer implements vscode.Disposable {
   private readonly server: ssh.Server;
 
-  constructor() {
+  constructor(config: {execRealCommand?: boolean} = {}) {
     this.server = new ssh.Server({
       hostKeys: [FAKE_SSH_HOST_KEY],
     });
@@ -66,6 +67,7 @@ export class FakeSshServer implements vscode.Disposable {
           const session = accept();
           session.on('exec', (accept, _reject, info) => {
             const channel = accept();
+
             switch (info.command) {
               case 'cat /etc/lsb-release':
                 channel.write(LSB_RELEASE);
@@ -78,6 +80,17 @@ export class FakeSshServer implements vscode.Disposable {
                 channel.end();
                 break;
               default:
+                if (config.execRealCommand) {
+                  const buffer = childProcess.execFileSync('bash', [
+                    '-c',
+                    info.command,
+                  ]);
+                  channel.write(buffer);
+                  channel.exit(0);
+                  channel.end();
+                  break;
+                }
+
                 console.error(`Unknown command: ${info.command}\n`);
                 channel.exit(255);
                 channel.end();

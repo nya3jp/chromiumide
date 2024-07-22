@@ -80,6 +80,11 @@ export class FakeQuickPick<
     this.onDidTriggerItemButtonEmitter.fire(itemButton);
   }
 
-  show(): void {}
+  private readonly onDidShowEmitter = new vscode.EventEmitter<void>();
+  readonly onDidShow = this.onDidShowEmitter.event;
+
+  show(): void {
+    this.onDidShowEmitter.fire();
+  }
   dispose(): void {}
 }
