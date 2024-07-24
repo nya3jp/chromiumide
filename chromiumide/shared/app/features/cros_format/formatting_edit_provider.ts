@@ -247,6 +247,18 @@ export class CrosFormatEditProvider
     remove(args, '--commit', /.*/);
     remove(args, '${PRESUBMIT_FILES}');
 
+    // Resolve --exclude and --include path patterns as absolute paths so that the command can be
+    // run anywhere.
+    replaceArg(args, '--exclude', (v: string) => {
+      return (
+        driver.path.resolve(cfg.root, v) +
+        (v.endsWith(driver.path.sep) ? driver.path.sep : '')
+      );
+    });
+    replaceArg(args, '--include', (v: string) => {
+      return driver.path.resolve(cfg.root, v);
+    });
+
     args.push('--stdout', document.uri.fsPath);
     return args;
   }
@@ -265,5 +277,22 @@ function remove(a: string[], ...rs: (RegExp | string)[]) {
       continue;
     }
     i++;
+  }
+}
+
+/** Apply given transform function to all specified args in the command.
+ */
+function replaceArg(
+  command: string[],
+  arg: string,
+  transform: (v: string) => string
+) {
+  let i = 0;
+  while (i < command.length - 1) {
+    if (command[i] === arg) {
+      command[i + 1] = transform(command[i + 1]);
+      i += 1;
+    }
+    i += 1;
   }
 }

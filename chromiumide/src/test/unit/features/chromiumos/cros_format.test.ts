@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import * as fs from 'fs';
+import * as path from 'path';
 import * as vscode from 'vscode';
 import {getDriver} from '../../../../../shared/app/common/driver_repository';
 import {ExecResult} from '../../../../../shared/app/common/exec/types';
@@ -76,6 +77,9 @@ describe('Cros format feature', () => {
     const crosFile = (subpath: string) =>
       vscode.Uri.file(driver.path.join(crosRoot, subpath));
 
+    const projectFilePath = (subpath: string) =>
+      path.join(crosRoot, 'src/platform2', subpath);
+
     fakeExec.installStdout('which', ['cros'], '/fake/path/to/depot_tools/cros');
 
     return {
@@ -84,6 +88,7 @@ describe('Cros format feature', () => {
       format,
       statusManager,
       crosFile,
+      projectFilePath,
       subscriptions,
     };
   });
@@ -316,11 +321,11 @@ cros format = cros format --check --commit \${PRESUBMIT_COMMIT} --include '*.pro
 `,
       wantOptions: [
         '--include',
-        '*.proto',
+        () => state.projectFilePath('*.proto'),
         '--include',
-        'OWNERS*',
+        () => state.projectFilePath('OWNERS*'),
         '--exclude',
-        '*',
+        () => state.projectFilePath('*'),
         '--stdout',
       ],
     },
@@ -330,7 +335,13 @@ cros format = cros format --check --commit \${PRESUBMIT_COMMIT} --include '*.pro
       content: `[Hook Scripts]
 cros format: cros format --include=webrtc_apm/* --exclude=* --check --commit \${PRESUBMIT_COMMIT} -- \${PRESUBMIT_FILES}
 `,
-      wantOptions: ['--include', 'webrtc_apm/*', '--exclude', '*', '--stdout'],
+      wantOptions: [
+        '--include',
+        () => state.projectFilePath('webrtc_apm/*'),
+        '--exclude',
+        () => state.projectFilePath('*'),
+        '--stdout',
+      ],
     },
     {
       // Taken from src/platform2, trimmed for brevity.
@@ -340,15 +351,15 @@ cros format = cros format --check --commit \${PRESUBMIT_COMMIT} --include "*/DIR
 `,
       wantOptions: [
         '--include',
-        '*/DIR_METADATA',
+        () => state.projectFilePath('*/DIR_METADATA'),
         '--include',
-        'OWNERS*',
+        () => state.projectFilePath('OWNERS*'),
         '--include',
-        '*.[ch]',
+        () => state.projectFilePath('*.[ch]'),
         '--include',
-        '*.cc',
+        () => state.projectFilePath('*.cc'),
         '--include',
-        '*.cpp',
+        () => state.projectFilePath('*.cpp'),
         '--stdout',
       ],
     },
@@ -376,7 +387,11 @@ cros format = cros format --check --commit \${PRESUBMIT_COMMIT} --include "*/DIR
         expect(edits![0].newText).toEqual('x');
         expect(fakeExec).toHaveBeenCalledWith(
           driver.path.join(state.crosRoot, 'chromite/bin/cros'),
-          ['format', ...wantOptions, file.fsPath],
+          [
+            'format',
+            ...wantOptions.map(v => (typeof v === 'string' ? v : v())),
+            file.fsPath,
+          ],
           jasmine.anything()
         );
       } else {
