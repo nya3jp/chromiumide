@@ -4,7 +4,7 @@
 
 import {exec} from '../../../../../shared/app/common/common_util';
 import {buildSshCommand} from '../../ssh_util';
-import {CommandContext} from '../common';
+import {CommandContext, ensureSshSession} from '../common';
 
 /**
  * Manages interaction with the device.
@@ -52,5 +52,13 @@ export class Device {
       return res;
     }
     return res.stdout.trim().split('\n');
+  }
+
+  async getAttributes(): Promise<{board: string} | Error> {
+    return await this.context.deviceClient.getDeviceAttributes(this.hostname);
+  }
+
+  async ensureSshSession(): Promise<number | undefined> {
+    return await ensureSshSession(this.context, this.hostname);
   }
 }

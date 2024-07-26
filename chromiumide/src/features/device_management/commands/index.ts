@@ -148,10 +148,6 @@ export function registerCommands(
     vscodeRegisterCommand('chromiumide.deviceManagement.openLogs', () => {
       output.show();
     }),
-    vscodeRegisterCommand(
-      'chromiumide.deviceManagement.remoteDebug',
-      (item: provider.DeviceItem) => remoteDebug(context, item)
-    ),
     registerChromiumosCommands(context, chromiumosServices)
   );
 }
@@ -226,6 +222,11 @@ function registerChromiumosCommands(
             });
           }
         }
+      ),
+      vscodeRegisterCommand(
+        'chromiumide.deviceManagement.remoteDebug',
+        async (item: provider.DeviceItem) =>
+          remoteDebug(context, item, chrootService)
       )
     );
 

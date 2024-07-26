@@ -47,6 +47,9 @@ function newVscodeSpy() {
       'executeCommand',
       'getCommands',
     ]),
+    debug: jasmine.createSpyObj<typeof vscode.debug>('vscode.debug', [
+      'startDebugging',
+    ]),
     env: jasmine.createSpyObj<typeof vscode.env>('vscode.env', [
       'openExternal',
     ]),
@@ -337,6 +340,7 @@ export function installVscodeDouble(): {
     const double = {
       commands: vscodeSpy.commands,
       comments: vscodeSpy.comments,
+      debug: vscodeSpy.debug,
       env: buildNamespace(theVscode.env, vscodeSpy.env, {}, vscodeGetters.env),
       extensions: buildNamespace(
         theVscode.extensions,
@@ -364,6 +368,7 @@ export function installVscodeDouble(): {
     } else {
       theVscode.commands = double.commands;
       theVscode.comments = double.comments;
+      theVscode.debug = double.debug;
       theVscode.env = double.env;
       theVscode.extensions = double.extensions;
       theVscode.languages = double.languages;

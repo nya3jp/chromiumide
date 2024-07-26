@@ -46,8 +46,8 @@ export type {TreeItemLabel} from './tree_item_label';
 export {UIKind} from './ui_kind';
 export {Uri} from './uri';
 
-export const debug = debugModule;
 export let commands = {};
+export let debug = debugModule;
 export let comments = {};
 export let env = envModule;
 export let extensions = extensionsModule;
@@ -60,6 +60,7 @@ export let workspace = workspaceModule;
 export function setVscode(double: {
   commands: typeof vscode.commands;
   comments: typeof vscode.comments;
+  debug: typeof vscode.debug;
   env: typeof vscode.env;
   extensions: typeof vscode.extensions;
   languages: typeof vscode.languages;
@@ -68,6 +69,7 @@ export function setVscode(double: {
 }): void {
   commands = double.commands;
   comments = double.comments;
+  debug = double.debug;
   env = double.env;
   extensions = double.extensions;
   languages = double.languages;
