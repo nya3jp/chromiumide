@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import * as auth from '../../../../features/gerrit/auth';
+import {RepoId} from '../../../../features/gerrit/git';
 
 describe('parseAuthGitcookies', () => {
   it('can parse a gitcookies', () => {
@@ -17,4 +18,16 @@ describe('parseAuthGitcookies', () => {
       )
     ).toBe('o=newtoken');
   });
+
+  const repoIds: RepoId[] = ['cros', 'cros-internal', 'chromium'];
+  for (const repoId of repoIds) {
+    it(`parses wildcard domains for ${repoId}`, () => {
+      expect(
+        auth.TEST_ONLY.parseAuthGitcookies(
+          repoId,
+          '.googlesource.com\tTRUE\t/\tTRUE\t2147483647\to\twildcard\n'
+        )
+      ).toBe('o=wildcard');
+    });
+  }
 });

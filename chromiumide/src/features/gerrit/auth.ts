@@ -69,6 +69,8 @@ function parseAuthGitcookies(
   repoId: git.RepoId,
   gitcookies: string
 ): string | undefined {
+  const repoUrl = git.gerritUrl(repoId);
+
   // We return the last match in the cookies
   // (by iterating over the lines backward with `.reverse()`),
   // because we want to get the newest auth token.
@@ -79,10 +81,25 @@ function parseAuthGitcookies(
     const fields = line.split('\t');
     // Skip if not with 7 fields
     if (fields.length !== 7) continue;
-    // Set the result if the line has the cookie `o` with the
-    // authentication token, for the Gerrit domain of `repoId`
-    if (`https://${fields[0]}` === git.gerritUrl(repoId) && fields[5] === 'o') {
-      return `o=${fields[6]}`;
+    const [
+      domain,
+      include_subdomains,
+      _path,
+      _https_only,
+      _expires,
+      name,
+      value,
+    ] = fields;
+    // Skip if the cookie does not have a name of `o`
+    if (name !== 'o') {
+      continue;
+    }
+
+    if (
+      `https://${domain}` === repoUrl ||
+      (include_subdomains === 'TRUE' && repoUrl.endsWith(domain))
+    ) {
+      return `o=${value}`;
     }
   }
 }
