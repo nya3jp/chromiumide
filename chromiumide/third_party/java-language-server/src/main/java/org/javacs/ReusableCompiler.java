@@ -114,7 +114,8 @@ class ReusableCompiler {
         List<String> opts =
                 StreamSupport.stream(options.spliterator(), false).collect(Collectors.toCollection(ArrayList::new));
         if (!opts.equals(currentOptions)) {
-            LOG.warning(String.format("Options changed from %s to %s, creating new compiler", options, opts));
+            LOG.fine(String.format("Options changed from %s to %s, creating new compiler", options, opts));
+            LOG.warning("Options changed, creating new compiler");
             currentOptions = opts;
             currentContext = new ReusableContext(opts);
         }
