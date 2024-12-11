@@ -13,6 +13,7 @@ import * as chromiumBuild from './chromium_build';
 import {ChromiumCppXrefs} from './cpp_xrefs';
 import * as format from './format';
 import * as gtest from './gtest';
+import * as java from './java';
 import * as outputDirectories from './output_directories';
 import * as relatedFiles from './related_files';
 
@@ -78,6 +79,10 @@ export class Chromium implements vscode.Disposable {
     if (config.underDevelopment.chromiumBuild.get()) {
       this.featureName = 'chromiumBuild';
       chromiumBuild.activate(ephemeralContext, this.statusManager);
+    }
+    if (config.underDevelopment.chromiumJavaSupport.get()) {
+      this.featureName = 'chromiumJavaSupport';
+      await java.activate(ephemeralContext, this.root, this.statusManager);
     }
     if (config.chrome.outputDirectories.get()) {
       this.featureName = 'chromiumOutputDirectories';
