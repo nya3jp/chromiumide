@@ -33,7 +33,7 @@ const JAVA_DOCUMENT_SELECTOR: DocumentSelector = [
 ];
 
 async function ensureCert(): Promise<void> {
-  const result = await exec('gcertstatus', [], {
+  const result = await exec('gcertstatus', ['-check_ssh=false'], {
     logStdout: true,
     ignoreNonZeroExit: true,
   });
