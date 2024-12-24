@@ -10,7 +10,7 @@ import {
   HandleDiagnosticsSignature,
   LanguageClient,
   LanguageClientOptions,
-  MessageSignature,
+  NotificationType,
   RevealOutputChannelOn,
   ServerOptions,
   TransportKind,
@@ -59,8 +59,18 @@ async function ensureCert(): Promise<void> {
   }
 }
 
+interface ChromiumIdeStartProgressParams {
+  id: string;
+  message: string;
+}
+
+interface ChromiumIdeEndProgressParams {
+  id: string;
+}
+
 class LanguageServerConnection implements vscode.Disposable {
   private readonly client: LanguageClient;
+  private readonly subscriptions: vscode.Disposable[] = [];
 
   /**
    * Creates a new connection.
@@ -75,8 +85,6 @@ class LanguageServerConnection implements vscode.Disposable {
     output: vscode.OutputChannel,
     statusBar: StatusBar
   ) {
-    let firstCodeAction = true;
-
     const clientOptions: LanguageClientOptions = {
       documentSelector: JAVA_DOCUMENT_SELECTOR,
       synchronize: {
@@ -110,29 +118,6 @@ class LanguageServerConnection implements vscode.Disposable {
               {settings}
             );
           },
-        },
-        sendRequest: async <P, R>(
-          type: string | MessageSignature,
-          param: P | undefined,
-          token: vscode.CancellationToken | undefined,
-          next: (
-            type: string | MessageSignature,
-            param?: P,
-            token?: vscode.CancellationToken
-          ) => Promise<R>
-        ): Promise<R> => {
-          const method = typeof type === 'string' ? type : type.method;
-          // Intercept the first textDocument/codeAction to show a progress
-          // indicator since the first compilations takes significant amount of
-          // time due to the cold cache.
-          if (method === 'textDocument/codeAction' && firstCodeAction) {
-            firstCodeAction = false;
-            return await statusBar.withProgress(
-              'Initializing compiler...',
-              () => next(type, param, token)
-            );
-          }
-          return await next(type, param, token);
         },
         handleDiagnostics: (
           uri: vscode.Uri,
@@ -181,10 +166,32 @@ class LanguageServerConnection implements vscode.Disposable {
       serverOptions,
       clientOptions
     );
+
+    this.subscriptions.push(
+      this.client.onNotification(
+        new NotificationType<ChromiumIdeStartProgressParams>(
+          'chromiumide/startProgress'
+        ),
+        params => {
+          statusBar.startProgress(params.id, params.message);
+        }
+      ),
+      this.client.onNotification(
+        new NotificationType<ChromiumIdeEndProgressParams>(
+          'chromiumide/endProgress'
+        ),
+        params => {
+          statusBar.endProgress(params.id);
+        }
+      )
+    );
   }
 
   dispose(): void {
     void this.client.dispose();
+    for (const subscription of this.subscriptions) {
+      subscription.dispose();
+    }
   }
 
   start(): Promise<void> {

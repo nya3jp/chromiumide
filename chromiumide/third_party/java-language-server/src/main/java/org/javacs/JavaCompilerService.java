@@ -1,5 +1,7 @@
 package org.javacs;
 
+import static org.javacs.JsonHelper.GSON;
+
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
@@ -7,6 +9,9 @@ import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import javax.tools.*;
+import org.javacs.lsp.ChromiumIDEEndProgressParams;
+import org.javacs.lsp.ChromiumIDEStartProgressParams;
+import org.javacs.lsp.LanguageClient;
 
 class JavaCompilerService implements CompilerProvider {
     // Not modifiable! If you want to edit these, you need to create a new instance
@@ -20,8 +25,9 @@ class JavaCompilerService implements CompilerProvider {
     // Use the same file manager for multiple tasks, so we don't repeatedly re-compile the same files
     // TODO intercept files that aren't in the batch and erase method bodies so compilation is faster
     final SourceFileManager fileManager;
+    private final LanguageClient client;
 
-    JavaCompilerService(Set<Path> classPath, Set<Path> docPath, Set<String> addExports) {
+    JavaCompilerService(Set<Path> classPath, Set<Path> docPath, Set<String> addExports, LanguageClient client) {
         System.err.println("Class path:");
         for (var p : classPath) {
             System.err.println("  " + p);
@@ -37,6 +43,7 @@ class JavaCompilerService implements CompilerProvider {
         this.docs = new Docs(docPath);
         this.classPathClasses = ScanClassPath.classPathTopLevelClasses(classPath);
         this.fileManager = new SourceFileManager();
+        this.client = client;
     }
 
     private CompileBatch cachedCompile;
@@ -346,8 +353,31 @@ class JavaCompilerService implements CompilerProvider {
 
     @Override
     public CompileTask compile(Collection<? extends JavaFileObject> sources) {
-        var compile = compileBatch(sources);
+        CompileBatch compile;
+        try (var _progress = withProgress("Compiling...")) {
+            compile = compileBatch(sources);
+        }
         return new CompileTask(compile.task, compile.roots, diags, compile::close);
+    }
+
+    private ChromiumIDEProgressReporter withProgress(String message) {
+        return new ChromiumIDEProgressReporter(client, message);
+    }
+
+    private static class ChromiumIDEProgressReporter implements AutoCloseable {
+        private final LanguageClient client;
+        private final String id;
+
+        ChromiumIDEProgressReporter(LanguageClient client, String message) {
+            this.client = client;
+            this.id = UUID.randomUUID().toString();
+            client.customNotification("chromiumide/startProgress", GSON.toJsonTree(new ChromiumIDEStartProgressParams(id, message)));
+        }
+
+        @Override
+        public void close() {
+            client.customNotification("chromiumide/endProgress", GSON.toJsonTree(new ChromiumIDEEndProgressParams(id)));
+        }
     }
 
     private static final Logger LOG = Logger.getLogger("main");

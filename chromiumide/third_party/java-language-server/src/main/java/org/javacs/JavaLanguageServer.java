@@ -101,7 +101,7 @@ class JavaLanguageServer extends LanguageServer {
         // If classpath is specified by the user, don't infer anything
         if (!classPath.isEmpty()) {
             javaEndProgress();
-            return new JavaCompilerService(classPath, docPath(), addExports);
+            return new JavaCompilerService(classPath, docPath(), addExports, client);
         }
         // Otherwise, combine inference with user-specified external dependencies
         else {
@@ -114,7 +114,7 @@ class JavaLanguageServer extends LanguageServer {
             var docPath = infer.buildDocPath();
 
             javaEndProgress();
-            return new JavaCompilerService(classPath, docPath, addExports);
+            return new JavaCompilerService(classPath, docPath, addExports, client);
         }
     }
 

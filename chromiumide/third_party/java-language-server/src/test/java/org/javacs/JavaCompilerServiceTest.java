@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 
 import java.nio.file.*;
 import java.util.*;
+import org.javacs.lsp.VoidLanguageClient;
 import org.junit.*;
 
 public class JavaCompilerServiceTest {
@@ -13,7 +14,7 @@ public class JavaCompilerServiceTest {
     }
 
     private JavaCompilerService compiler =
-            new JavaCompilerService(Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+            new JavaCompilerService(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), new VoidLanguageClient());
 
     static Path simpleProjectSrc() {
         return Paths.get("src/test/examples/simple-project").normalize();
