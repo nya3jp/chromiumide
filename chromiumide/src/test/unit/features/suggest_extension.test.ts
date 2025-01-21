@@ -20,6 +20,12 @@ describe('Suggest extension module', () => {
       'workbench.extensions.installExtension',
       () => {}
     );
+    vscodeSpy.extensions.getExtension
+      .withArgs('fake.installed')
+      .and.returnValue({} as vscode.Extension<void>);
+    vscodeSpy.extensions.getExtension
+      .withArgs('fake.not-installed')
+      .and.returnValue(undefined);
 
     vscode.Disposable.from(...subscriptions).dispose();
     subscriptions.splice(0);
@@ -31,7 +37,7 @@ describe('Suggest extension module', () => {
       activateSingle(
         {
           languageIds: ['cpp'],
-          extensionId: 'foo',
+          extensionIds: ['fake.not-installed'],
           message:
             'It is recommended to install Foo extension for C++. Proceed?',
           availableForCodeServer: true,
@@ -58,11 +64,11 @@ describe('Suggest extension module', () => {
 
     expect(vscodeSpy.commands.executeCommand).toHaveBeenCalledWith(
       'extension.open',
-      'foo'
+      'fake.not-installed'
     );
     expect(vscodeSpy.commands.executeCommand).toHaveBeenCalledWith(
       'workbench.extensions.installExtension',
-      'foo'
+      'fake.not-installed'
     );
     expect(driver.metrics.send).toHaveBeenCalledTimes(2);
     expect(driver.metrics.send).toHaveBeenCalledWith({
@@ -70,14 +76,14 @@ describe('Suggest extension module', () => {
       group: 'misc',
       description: 'show suggestion',
       name: 'misc_suggested_extension',
-      extension: 'foo',
+      extension: 'fake.not-installed',
     });
     expect(driver.metrics.send).toHaveBeenCalledWith({
       category: 'interactive',
       group: 'misc',
       description: 'install suggested',
       name: 'misc_installed_suggested_extension',
-      extension: 'foo',
+      extension: 'fake.not-installed',
     });
   });
 
@@ -85,7 +91,7 @@ describe('Suggest extension module', () => {
     activateSingle(
       {
         languageIds: ['cpp'],
-        extensionId: 'foo',
+        extensionIds: ['fake.not-installed'],
         message: 'It is recommended to install Foo extension for C++. Proceed?',
         availableForCodeServer: true,
       },
@@ -106,7 +112,7 @@ describe('Suggest extension module', () => {
       activateSingle(
         {
           languageIds: ['gn'],
-          extensionId: 'msedge-dev.gnls',
+          extensionIds: ['fake.not-installed'],
           message:
             'GN Language Server extension provides syntax highlighting and code navigation for GN build files. ' +
             'Would you like to install it?',
@@ -130,7 +136,7 @@ describe('Suggest extension module', () => {
       activateSingle(
         {
           languageIds: ['cpp'],
-          extensionId: 'foo',
+          extensionIds: ['fake.not-installed'],
           message:
             'It is recommended to install Foo extension for C++. Proceed?',
           availableForCodeServer: true,
@@ -160,5 +166,38 @@ describe('Suggest extension module', () => {
 
     // Suggestion should be shown exactly once.
     expect(vscodeSpy.window.showInformationMessage.calls.count()).toEqual(1);
+  });
+
+  it('does not suggest an extension if any candidate extension is installed', async () => {
+    subscriptions.push(
+      activateSingle(
+        {
+          languageIds: ['cpp'],
+          extensionIds: ['fake.not-installed', 'fake.installed'],
+          message:
+            'It is recommended to install Foo extension for C++. Proceed?',
+          availableForCodeServer: true,
+        },
+        false /* isCodeServer */
+      )
+    );
+
+    vscodeSpy.window.showInformationMessage
+      .withArgs(
+        'It is recommended to install Foo extension for C++. Proceed?',
+        'Yes',
+        'Later'
+      )
+      .and.returnValues('Later');
+
+    vscodeEmitters.window.onDidChangeActiveTextEditor.fire({
+      document: {
+        languageId: 'cpp',
+      },
+    } as vscode.TextEditor);
+
+    await flushMicrotasks();
+
+    expect(vscodeSpy.window.showInformationMessage).toHaveBeenCalledTimes(0);
   });
 });

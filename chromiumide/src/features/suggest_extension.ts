@@ -12,7 +12,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const recommendations: Recommendation[] = [
     {
       languageIds: ['cpp', 'c'],
-      extensionId: 'llvm-vs-code-extensions.vscode-clangd',
+      extensionIds: ['llvm-vs-code-extensions.vscode-clangd'],
       message:
         'Clangd extension provides cross references and autocompletion in C/C++. ' +
         'Would you like to install it?',
@@ -20,7 +20,7 @@ export function activate(context: vscode.ExtensionContext): void {
     },
     {
       languageIds: ['gn'],
-      extensionId: 'msedge-dev.gnls',
+      extensionIds: ['msedge-dev.gnls', 'google.gn'],
       message:
         'GN Language Server extension provides syntax highlighting and code navigation for GN build files. ' +
         'Would you like to install it?',
@@ -28,7 +28,7 @@ export function activate(context: vscode.ExtensionContext): void {
     },
     {
       languageIds: ['go'],
-      extensionId: 'golang.Go',
+      extensionIds: ['golang.Go'],
       message:
         'Go extension provides rich language support for the Go programming language. ' +
         'Would you like to install it?',
@@ -37,7 +37,7 @@ export function activate(context: vscode.ExtensionContext): void {
     },
     {
       languageIds: ['proto'],
-      extensionId: 'zxh404.vscode-proto3',
+      extensionIds: ['zxh404.vscode-proto3'],
       message:
         'vscode-proto3 provides rich language support for protobuf3 files. ' +
         'Would you like to install it?',
@@ -45,7 +45,7 @@ export function activate(context: vscode.ExtensionContext): void {
     },
     {
       languageIds: ['sepolicy'],
-      extensionId: 'google.selinux-policy-languages',
+      extensionIds: ['google.selinux-policy-languages'],
       message:
         'SELinux Policy provides syntax highlighting for the SELinux kernel ' +
         'policy language and Common Intermediate Language. Would you like to install it?',
@@ -53,7 +53,7 @@ export function activate(context: vscode.ExtensionContext): void {
     },
     {
       languageIds: ['starlark'],
-      extensionId: 'bazelbuild.vscode-bazel',
+      extensionIds: ['bazelbuild.vscode-bazel'],
       message:
         'Bazel plugin provides syntax highlighting for Starlark files. ' +
         'Would you like to install it?',
@@ -69,7 +69,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 interface Recommendation {
   languageIds: string[];
-  extensionId: string;
+  extensionIds: string[];
   message: string;
 
   // Whether the recommended extension is available for both the regular VS Code and
@@ -134,13 +134,19 @@ class Recommender implements vscode.Disposable {
       return;
     }
 
-    // Do not suggest an already installed extension.
-    if (vscode.extensions.getExtension(this.recommendation.extensionId)) {
+    // Do not suggest if any of extensions are already installed.
+    if (
+      this.recommendation.extensionIds.some(extensionId =>
+        vscode.extensions.getExtension(extensionId)
+      )
+    ) {
       return;
     }
 
     // Show a suggestion asynchronously.
     void (async () => {
+      const extensionId = this.recommendation.extensionIds[0];
+
       const choice = await vscode.window.showInformationMessage(
         this.recommendation.message,
         YES,
@@ -151,23 +157,20 @@ class Recommender implements vscode.Disposable {
         group: 'misc',
         description: 'show suggestion',
         name: 'misc_suggested_extension',
-        extension: this.recommendation.extensionId,
+        extension: extensionId,
       });
       if (choice === YES) {
-        await vscode.commands.executeCommand(
-          'extension.open',
-          this.recommendation.extensionId
-        );
+        await vscode.commands.executeCommand('extension.open', extensionId);
         await vscode.commands.executeCommand(
           'workbench.extensions.installExtension',
-          this.recommendation.extensionId
+          extensionId
         );
         driver.metrics.send({
           category: 'interactive',
           group: 'misc',
           description: 'install suggested',
           name: 'misc_installed_suggested_extension',
-          extension: this.recommendation.extensionId,
+          extension: extensionId,
         });
       }
     })();
