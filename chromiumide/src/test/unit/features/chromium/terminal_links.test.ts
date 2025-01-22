@@ -35,6 +35,7 @@ describe('Chromium terminal link provider', () => {
     expect(await provideTerminalLinks('foo/bar.cc')).toEqual([]);
     expect(await provideTerminalLinks('foo/gen/bar.cc')).toEqual([]);
     expect(await provideTerminalLinks('https://example.com')).toEqual([]);
+    expect(await provideTerminalLinks('http://localhost:8080')).toEqual([]);
     expect(await provideTerminalLinks('../../foo/bar.cc')).toEqual([
       new ChromiumTerminalLink(
         6,
@@ -111,6 +112,20 @@ describe('Chromium terminal link provider', () => {
         new vscode.Position(6, 0)
       ),
     ]);
+    expect(await provideTerminalLinks('[//foo/bar](//foo/bar)')).toEqual([
+      new ChromiumTerminalLink(
+        3,
+        7,
+        vscode.Uri.file(path.join(srcDir, 'foo/bar')),
+        undefined
+      ),
+      new ChromiumTerminalLink(
+        14,
+        7,
+        vscode.Uri.file(path.join(srcDir, 'foo/bar')),
+        undefined
+      ),
+    ]);
     expect(
       await provideTerminalLinks('gen/foo/bar.ts:117:11 - error TS2322: ...')
     ).toEqual([
@@ -135,6 +150,22 @@ describe('Chromium terminal link provider', () => {
             'out/current_link/gen/chrome/browser/resources/extensions/tsconfig_build_ts.json'
           )
         ),
+        undefined
+      ),
+    ]);
+    expect(
+      await provideTerminalLinks('ACTION //foo/bar:build(//bar/baz:qux)')
+    ).toEqual([
+      new ChromiumTerminalLink(
+        7,
+        15,
+        vscode.Uri.file(path.join(srcDir, 'foo/bar/BUILD.gn')),
+        undefined
+      ),
+      new ChromiumTerminalLink(
+        23,
+        13,
+        vscode.Uri.file(path.join(srcDir, 'bar/baz/BUILD.gn')),
         undefined
       ),
     ]);
