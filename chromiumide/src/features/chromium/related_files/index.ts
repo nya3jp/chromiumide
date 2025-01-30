@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import {vscodeRegisterCommand} from '../../../../shared/app/common/vscode/commands';
 import {CppRelatedFilesProvider} from './cpp';
+import {PreprocessedFilesCodeLensProvider} from './preprocessed';
 
 export function activate(
   context: vscode.ExtensionContext,
@@ -33,5 +34,8 @@ export function activate(
     )
   );
 
-  context.subscriptions.push(CppRelatedFilesProvider.activate(srcDir));
+  context.subscriptions.push(
+    CppRelatedFilesProvider.activate(srcDir),
+    PreprocessedFilesCodeLensProvider.activate(srcDir)
+  );
 }

@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {
   CppRelatedFileCodeLens,
   CppRelatedFilesProvider,
 } from '../../../../features/chromium/related_files/cpp';
+import {PreprocessedFilesCodeLensProvider} from '../../../../features/chromium/related_files/preprocessed';
 import * as testing from '../../../testing';
-import {FakeCancellationToken} from '../../../testing/fakes';
+import {FakeCancellationToken, FakeTextDocument} from '../../../testing/fakes';
 import * as extensionTesting from '../../extension_testing';
 
 // Uses `CppRelatedFilesProvider` to resolve a `CppRelatedFileCodeLens`.
@@ -158,5 +160,63 @@ describe('Related files on C++', () => {
     expect(
       vscode.languages.match(selector, cpp('/outside/src/foo.cc'))
     ).toBeFalsy();
+  });
+});
+
+describe('Related files on generated files', () => {
+  it('matches preprocessed files', () => {
+    const selector = PreprocessedFilesCodeLensProvider.documentSelector('/src');
+    expect(
+      vscode.languages.match(
+        selector,
+        new FakeTextDocument({
+          uri: vscode.Uri.file(
+            '/src/out/Debug/gen/chrome/browser/resources/extensions/preprocessed/service.ts'
+          ),
+        })
+      )
+    ).toBeTruthy();
+    expect(
+      vscode.languages.match(
+        selector,
+        new FakeTextDocument({
+          uri: vscode.Uri.file('/src/out/Debug/gen/foo/bar.h'),
+        })
+      )
+    ).toBeFalsy();
+  });
+
+  const srcDir = testing.tempDir();
+
+  it('provides link to the original file', async () => {
+    const provider = new PreprocessedFilesCodeLensProvider(srcDir.path);
+
+    const orig = path.join(
+      srcDir.path,
+      'chrome/browser/resources/extensions/service.ts'
+    );
+    const generated = path.join(
+      srcDir.path,
+      'out/Debug/gen/chrome/browser/resources/extensions/preprocessed/service.ts'
+    );
+
+    await fs.promises.mkdir(path.dirname(orig), {recursive: true});
+    await fs.promises.writeFile(orig, '');
+
+    const lens = provider
+      .provideCodeLenses(
+        new FakeTextDocument({
+          uri: vscode.Uri.file(generated),
+        }),
+        new FakeCancellationToken()
+      )
+      .map(lens => provider.resolveCodeLens(lens, new FakeCancellationToken()));
+
+    expect(lens.length).toEqual(1);
+    expect((await lens[0])!.command).toEqual({
+      title: 'Open original file',
+      command: 'vscode.open',
+      arguments: [vscode.Uri.file(orig)],
+    });
   });
 });
