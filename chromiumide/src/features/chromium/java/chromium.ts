@@ -8,8 +8,8 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import pLimit from 'p-limit';
 import {exec, execOrThrow} from '../../../../shared/app/common/common_util';
+import {statNoThrow} from '../../../common/fs_util';
 import {StatusBar} from './ui';
-import {statNoThrow} from './utils';
 
 // A pattern matching a package name declaration in Java source files.
 // It is used to scrape a package name from a Java source file without

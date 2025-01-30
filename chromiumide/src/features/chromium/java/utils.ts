@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import * as fs from 'fs';
-import * as fsPromises from 'fs/promises';
 import * as vscode from 'vscode';
+import {statNoThrow} from '../../../common/fs_util';
 
 /**
  * Returns a promise that can be rejected by a cancellation token.
@@ -28,18 +27,6 @@ export function withPseudoCancel<T>(
     });
   });
   return Promise.race([body, cancel]);
-}
-
-/**
- * Similar to fsPromises.stat, but it returns an error as a value, instead of
- * throwing it.
- */
-export async function statNoThrow(path: string): Promise<fs.Stats | undefined> {
-  try {
-    return await fsPromises.stat(path);
-  } catch {
-    return undefined;
-  }
 }
 
 /**

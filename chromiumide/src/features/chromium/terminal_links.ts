@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {statNoThrow} from '../../common/fs_util';
 
 // Matches with file paths that expectedly represent files under src/.
 // - It should start with one or more "../" without a leading slash or two slashes.
@@ -27,14 +27,6 @@ export class ChromiumTerminalLink implements vscode.TerminalLink {
     readonly uri: vscode.Uri,
     readonly position: vscode.Position | undefined
   ) {}
-}
-
-async function statNoThrow(file: string): Promise<fs.Stats | undefined> {
-  try {
-    return await fs.promises.stat(file);
-  } catch (e) {
-    return undefined;
-  }
 }
 
 /**

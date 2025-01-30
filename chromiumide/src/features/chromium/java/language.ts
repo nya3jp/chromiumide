@@ -17,9 +17,10 @@ import {
 } from 'vscode-languageclient/node';
 import {exec} from '../../../../shared/app/common/common_util';
 import {getDriver} from '../../../../shared/app/common/driver_repository';
+import {statNoThrow} from '../../../common/fs_util';
 import {CompilerConfig, computeCompilerConfig} from './chromium';
 import {StatusBar} from './ui';
-import {FilePathWatcher, statNoThrow, withPseudoCancel} from './utils';
+import {FilePathWatcher, withPseudoCancel} from './utils';
 
 const driver = getDriver();
 
