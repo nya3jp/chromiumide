@@ -6,7 +6,10 @@ import * as vscode from 'vscode';
 import {vscodeRegisterCommand} from '../../../../shared/app/common/vscode/commands';
 import {CppRelatedFilesProvider} from './cpp';
 
-export function activate(context: vscode.ExtensionContext): void {
+export function activate(
+  context: vscode.ExtensionContext,
+  srcDir: string
+): void {
   context.subscriptions.push(
     vscodeRegisterCommand(
       'chromiumide.relatedFiles.create',
@@ -30,5 +33,5 @@ export function activate(context: vscode.ExtensionContext): void {
     )
   );
 
-  context.subscriptions.push(CppRelatedFilesProvider.activate());
+  context.subscriptions.push(CppRelatedFilesProvider.activate(srcDir));
 }

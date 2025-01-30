@@ -113,7 +113,7 @@ export class Chromium implements vscode.Disposable {
     // other repos once we understand their file structures better.
     if (config.underDevelopment.relatedFiles.get()) {
       this.featureName = 'relatedFiles';
-      relatedFiles.activate(ephemeralContext);
+      relatedFiles.activate(ephemeralContext, path.join(this.root, 'src'));
     }
 
     if (config.chrome.gtest.enabled.get()) {

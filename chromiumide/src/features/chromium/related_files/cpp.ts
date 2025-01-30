@@ -18,9 +18,18 @@ export class CppRelatedFileCodeLens extends vscode.CodeLens {
 export class CppRelatedFilesProvider
   implements vscode.CodeLensProvider<CppRelatedFileCodeLens>
 {
-  static activate(): vscode.Disposable {
+  static documentSelector(srcDir: string): vscode.DocumentSelector {
+    return [
+      // Not to match anything under src/out.
+      {scheme: 'file', language: 'cpp', pattern: `${srcDir}/[!o]*/**`},
+      {scheme: 'file', language: 'cpp', pattern: `${srcDir}/o[!u]*/**`},
+      {scheme: 'file', language: 'cpp', pattern: `${srcDir}/ou[!t]*/**`},
+    ];
+  }
+
+  static activate(srcDir: string): vscode.Disposable {
     return vscode.languages.registerCodeLensProvider(
-      {scheme: 'file', language: 'cpp'},
+      CppRelatedFilesProvider.documentSelector(srcDir),
       new CppRelatedFilesProvider()
     );
   }

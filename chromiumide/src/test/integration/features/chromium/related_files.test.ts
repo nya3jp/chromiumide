@@ -22,7 +22,7 @@ async function resolveLense(
   await provider.resolveCodeLens(lense, new FakeCancellationToken());
 }
 
-describe('Related files', () => {
+describe('Related files on C++', () => {
   const tempDir = testing.tempDir();
 
   // Create a `vscode.TextDocument` from text and run `CppRelatedFilesProvider` on it.
@@ -138,5 +138,25 @@ describe('Related files', () => {
       title: 'Open unit test',
       arguments: [uri],
     });
+  });
+
+  it('does not give code lense on generated files', async () => {
+    const selector = CppRelatedFilesProvider.documentSelector('/src');
+
+    const cpp = (path: string) =>
+      ({
+        uri: vscode.Uri.file(path),
+        languageId: 'cpp',
+      } as vscode.TextDocument);
+
+    expect(
+      vscode.languages.match(selector, cpp('/src/chrome/foo.cc'))
+    ).toBeTruthy();
+    expect(
+      vscode.languages.match(selector, cpp('/src/out/Debug/chrome/foo.cc'))
+    ).toBeFalsy();
+    expect(
+      vscode.languages.match(selector, cpp('/outside/src/foo.cc'))
+    ).toBeFalsy();
   });
 });
