@@ -159,8 +159,9 @@ public class JavaDebugServer implements DebugServer {
             }
         }
         // Check for breakpoint in loaded classes
-        for (var type : loadedTypesMatching(source.path)) {
-            return enableBreakpointImmediately(source, b, type);
+        var enabled = enableBreakpointImmediately(source, b);
+        if (enabled != null) {
+            return enabled;
         }
         // If class hasn't been loaded, add breakpoint to pending list
         return enableBreakpointLater(source, b);
@@ -205,27 +206,17 @@ public class JavaDebugServer implements DebugServer {
         return ok;
     }
 
-    private Breakpoint enableBreakpointImmediately(Source source, SourceBreakpoint b, ReferenceType type) {
-        if (!tryEnableBreakpointImmediately(source, b, type)) {
-            var failed = new Breakpoint();
-            failed.verified = false;
-            failed.message = source.name + ":" + b.line + " could not be found or had no code on it";
-            return failed;
+    private Breakpoint enableBreakpointImmediately(Source source, SourceBreakpoint b) {
+        ArrayList<Location> locations = new ArrayList<>();
+        for (var type : loadedTypesMatching(source.path)) {
+            try {
+                locations.addAll(type.locationsOfLine(b.line));
+            } catch (AbsentInformationException __) {
+                LOG.info(String.format("No locations in %s for breakpoint %s:%d", type.name(), source.path, b.line));
+            }
         }
-        var ok = new Breakpoint();
-        ok.verified = true;
-        ok.source = source;
-        ok.line = b.line;
-        return ok;
-    }
-
-    private boolean tryEnableBreakpointImmediately(Source source, SourceBreakpoint b, ReferenceType type) {
-        List<Location> locations;
-        try {
-            locations = type.locationsOfLine(b.line);
-        } catch (AbsentInformationException __) {
-            LOG.info(String.format("No locations in %s for breakpoint %s:%d", type.name(), source.path, b.line));
-            return false;
+        if (locations.isEmpty()) {
+            return null;
         }
         for (var l : locations) {
             LOG.info(String.format("Create breakpoint %s:%d", source.path, l.lineNumber()));
@@ -233,7 +224,11 @@ public class JavaDebugServer implements DebugServer {
             req.setSuspendPolicy(EventRequest.SUSPEND_ALL);
             req.enable();
         }
-        return true;
+        var ok = new Breakpoint();
+        ok.verified = true;
+        ok.source = source;
+        ok.line = b.line;
+        return ok;
     }
 
     private Breakpoint enableBreakpointLater(Source source, SourceBreakpoint b) {
@@ -385,48 +380,36 @@ public class JavaDebugServer implements DebugServer {
         // Look for pending breakpoints that can be enabled
         var enabled = new ArrayList<Breakpoint>();
         for (var b : pendingBreakpoints) {
-            if (b.source.path.endsWith(path)) {
-                enablePendingBreakpoint(b, type);
+            if (b.source.path.endsWith(path) && enablePendingBreakpoint(b, type)) {
                 enabled.add(b);
             }
         }
         pendingBreakpoints.removeAll(enabled);
     }
 
-    private void enablePendingBreakpoint(Breakpoint b, ReferenceType type) {
+    private boolean enablePendingBreakpoint(Breakpoint b, ReferenceType type) {
+        List<Location> locations;
         try {
-            var locations = type.locationsOfLine(b.line);
-            for (var line : locations) {
-                var req = vm.eventRequestManager().createBreakpointRequest(line);
-                req.setSuspendPolicy(EventRequest.SUSPEND_ALL);
-                req.enable();
-            }
-            if (locations.isEmpty()) {
-                LOG.info("No locations at " + b.source.path + ":" + b.line);
-                var failed = new BreakpointEventBody();
-                failed.reason = "changed";
-                failed.breakpoint = b;
-                b.verified = false;
-                b.message = b.source.name + ":" + b.line + " could not be found or had no code on it";
-                client.breakpoint(failed);
-                return;
-            }
-            LOG.info("Enable breakpoint at " + b.source.path + ":" + b.line);
-            var ok = new BreakpointEventBody();
-            ok.reason = "changed";
-            ok.breakpoint = b;
-            b.verified = true;
-            b.message = null;
-            client.breakpoint(ok);
+            locations = type.locationsOfLine(b.line);
         } catch (AbsentInformationException __) {
-            LOG.info("Absent information at " + b.source.path + ":" + b.line);
-            var failed = new BreakpointEventBody();
-            failed.reason = "changed";
-            failed.breakpoint = b;
-            b.verified = false;
-            b.message = b.source.name + ":" + b.line + " could not be found or had no code on it";
-            client.breakpoint(failed);
+            return false;
         }
+        if (locations.isEmpty()) {
+            return false;
+        }
+        for (var line : locations) {
+            var req = vm.eventRequestManager().createBreakpointRequest(line);
+            req.setSuspendPolicy(EventRequest.SUSPEND_ALL);
+            req.enable();
+        }
+        LOG.info("Enable breakpoint at " + b.source.path + ":" + b.line);
+        var ok = new BreakpointEventBody();
+        ok.reason = "changed";
+        ok.breakpoint = b;
+        b.verified = true;
+        b.message = null;
+        client.breakpoint(ok);
+        return true;
     }
 
     private String relativePath(ReferenceType type) {
