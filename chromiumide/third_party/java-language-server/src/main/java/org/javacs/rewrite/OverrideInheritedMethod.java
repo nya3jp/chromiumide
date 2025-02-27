@@ -52,6 +52,7 @@ public class OverrideInheritedMethod implements Rewrite {
             if (sourceFile.isEmpty()) return "";
             var parse = compiler.parse(sourceFile.get());
             var source = FindHelper.findMethod(parse, superClassName, methodName, erasedParameterTypes);
+            if (source == null) return "";
             var text = EditHelper.printMethod(superMethod, parameterizedType, source);
             text = text.replaceAll("\n", "\n" + " ".repeat(indent));
             text = text + "\n\n";

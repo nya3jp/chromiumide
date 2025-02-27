@@ -51,6 +51,7 @@ public class HoverProvider {
         if (source.isEmpty()) return;
         var task = compiler.parse(source.get());
         var tree = findItem(task, data);
+        if (tree == null) return;
         resolveDetail(item, data, tree);
         var path = Trees.instance(task.task).getPath(task.root, tree);
         var docTree = DocTrees.instance(task.task).getDocCommentTree(path);
@@ -90,7 +91,7 @@ public class HoverProvider {
         if (data.className != null) {
             return FindHelper.findType(task, data.className);
         }
-        throw new RuntimeException("no className");
+        return null;
     }
 
     private String docs(CompileTask task, Element element) {
@@ -110,6 +111,7 @@ public class HoverProvider {
             if (file.isEmpty()) return "";
             var parse = compiler.parse(file.get());
             var tree = FindHelper.findField(parse, className, field.getSimpleName().toString());
+            if (tree == null) return "";
             return docs(parse, tree);
         } else if (element instanceof ExecutableElement) {
             var method = (ExecutableElement) element;
@@ -121,6 +123,7 @@ public class HoverProvider {
             if (file.isEmpty()) return "";
             var parse = compiler.parse(file.get());
             var tree = FindHelper.findMethod(parse, className, methodName, erasedParameterTypes);
+            if (tree == null) return "";
             return docs(parse, tree);
         } else {
             return "";

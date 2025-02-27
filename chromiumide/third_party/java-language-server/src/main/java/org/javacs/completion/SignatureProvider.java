@@ -181,6 +181,7 @@ public class SignatureProvider {
         if (file.isEmpty()) return;
         var parse = compiler.parse(file.get());
         var source = FindHelper.findMethod(parse, className, methodName, erasedParameterTypes);
+        if (source == null) return;
         var path = Trees.instance(task.task).getPath(parse.root, source);
         var docTree = DocTrees.instance(task.task).getDocCommentTree(path);
         if (docTree != null) {
