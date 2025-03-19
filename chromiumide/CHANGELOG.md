@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.36.0 (March 2025)
+
+- Chromium Java support
+- Link file paths on the terminal output.
+
 ## 0.34.0 (June 2024)
 
 - Cros format
