@@ -43,13 +43,13 @@ export async function crosWorkon(
   }
 
   const res = await ctx.chrootService.exec(
-    'cros_workon',
-    [board.map(b => `--board=${b}`, '--host'), action, targetName],
+    'cros',
+    ['workon', board.map(b => `--board=${b}`, '--host'), action, targetName],
     {
       logger: ctx.output,
       logStdout: true,
       ignoreNonZeroExit: true,
-      sudoReason: 'to run cros_workon in chroot',
+      sudoReason: 'to run `cros workon` in chroot',
     }
   );
   if (res instanceof Error) {

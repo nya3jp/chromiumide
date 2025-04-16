@@ -224,10 +224,10 @@ describe('Boards and packages', () => {
     testing.fakes.installChrootCommandHandler(
       fakeExec,
       chromiumosRoot,
-      'cros_workon',
-      ['--board=betty', 'start', 'chromeos-base/codelab'],
+      'cros',
+      ['workon', '--board=betty', 'start', 'chromeos-base/codelab'],
       args => {
-        expect(args.length).toBe(3);
+        expect(args.length).toBe(4);
         started = true;
         return '';
       }
