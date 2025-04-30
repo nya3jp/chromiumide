@@ -20,11 +20,11 @@ export function activate(context: vscode.ExtensionContext): void {
     },
     {
       languageIds: ['gn'],
-      extensionIds: ['msedge-dev.gnls', 'google.gn'],
+      extensionIds: ['google.gn', 'msedge-dev.gnls'],
       message:
-        'GN Language Server extension provides syntax highlighting and code navigation for GN build files. ' +
+        'GN Language extension provides syntax highlighting and code navigation for GN build files. ' +
         'Would you like to install it?',
-      availableForCodeServer: false,
+      availableForCodeServer: true,
     },
     {
       languageIds: ['go'],
