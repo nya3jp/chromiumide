@@ -50,8 +50,10 @@ public class FoldProvider {
         // Merge import ranges
         if (!imports.isEmpty()) {
             var merged = asFoldingRange(task, imports.get(0), FoldingRangeKind.Imports);
+            assert merged != null;
             for (var i : imports) {
                 var r = asFoldingRange(task, i, FoldingRangeKind.Imports);
+                assert r != null;
                 if (r.startLine <= merged.endLine + 1) {
                     merged =
                             new FoldingRange(
@@ -70,10 +72,16 @@ public class FoldProvider {
 
         // Convert blocks and comments
         for (var t : blocks) {
-            all.add(asFoldingRange(task, t, FoldingRangeKind.Region));
+            var r = asFoldingRange(task, t, FoldingRangeKind.Region);
+            if (r != null) {
+                all.add(r);
+            }
         }
         for (var t : comments) {
-            all.add(asFoldingRange(task, t, FoldingRangeKind.Region));
+            var r = asFoldingRange(task, t, FoldingRangeKind.Region);
+            if (r != null) {
+                all.add(r);
+            }
         }
 
         return all;
@@ -85,6 +93,10 @@ public class FoldProvider {
         var lines = t.getCompilationUnit().getLineMap();
         var start = (int) pos.getStartPosition(t.getCompilationUnit(), t.getLeaf());
         var end = (int) pos.getEndPosition(t.getCompilationUnit(), t.getLeaf());
+
+        if (start < 0 || end < 0) {
+            return null;
+        }
 
         // If this is a class tree, adjust start position to '{'
         if (t.getLeaf() instanceof ClassTree) {

@@ -34,12 +34,15 @@ class FindSymbolsMatching extends TreePathScanner<Void, List<SymbolInformation>>
     @Override
     public Void visitClass(ClassTree t, List<SymbolInformation> list) {
         if (StringSearch.matchesTitleCase(t.getSimpleName(), query)) {
-            var info = new SymbolInformation();
-            info.name = t.getSimpleName().toString();
-            info.kind = asSymbolKind(t.getKind());
-            info.location = location(t);
-            info.containerName = containerName.toString();
-            list.add(info);
+            var location = location(t);
+            if (location != null) {
+                var info = new SymbolInformation();
+                info.name = t.getSimpleName().toString();
+                info.kind = asSymbolKind(t.getKind());
+                info.location = location;
+                info.containerName = containerName.toString();
+                list.add(info);
+            }
         }
         var push = containerName;
         containerName = t.getSimpleName();
@@ -51,12 +54,15 @@ class FindSymbolsMatching extends TreePathScanner<Void, List<SymbolInformation>>
     @Override
     public Void visitMethod(MethodTree t, List<SymbolInformation> list) {
         if (StringSearch.matchesTitleCase(t.getName(), query)) {
-            var info = new SymbolInformation();
-            info.name = t.getName().toString();
-            info.kind = asSymbolKind(t.getKind());
-            info.location = location(t);
-            info.containerName = containerName.toString();
-            list.add(info);
+            var location = location(t);
+            if (location != null) {
+                var info = new SymbolInformation();
+                info.name = t.getName().toString();
+                info.kind = asSymbolKind(t.getKind());
+                info.location = location;
+                info.containerName = containerName.toString();
+                list.add(info);
+            }
         }
         var push = containerName;
         containerName = t.getName();
@@ -69,12 +75,15 @@ class FindSymbolsMatching extends TreePathScanner<Void, List<SymbolInformation>>
     public Void visitVariable(VariableTree t, List<SymbolInformation> list) {
         if (getCurrentPath().getParentPath().getLeaf() instanceof ClassTree
                 && StringSearch.matchesTitleCase(t.getName(), query)) {
-            var info = new SymbolInformation();
-            info.name = t.getName().toString();
-            info.kind = asSymbolKind(t.getKind());
-            info.location = location(t);
-            info.containerName = containerName.toString();
-            list.add(info);
+            var location = location(t);
+            if (location != null) {
+                var info = new SymbolInformation();
+                info.name = t.getName().toString();
+                info.kind = asSymbolKind(t.getKind());
+                info.location = location;
+                info.containerName = containerName.toString();
+                list.add(info);
+            }
         }
         var push = containerName;
         containerName = t.getName();
@@ -111,6 +120,9 @@ class FindSymbolsMatching extends TreePathScanner<Void, List<SymbolInformation>>
         var lines = task.root.getLineMap();
         var start = pos.getStartPosition(root, t);
         var end = pos.getEndPosition(root, t);
+        if (start < 0 || end < 0) {
+            return null;
+        }
         var startLine = (int) lines.getLineNumber(start);
         var startColumn = (int) lines.getColumnNumber(start);
         var endLine = (int) lines.getLineNumber(end);
