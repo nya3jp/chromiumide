@@ -1306,13 +1306,6 @@
         ]
       },
       {
-        "id": "gn",
-        "extensions": [
-          ".gn",
-          ".gni"
-        ]
-      },
-      {
         "id": "upstart",
         "aliases": [
           "Upstart"

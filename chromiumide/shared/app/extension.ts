@@ -5,7 +5,7 @@
 import * as vscode from 'vscode';
 import {Driver} from '../driver';
 import {registerDriver} from './common/driver_repository';
-import {LoggingBundle, createLinterLoggingBundle} from './common/logs';
+import {createLinterLoggingBundle} from './common/logs';
 import * as feedback from './common/metrics/feedback';
 import {CrosFormatFeature} from './features/cros_format';
 import * as lint from './features/lint';
@@ -19,7 +19,6 @@ export async function activate(
   driver: Driver
 ): Promise<{
   statusManager: bgTaskStatus.StatusManager;
-  linterLogger: LoggingBundle;
 }> {
   registerDriver(driver);
 
@@ -35,5 +34,5 @@ export async function activate(
     new CrosFormatFeature(context.extension.id, statusManager)
   );
 
-  return {statusManager, linterLogger};
+  return {statusManager};
 }

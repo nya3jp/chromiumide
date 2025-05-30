@@ -14,7 +14,6 @@ import {
   getDriver,
   registerDriver,
 } from '../shared/app/common/driver_repository';
-import {LoggingBundle} from '../shared/app/common/logs';
 import {vscodeRegisterCommand} from '../shared/app/common/vscode/commands';
 import {activate as activateSharedFeatures} from '../shared/app/extension';
 import * as config from '../shared/app/services/config';
@@ -35,7 +34,6 @@ import * as dirMetadata from './features/dir_metadata';
 import {DisclaimerOnMac} from './features/disclaimer_on_mac';
 import {Gcert} from './features/gcert';
 import * as gerrit from './features/gerrit';
-import * as gn from './features/gn';
 import * as hints from './features/hints';
 import * as ownersLinks from './features/owners_links';
 import * as shortLinkProvider from './features/short_link_provider';
@@ -64,19 +62,14 @@ export async function activate(
 
   registerDriver(new DriverImpl());
   // Activate metrics (a shared feature) so that other components can emit metrics on activation.
-  const {statusManager, linterLogger} = await activateSharedFeatures(
+  const {statusManager} = await activateSharedFeatures(
     context,
     new DriverImpl()
   );
   const driver = getDriver();
 
   try {
-    return await postMetricsActivate(
-      context,
-      driver,
-      statusManager,
-      linterLogger
-    );
+    return await postMetricsActivate(context, driver, statusManager);
   } catch (err) {
     driver.metrics.send({
       category: 'error',
@@ -91,8 +84,7 @@ export async function activate(
 async function postMetricsActivate(
   context: vscode.ExtensionContext,
   driver: Driver,
-  statusManager: bgTaskStatus.StatusManager,
-  linterLogger: LoggingBundle
+  statusManager: bgTaskStatus.StatusManager
 ): Promise<ExtensionApi> {
   // Put it on top to ensure the disclaimer is shown even if the following code malfunctions.
   context.subscriptions.push(new DisclaimerOnMac());
@@ -153,7 +145,6 @@ async function postMetricsActivate(
     command: SHOW_UI_LOG,
   });
 
-  gn.activate(context, statusManager, linterLogger);
   shortLinkProvider.activate(context);
   if (config.ownersFiles.links.get()) {
     ownersLinks.activate(context);
