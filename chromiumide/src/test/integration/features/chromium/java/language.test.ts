@@ -5,6 +5,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import * as config from '../../../../../../shared/app/services/config';
 import {LanguageServerManager} from '../../../../../features/chromium/java/language';
 import {StatusBar} from '../../../../../features/chromium/java/ui';
 import * as testing from '../../../../testing';
@@ -40,6 +41,11 @@ describe('Chromium Java language server', () => {
       const srcDir = testing.testdataUri('java/src').fsPath;
       const statusBar = new StatusBar();
       subscriptions.push(statusBar);
+
+      // Ensure to use the fake depot_tools.
+      await config.paths.depotTools.update(
+        path.join(srcDir, 'third_party/depot_tools')
+      );
 
       const manager = new LanguageServerManager(
         extensionDir,
