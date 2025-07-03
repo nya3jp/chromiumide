@@ -278,8 +278,8 @@
       },
       {
         "command": "chromiumide.fileIdeBug",
-        "category": "CrOS",
-        "title": "File a bug on Buganizer"
+        "category": "ChromiumIDE",
+        "title": "File a bug"
       },
       {
         "command": "chromiumide.gcert.run",

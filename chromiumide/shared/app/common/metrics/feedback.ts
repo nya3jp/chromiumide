@@ -5,7 +5,6 @@
 import * as vscode from 'vscode';
 import {Platform} from '../../../driver';
 import {getDriver} from '../driver_repository';
-import {extensionName} from '../extension_name';
 import {vscodeRegisterCommand} from '../vscode/commands';
 
 const driver = getDriver();
@@ -27,13 +26,4 @@ function activateVscode(context: vscode.ExtensionContext): void {
       );
     })
   );
-
-  const feedbackStatusBarItem = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Right,
-    5
-  );
-  feedbackStatusBarItem.command = 'chromiumide.fileIdeBug';
-  feedbackStatusBarItem.text = '$(feedback) Feedback';
-  feedbackStatusBarItem.tooltip = `File a ${extensionName()} bug on Buganizer`;
-  feedbackStatusBarItem.show();
 }
