@@ -37,12 +37,6 @@ const USAGE = `
      This option is meaningful only for the publish command.
 `;
 
-const LAST_CODE_SERVER_VERSION = new semver.SemVer('0.32.1000');
-
-function shouldPublishCodeServer(version: semver.SemVer) {
-  return version.compare(LAST_CODE_SERVER_VERSION) < 0;
-}
-
 async function withTempDir(
   f: (tempDir: string) => Promise<void>
 ): Promise<void> {
@@ -263,15 +257,13 @@ async function buildAndUpload(preRelease: boolean, remoteBranch?: string) {
 
     let publishFailures = false;
 
-    if (shouldPublishCodeServer(version)) {
-      console.log(`Publishing ${fileName} to OpenVSX`);
+    console.log(`Publishing ${fileName} to OpenVSX`);
 
-      try {
-        await execute('npx', ovsxArgs, logOpts);
-      } catch (e) {
-        console.error(e);
-        publishFailures = true;
-      }
+    try {
+      await execute('npx', ovsxArgs, logOpts);
+    } catch (e) {
+      console.error(e);
+      publishFailures = true;
     }
 
     console.log(`Publishing ${fileName} to MS Marketplace`);
