@@ -3,6 +3,10 @@
 This VSCode extension is designed to make Chromium/ChromiumOS development easier and faster by
 anchoring core tools in one place, and making them discoverable and easy to use.
 
+## Installing
+
+You can install from the [VSCode marketplace](https://marketplace.visualstudio.com/items?itemName=Google.cros-ide) or the [OpenVSX marketplace](https://open-vsx.org/extension/Google/cros-ide).
+
 ## User Scope
 
 This is intended for Googlers only.
