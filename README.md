@@ -7,10 +7,6 @@ anchoring core tools in one place, and making them discoverable and easy to use.
 
 You can install from the [VSCode marketplace](https://marketplace.visualstudio.com/items?itemName=Google.cros-ide) or the [OpenVSX marketplace](https://open-vsx.org/extension/Google/cros-ide).
 
-## User Scope
-
-This is intended for Googlers only.
-
 ## Features
 
 Initial release has been tested for `platform2` development and offers the following features:
@@ -24,9 +20,10 @@ Initial release has been tested for `platform2` development and offers the follo
 
 See [QuickStart Guide] for setup instructions and full features guide.
 
-[quickstart guide]: https://chromium.googlesource.com/chromiumos/infra/ide/+/HEAD/docs/quickstart.md
+[quickstart guide]: ./docs/quickstart.md
 
-## Contacting Us
+## Disclaimer
 
-- [g/chromiumide-users](http://g/chromiumide-users)
-- [go/chromiumide-users-chat](http://go/chromiumide-users-chat)
+This is not an officially supported Google product. This project is not
+eligible for the [Google Open Source Software Vulnerability Rewards
+Program](https://bughunters.google.com/open-source-security).
