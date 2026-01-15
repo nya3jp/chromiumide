@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.48.0 (January 2026)
+
+- Enable Java debugger by default
+- Support C++ unit test execution in Clank
+
 ## 0.46.0 (June 2025)
 
 - Chromium
